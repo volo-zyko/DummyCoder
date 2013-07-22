@@ -1,0 +1,529 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" targetNamespace="urn:oasis:names:tc:opendocument:xmlns:database:1.0" xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" xmlns:number="urn:oasis:names:tc:opendocument:xmlns:datastyle:1.0" xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0" xmlns:form="urn:oasis:names:tc:opendocument:xmlns:form:1.0" xmlns:xforms="http://www.w3.org/2002/xforms" xmlns:script="urn:oasis:names:tc:opendocument:xmlns:script:1.0" xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" xmlns:dr3d="urn:oasis:names:tc:opendocument:xmlns:dr3d:1.0" xmlns:smil="urn:oasis:names:tc:opendocument:xmlns:smil-compatible:1.0" xmlns:db="urn:oasis:names:tc:opendocument:xmlns:database:1.0" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:presentation="urn:oasis:names:tc:opendocument:xmlns:presentation:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:math="http://www.w3.org/1998/Math/MathML" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" xmlns:grddl="http://www.w3.org/2003/g/data-view#" xmlns:config="urn:oasis:names:tc:opendocument:xmlns:config:1.0" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:meta="urn:oasis:names:tc:opendocument:xmlns:meta:1.0" xmlns:chart="urn:oasis:names:tc:opendocument:xmlns:chart:1.0" xmlns:anim="urn:oasis:names:tc:opendocument:xmlns:animation:1.0" xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0">
+  <xs:import namespace="http://purl.org/dc/elements/1.1/" schemaLocation="dc.xsd"/>
+  <xs:import namespace="http://www.w3.org/1998/Math/MathML" schemaLocation="math.xsd"/>
+  <xs:import namespace="http://www.w3.org/1999/xhtml" schemaLocation="xhtml.xsd"/>
+  <xs:import namespace="http://www.w3.org/1999/xlink" schemaLocation="xlink.xsd"/>
+  <xs:import namespace="http://www.w3.org/2002/xforms" schemaLocation="xforms.xsd"/>
+  <xs:import namespace="http://www.w3.org/2003/g/data-view#" schemaLocation="grddl.xsd"/>
+  <xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd"/>
+  <xs:import namespace="urn:oasis:names:tc:opendocument:xmlns:animation:1.0" schemaLocation="anim.xsd"/>
+  <xs:import namespace="urn:oasis:names:tc:opendocument:xmlns:chart:1.0" schemaLocation="chart.xsd"/>
+  <xs:import namespace="urn:oasis:names:tc:opendocument:xmlns:config:1.0" schemaLocation="config.xsd"/>
+  <xs:import namespace="urn:oasis:names:tc:opendocument:xmlns:datastyle:1.0" schemaLocation="number.xsd"/>
+  <xs:import namespace="urn:oasis:names:tc:opendocument:xmlns:dr3d:1.0" schemaLocation="dr3d.xsd"/>
+  <xs:import namespace="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0" schemaLocation="draw.xsd"/>
+  <xs:import namespace="urn:oasis:names:tc:opendocument:xmlns:form:1.0" schemaLocation="form.xsd"/>
+  <xs:import namespace="urn:oasis:names:tc:opendocument:xmlns:meta:1.0" schemaLocation="meta.xsd"/>
+  <xs:import namespace="urn:oasis:names:tc:opendocument:xmlns:office:1.0" schemaLocation="office.xsd"/>
+  <xs:import namespace="urn:oasis:names:tc:opendocument:xmlns:presentation:1.0" schemaLocation="presentation.xsd"/>
+  <xs:import namespace="urn:oasis:names:tc:opendocument:xmlns:script:1.0" schemaLocation="script.xsd"/>
+  <xs:import namespace="urn:oasis:names:tc:opendocument:xmlns:smil-compatible:1.0" schemaLocation="smil.xsd"/>
+  <xs:import namespace="urn:oasis:names:tc:opendocument:xmlns:style:1.0" schemaLocation="style.xsd"/>
+  <xs:import namespace="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" schemaLocation="svg.xsd"/>
+  <xs:import namespace="urn:oasis:names:tc:opendocument:xmlns:table:1.0" schemaLocation="table.xsd"/>
+  <xs:import namespace="urn:oasis:names:tc:opendocument:xmlns:text:1.0" schemaLocation="OpenDocument-v1.2-os-schema.xsd"/>
+  <xs:import namespace="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0" schemaLocation="fo.xsd"/>
+  <xs:element name="data-source">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="db:connection-data"/>
+        <xs:element minOccurs="0" ref="db:driver-settings"/>
+        <xs:element minOccurs="0" ref="db:application-connection-settings"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="connection-data">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice>
+          <xs:element ref="db:database-description"/>
+          <xs:element ref="db:connection-resource"/>
+        </xs:choice>
+        <xs:element minOccurs="0" ref="db:login"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="database-description">
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="db:file-based-database"/>
+        <xs:element ref="db:server-database"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="file-based-database">
+    <xs:complexType>
+      <xs:attributeGroup ref="text:db-file-based-database-attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attribute name="media-type" type="text:string"/>
+  <xs:attribute name="extension" type="text:string"/>
+  <xs:element name="server-database">
+    <xs:complexType>
+      <xs:attributeGroup ref="text:db-server-database-attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="type">
+    <xs:attribute name="type" use="required" form="qualified" type="text:namespacedToken"/>
+  </xs:attributeGroup>
+  <xs:attribute name="hostname" type="text:string"/>
+  <xs:attribute name="port" type="text:positiveInteger"/>
+  <xs:attribute name="database-name" type="text:string"/>
+  <xs:attribute name="local-socket" type="text:string"/>
+  <xs:element name="connection-resource">
+    <xs:complexType>
+      <xs:attributeGroup ref="text:db-connection-resource-attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="login">
+    <xs:complexType>
+      <xs:attributeGroup ref="text:db-login-attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attribute name="user-name" type="text:string"/>
+  <xs:attribute name="use-system-user" type="text:boolean"/>
+  <xs:attribute name="is-password-required" type="text:boolean"/>
+  <xs:attribute name="login-timeout" type="text:positiveInteger"/>
+  <xs:element name="driver-settings">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" ref="db:auto-increment"/>
+        <xs:element minOccurs="0" ref="db:delimiter"/>
+        <xs:element minOccurs="0" ref="db:character-set"/>
+        <xs:element minOccurs="0" ref="db:table-settings"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="text:db-driver-settings-attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attribute name="system-driver-settings" type="text:string"/>
+  <xs:attribute name="base-dn" type="text:string"/>
+  <xs:attribute name="parameter-name-substitution" type="text:boolean"/>
+  <xs:attribute name="show-deleted" type="text:boolean"/>
+  <xs:attribute name="is-first-row-header-line" type="text:boolean"/>
+  <xs:element name="auto-increment">
+    <xs:complexType>
+      <xs:attributeGroup ref="text:db-auto-increment-attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attribute name="additional-column-statement" type="text:string"/>
+  <xs:attribute name="row-retrieving-statement" type="text:string"/>
+  <xs:element name="delimiter">
+    <xs:complexType>
+      <xs:attributeGroup ref="text:db-delimiter-attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attribute name="field" type="text:string"/>
+  <xs:attribute name="string" type="text:string"/>
+  <xs:attribute name="decimal" type="text:string"/>
+  <xs:attribute name="thousand" type="text:string"/>
+  <xs:element name="character-set">
+    <xs:complexType>
+      <xs:attributeGroup ref="text:db-character-set-attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attribute name="encoding" type="text:textEncoding"/>
+  <xs:element name="table-settings">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="db:table-setting"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="table-setting">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" ref="db:delimiter"/>
+        <xs:element minOccurs="0" ref="db:character-set"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="text:db-table-setting-attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="application-connection-settings">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" ref="db:table-filter"/>
+        <xs:element minOccurs="0" ref="db:table-type-filter"/>
+        <xs:element minOccurs="0" ref="db:data-source-settings"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="text:db-application-connection-settings-attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attribute name="is-table-name-length-limited" type="text:boolean"/>
+  <xs:attribute name="enable-sql92-check" type="text:boolean"/>
+  <xs:attribute name="append-table-alias-name" type="text:boolean"/>
+  <xs:attribute name="ignore-driver-privileges" type="text:boolean"/>
+  <xs:attribute name="boolean-comparison-mode">
+    <xs:simpleType>
+      <xs:restriction base="xs:token">
+        <xs:enumeration value="equal-integer"/>
+        <xs:enumeration value="is-boolean"/>
+        <xs:enumeration value="equal-boolean"/>
+        <xs:enumeration value="equal-use-only-zero"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:attribute>
+  <xs:attribute name="use-catalog" type="text:boolean"/>
+  <xs:attribute name="max-row-count" type="text:integer"/>
+  <xs:attribute name="suppress-version-columns" type="text:boolean"/>
+  <xs:element name="table-filter">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" ref="db:table-include-filter"/>
+        <xs:element minOccurs="0" ref="db:table-exclude-filter"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="table-include-filter">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="db:table-filter-pattern"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="table-exclude-filter">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="db:table-filter-pattern"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="table-filter-pattern" type="text:string"/>
+  <xs:element name="table-type-filter">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="db:table-type"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="table-type" type="text:string"/>
+  <xs:element name="data-source-settings">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="db:data-source-setting"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="data-source-setting">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="db:data-source-setting-value"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="text:db-data-source-setting-attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attribute name="data-source-setting-is-list" type="text:boolean"/>
+  <xs:attribute name="data-source-setting-name" type="text:string"/>
+  <xs:attribute name="data-source-setting-type" type="text:db-data-source-setting-types"/>
+  <xs:element name="data-source-setting-value" type="text:string"/>
+  <xs:element name="forms">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="db:component"/>
+        <xs:element ref="db:component-collection"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="reports">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="db:component"/>
+        <xs:element ref="db:component-collection"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="component-collection">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="db:component"/>
+        <xs:element ref="db:component-collection"/>
+      </xs:choice>
+      <xs:attributeGroup ref="text:common-db-object-name"/>
+      <xs:attributeGroup ref="text:common-db-object-title"/>
+      <xs:attributeGroup ref="text:common-db-object-description"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="component">
+    <xs:complexType>
+      <xs:choice minOccurs="0">
+        <xs:element ref="office:document"/>
+        <xs:element ref="math:math"/>
+      </xs:choice>
+      <xs:attributeGroup ref="text:db-component-attlist"/>
+      <xs:attributeGroup ref="text:common-db-object-name"/>
+      <xs:attributeGroup ref="text:common-db-object-title"/>
+      <xs:attributeGroup ref="text:common-db-object-description"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attribute name="as-template" type="text:boolean"/>
+  <xs:element name="queries">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="db:query"/>
+        <xs:element ref="db:query-collection"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="query-collection">
+    <xs:complexType>
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element ref="db:query"/>
+        <xs:element ref="db:query-collection"/>
+      </xs:choice>
+      <xs:attributeGroup ref="text:common-db-object-name"/>
+      <xs:attributeGroup ref="text:common-db-object-title"/>
+      <xs:attributeGroup ref="text:common-db-object-description"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="query">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" ref="db:order-statement"/>
+        <xs:element minOccurs="0" ref="db:filter-statement"/>
+        <xs:element minOccurs="0" ref="db:columns"/>
+        <xs:element minOccurs="0" ref="db:update-table"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="text:db-query-attlist"/>
+      <xs:attributeGroup ref="text:common-db-object-name"/>
+      <xs:attributeGroup ref="text:common-db-object-title"/>
+      <xs:attributeGroup ref="text:common-db-object-description"/>
+      <xs:attributeGroup ref="text:common-db-table-style-name"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attribute name="command" type="text:string"/>
+  <xs:attribute name="escape-processing" type="text:boolean"/>
+  <xs:element name="order-statement">
+    <xs:complexType>
+      <xs:attributeGroup ref="text:db-command"/>
+      <xs:attributeGroup ref="text:db-apply-command"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="filter-statement">
+    <xs:complexType>
+      <xs:attributeGroup ref="text:db-command"/>
+      <xs:attributeGroup ref="text:db-apply-command"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="update-table">
+    <xs:complexType>
+      <xs:attributeGroup ref="text:common-db-table-name-attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="table-representations">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="db:table-representation"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="table-representation">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" ref="db:order-statement"/>
+        <xs:element minOccurs="0" ref="db:filter-statement"/>
+        <xs:element minOccurs="0" ref="db:columns"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="text:common-db-table-name-attlist"/>
+      <xs:attributeGroup ref="text:common-db-object-title"/>
+      <xs:attributeGroup ref="text:common-db-object-description"/>
+      <xs:attributeGroup ref="text:common-db-table-style-name"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="columns">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="db:column"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="column">
+    <xs:complexType>
+      <xs:attributeGroup ref="text:db-column-attlist"/>
+      <xs:attributeGroup ref="text:common-db-object-name"/>
+      <xs:attributeGroup ref="text:common-db-object-title"/>
+      <xs:attributeGroup ref="text:common-db-object-description"/>
+      <xs:attributeGroup ref="text:common-db-default-value"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attribute name="visible" type="text:boolean"/>
+  <xs:attribute name="style-name">
+    <xs:simpleType>
+      <xs:union memberTypes="text:styleNameRef">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:length value="0"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:union>
+    </xs:simpleType>
+  </xs:attribute>
+  <xs:attribute name="default-cell-style-name">
+    <xs:simpleType>
+      <xs:union memberTypes="text:styleNameRef">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:length value="0"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:union>
+    </xs:simpleType>
+  </xs:attribute>
+  <xs:attribute name="apply-command" type="text:boolean"/>
+  <xs:attribute name="name" type="text:string"/>
+  <xs:attribute name="catalog-name" type="text:string"/>
+  <xs:attribute name="schema-name" type="text:string"/>
+  <xs:attribute name="title" type="text:string"/>
+  <xs:attribute name="description" type="text:string"/>
+  <xs:attribute name="default-row-style-name">
+    <xs:simpleType>
+      <xs:union memberTypes="text:styleNameRef">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:length value="0"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:union>
+    </xs:simpleType>
+  </xs:attribute>
+  <xs:element name="schema-definition" type="text:db-table-definitions"/>
+  <xs:element name="table-definitions">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" maxOccurs="unbounded" ref="db:table-definition"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="table-definition">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="db:column-definitions"/>
+        <xs:element minOccurs="0" ref="db:keys"/>
+        <xs:element minOccurs="0" ref="db:indices"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="text:common-db-table-name-attlist"/>
+      <xs:attributeGroup ref="text:db-table-definition-attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="type1">
+    <xs:attribute name="type" use="required" form="qualified" type="text:string"/>
+  </xs:attributeGroup>
+  <xs:element name="column-definitions">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="db:column-definition"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="column-definition">
+    <xs:complexType>
+      <xs:attributeGroup ref="text:db-column-definition-attlist"/>
+      <xs:attributeGroup ref="text:common-db-default-value"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attribute name="data-type" type="text:db-data-types"/>
+  <xs:attribute name="type-name" type="text:string"/>
+  <xs:attribute name="precision" type="text:positiveInteger"/>
+  <xs:attribute name="scale" type="text:positiveInteger"/>
+  <xs:attribute name="is-nullable">
+    <xs:simpleType>
+      <xs:restriction base="xs:token">
+        <xs:enumeration value="no-nulls"/>
+        <xs:enumeration value="nullable"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:attribute>
+  <xs:attribute name="is-empty-allowed" type="text:boolean"/>
+  <xs:attribute name="is-autoincrement" type="text:boolean"/>
+  <xs:element name="keys">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="db:key"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="key">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="db:key-columns"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="text:db-key-attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attributeGroup name="type2">
+    <xs:attribute name="type" use="required" form="qualified">
+      <xs:simpleType>
+        <xs:restriction base="xs:token">
+          <xs:enumeration value="primary"/>
+          <xs:enumeration value="unique"/>
+          <xs:enumeration value="foreign"/>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+  </xs:attributeGroup>
+  <xs:attribute name="referenced-table-name" type="text:string"/>
+  <xs:attribute name="update-rule">
+    <xs:simpleType>
+      <xs:restriction base="xs:token">
+        <xs:enumeration value="cascade"/>
+        <xs:enumeration value="restrict"/>
+        <xs:enumeration value="set-null"/>
+        <xs:enumeration value="no-action"/>
+        <xs:enumeration value="set-default"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:attribute>
+  <xs:attribute name="delete-rule">
+    <xs:simpleType>
+      <xs:restriction base="xs:token">
+        <xs:enumeration value="cascade"/>
+        <xs:enumeration value="restrict"/>
+        <xs:enumeration value="set-null"/>
+        <xs:enumeration value="no-action"/>
+        <xs:enumeration value="set-default"/>
+      </xs:restriction>
+    </xs:simpleType>
+  </xs:attribute>
+  <xs:element name="key-columns">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="db:key-column"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="key-column">
+    <xs:complexType>
+      <xs:attributeGroup ref="text:db-key-column-attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attribute name="related-column-name" type="text:string"/>
+  <xs:element name="indices">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="db:index"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="index">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="db:index-columns"/>
+      </xs:sequence>
+      <xs:attributeGroup ref="text:db-index-attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attribute name="is-unique" type="text:boolean"/>
+  <xs:attribute name="is-clustered" type="text:boolean"/>
+  <xs:element name="index-columns">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="db:index-column"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="index-column">
+    <xs:complexType>
+      <xs:attributeGroup ref="text:db-index-column-attlist"/>
+    </xs:complexType>
+  </xs:element>
+  <xs:attribute name="is-ascending" type="text:boolean"/>
+</xs:schema>
