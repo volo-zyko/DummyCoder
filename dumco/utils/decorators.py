@@ -1,7 +1,7 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
 
-def function_once(func): # pragma: no cover
+def function_once(func):
     def decorated(*args, **kwargs):
         if not decorated.run[0]:
             decorated.run = (True, func(*args, **kwargs))

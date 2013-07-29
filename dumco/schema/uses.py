@@ -2,58 +2,39 @@
 
 from dumco.utils.decorators import method_once
 
-import base
 import checks
-
-import prv.utils
+import namer
 
 
 class Particle(object):
-    def __init__(self, attrs, element, factory):
-        self.min_occurs = 1
-        self.max_occurs = 1
-        self.element = element
+    def __init__(self, min_occurs, max_occurs, term):
+        assert min_occurs <= max_occurs
+        self.min_occurs = min_occurs
+        self.max_occurs = max_occurs
+        self.term = term
         self.name = None
 
-        self._set_multiplicity(attrs, factory)
+    def append_doc(self, doc):
+        self.term.append_doc(doc)
 
     @method_once
     def nameit(self, parents, factory, names):
-        prv.utils.forge_name(self, parents, factory, names)
+        namer.forge_name(self, parents, factory, names)
 
-        assert checks.is_compositor(self.element), \
+        assert checks.is_compositor(self.term), \
             'Trying to name non-compositor'
 
-        for p in self.element.particles:
-            if checks.is_compositor(p.element):
+        for p in self.term.particles:
+            if checks.is_compositor(p.term):
                 p.nameit(parents + [self], factory, names)
                 assert p.name is not None, 'Name cannot be None'
 
-    def _set_multiplicity(self, attrs, factory):
-        try:
-            min_occurs = factory.get_attribute(attrs, 'minOccurs')
-            self.min_occurs = int(min_occurs)
-        except LookupError:
-            pass
-
-        try:
-            max_occurs = factory.get_attribute(attrs, 'maxOccurs')
-            self.max_occurs = (base.UNBOUNDED if max_occurs == 'unbounded'
-                               else int(max_occurs))
-        except LookupError:
-            pass
-
-        assert self.min_occurs <= self.max_occurs
-
 
 class AttributeUse(object):
-    def __init__(self, attrs, attribute, factory):
-        try:
-            self.default = factory.get_attribute(attrs, 'default')
-        except LookupError:
-            self.default = None
-        try:
-            self.required = factory.get_attribute(attrs, 'use') == 'required'
-        except LookupError:
-            self.required = None
+    def __init__(self, default, required, attribute):
+        self.default = default
+        self.required = required
         self.attribute = attribute
+
+    def append_doc(self, doc):
+        self.attribute.append_doc(doc)

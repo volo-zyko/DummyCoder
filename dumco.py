@@ -13,7 +13,8 @@ import argparse
 from dumco.xml.parser import XmlLoader
 from dumco.xml.xsd.element_factory import XsdElementFactory
 from dumco.xml.xsd.dump_xsd import dump_xsd
-import dumco.schema.prv.namers
+import dumco.schema.fb2_namer
+import dumco.schema.oxml_namer
 
 def process_arguments():
     parser = argparse.ArgumentParser()
@@ -58,9 +59,9 @@ if __name__ == '__main__':
     args = process_arguments()
 
     if args.element_namer == 'oxml':
-        namer = dumco.schema.prv.namers.OxmlNamer()
+        namer = dumco.schema.oxml_namer.OxmlNamer()
     elif args.element_namer == 'fb2':
-        namer = dumco.schema.prv.namers.Fb2Namer()
+        namer = dumco.schema.fb2_namer.Fb2Namer()
 
     if args.input_syntax == 'xsd':
         factory = XsdElementFactory(namer)

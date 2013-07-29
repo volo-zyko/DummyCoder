@@ -5,22 +5,26 @@ from __future__ import print_function
 import sys
 import shutil
 import os.path
+import xml.sax.saxutils
 
-import dumco.schema.base
-import dumco.schema.checks
+import dumco.schema.base as base
+import dumco.schema.checks as checks
+import dumco.schema.elements as elements
 
 
 _XSD_NS = 'xsd'
-_XSD_URI = dumco.schema.checks.XSD_NAMESPACE
+_XSD_URI = checks.XSD_NAMESPACE
 _XML_NS = 'xml'
 _VFILE_NS = 'dumco'
 
 
 class _XmlWriter(object):
+    ENTITIES = {chr(x): '&#{0};'.format(x) for x in xrange(127, 256)}
+
     def __init__(self, filename):
         self.indentation = 0
         self.fhandle = None
-        self.namespaces = {_XML_NS: dumco.schema.checks.XML_NAMESPACE}
+        self.namespaces = {_XML_NS: checks.XML_NAMESPACE}
         self.complex_content = []
         self.prev_opened = False
 
@@ -69,10 +73,11 @@ class _XmlWriter(object):
             self.fhandle.write(' xmlns{0}="{1}"'.format(real_ns, uri))
 
     def add_attribute(self, name, value, ns=''):
+        esc_value = xml.sax.saxutils.quoteattr(str(value), self.ENTITIES)
         if ns != '':
-            self.fhandle.write(' {0}:{1}="{2}"'.format(ns, name, value))
+            self.fhandle.write(' {0}:{1}={2}'.format(ns, name, esc_value))
         else:
-            self.fhandle.write(' {0}="{1}"'.format(name, value))
+            self.fhandle.write(' {0}={1}'.format(name, esc_value))
 
     def add_comment(self, comment):
         if self.prev_opened:
@@ -107,7 +112,7 @@ def _qname(name, own_schema, other_schema, ns=_XSD_NS):
 
 
 def _max_occurs(value):
-    return ('unbounded' if value == dumco.schema.base.UNBOUNDED else value)
+    return ('unbounded' if value == base.UNBOUNDED else value)
 
 
 def _dump_restriction(restriction, schema, xml_writer):
@@ -147,7 +152,7 @@ def _dump_restriction(restriction, schema, xml_writer):
 
 
 def _dump_listitem(listitem, schema, xml_writer):
-    assert dumco.schema.checks.is_primitive_type(listitem)
+    assert checks.is_primitive_type(listitem)
 
     with _TagGuard('list', xml_writer):
         xml_writer.add_attribute('listItem',
@@ -155,11 +160,11 @@ def _dump_listitem(listitem, schema, xml_writer):
 
 
 def _dump_union(union, schema, xml_writer):
-    assert all([dumco.schema.checks.is_primitive_type(m[1]) for m in union])
+    assert all([checks.is_primitive_type(m) for m in union])
 
     with _TagGuard('union', xml_writer):
         xml_writer.add_attribute('memberItems',
-            ' '.join([_qname(m[1].name, m[1].schema, schema) for m in union]))
+            ' '.join([_qname(m.name, m.schema, schema) for m in union]))
 
 
 def _dump_simple_content(cont, attrs, schema, xml_writer):
@@ -169,7 +174,7 @@ def _dump_simple_content(cont, attrs, schema, xml_writer):
                 _qname(cont.type.name, cont.type.schema, schema))
 
             for a in attrs:
-                if dumco.schema.checks.is_any(a.attribute):
+                if checks.is_any(a.attribute):
                     with _TagGuard('anyAttribute', xml_writer):
                         _dump_any(a.attribute, schema, xml_writer)
                 else:
@@ -177,12 +182,12 @@ def _dump_simple_content(cont, attrs, schema, xml_writer):
 
 
 def _dump_particle(particle, schema, xml_writer, names):
-    name = particle.element.__class__.__name__.lower()
+    name = particle.term.__class__.__name__.lower()
     with _TagGuard(name, xml_writer):
-        if dumco.schema.checks.is_compositor(particle.element):
+        if checks.is_compositor(particle.term):
             xml_writer.add_attribute('name', particle.name, ns=_VFILE_NS)
-        elif dumco.schema.checks.is_element(particle.element):
-            _dump_element_attributes(particle.element, schema, xml_writer)
+        elif checks.is_element(particle.term):
+            _dump_element_attributes(particle.term, schema, xml_writer)
 
         if particle.min_occurs != 1:
             xml_writer.add_attribute('minOccurs', particle.min_occurs)
@@ -190,20 +195,20 @@ def _dump_particle(particle, schema, xml_writer, names):
             xml_writer.add_attribute('maxOccurs',
                                      _max_occurs(particle.max_occurs))
 
-        if dumco.schema.checks.is_compositor(particle.element):
-            for p in particle.element.particles:
+        if checks.is_compositor(particle.term):
+            for p in particle.term.particles:
                 _dump_particle(p, schema, xml_writer, names)
-        elif dumco.schema.checks.is_element(particle.element):
+        elif checks.is_element(particle.term):
             pass
-        elif dumco.schema.checks.is_any(particle.element):
-            _dump_any(particle.element, schema, xml_writer)
-        else:
+        elif checks.is_any(particle.term):
+            _dump_any(particle.term, schema, xml_writer)
+        else: # pragma: no cover
             assert False
 
 
 def _dump_attribute(attr, schema, xml_writer):
-    assert (dumco.schema.checks.is_attribute(attr.attribute) or
-            dumco.schema.checks.is_xmlattribute(attr.attribute))
+    assert (checks.is_attribute(attr.attribute) or
+            checks.is_xmlattribute(attr.attribute))
 
     with _TagGuard('attribute', xml_writer):
         _dump_attribute_attributes(attr.attribute, schema, xml_writer)
@@ -216,12 +221,14 @@ def _dump_attribute(attr, schema, xml_writer):
 
 
 def _dump_attribute_attributes(attr, schema, xml_writer, top_level=False):
-    if top_level or (attr.schema is not None and
-                     attr.schema == schema and
-                     attr not in attr.schema.attributes):
+    attrs = []
+    if not checks.is_xmlattribute(attr):
+        attrs = [a.attribute for a in attr.schema.attributes.itervalues()]
+    if top_level or (not checks.is_xmlattribute(attr) and
+                     attr.schema == schema and attr not in attrs):
         xml_writer.add_attribute('name',
             _qname(attr.name, attr.schema, schema))
-        if not dumco.schema.checks.is_simple_urtype(attr.type):
+        if not checks.is_simple_urtype(attr.type):
             xml_writer.add_attribute('type',
                 _qname(attr.type.name, attr.type.schema, schema))
 
@@ -229,21 +236,21 @@ def _dump_attribute_attributes(attr, schema, xml_writer, top_level=False):
             'qualified' if attr.qualified else 'unqualified')
     else:
         ns = _XSD_NS
-        if dumco.schema.checks.is_xmlattribute(attr):
+        if checks.is_xmlattribute(attr):
             ns = _XML_NS
         xml_writer.add_attribute('ref',
             _qname(attr.name, attr.schema, schema, ns=ns))
 
 
 def _dump_element_attributes(elem, schema, xml_writer, top_level=False):
-    assert dumco.schema.checks.is_element(elem)
+    assert checks.is_element(elem)
 
+    elems = [p.term for p in elem.schema.elements.itervalues()]
     if top_level or (elem.schema is not None and
-                     elem.schema == schema and
-                     elem not in elem.schema.elements):
+                     elem.schema == schema and elem not in elems):
         xml_writer.add_attribute('name',
             _qname(elem.name, elem.schema, schema))
-        if not dumco.schema.checks.is_complex_urtype(elem.type):
+        if not checks.is_complex_urtype(elem.type):
             xml_writer.add_attribute('type',
                 _qname(elem.type.name, elem.type.schema, schema))
 
@@ -255,11 +262,15 @@ def _dump_element_attributes(elem, schema, xml_writer, top_level=False):
 
 
 def _dump_any(elem, schema, xml_writer):
-    assert dumco.schema.checks.is_any(elem)
+    assert checks.is_any(elem)
 
     val = elem.namespace
     if isinstance(elem.namespace, list):
         val = ' '.join(elem.namespace)
+    elif elem.namespace == elements.Any.ANY:
+        val = '##any'
+    elif elem.namespace == elements.Any.OTHER:
+        val = '##other'
 
     xml_writer.add_attribute('namespace', val)
 
@@ -279,7 +290,7 @@ def dump_xsd(schemata, output_dir):
         with _TagGuard('schema', xml_writer):
             xml_writer.add_attribute('targetNamespace', schema.target_ns)
 
-            xml_writer.define_namespace(_VFILE_NS, 'http://dumco.com')
+            xml_writer.define_namespace(_VFILE_NS, 'http://dumco.com/naming')
             for (ns, uri) in schema.namespaces.iteritems():
                 xml_writer.define_namespace(ns, uri)
 
@@ -314,16 +325,16 @@ def dump_xsd(schemata, output_dir):
                     if ct.mixed:
                         xml_writer.add_attribute('mixed', ct.mixed)
 
-                    if dumco.schema.checks.has_simple_content(ct):
+                    if checks.has_simple_content(ct):
                         _dump_simple_content(ct.text, ct.attributes,
                                              schema, xml_writer)
                     elif (ct.mixed or
-                          dumco.schema.checks.has_complex_content(ct)):
-                        _dump_particle(ct.term, schema, xml_writer, set())
+                          checks.has_complex_content(ct)):
+                        _dump_particle(ct.particle, schema, xml_writer, set())
 
-                    if not dumco.schema.checks.has_simple_content(ct):
+                    if not checks.has_simple_content(ct):
                         for a in ct.attributes:
-                            if dumco.schema.checks.is_any(a.attribute):
+                            if checks.is_any(a.attribute):
                                 with _TagGuard('anyAttribute', xml_writer):
                                     _dump_any(a.attribute, schema, xml_writer)
                             else:
@@ -334,7 +345,7 @@ def dump_xsd(schemata, output_dir):
             for (name, elem) in sorted(schema.elements.iteritems(),
                                        key=lambda item: item[0]):
                 with _TagGuard('element', xml_writer):
-                    _dump_element_attributes(elem, schema, xml_writer,
+                    _dump_element_attributes(elem.term, schema, xml_writer,
                                              top_level=True)
 
             if len(schema.attributes) != 0:
@@ -342,7 +353,7 @@ def dump_xsd(schemata, output_dir):
             for (name, attr) in sorted(schema.attributes.iteritems(),
                                        key=lambda item: item[0]):
                 with _TagGuard('attribute', xml_writer):
-                    _dump_attribute_attributes(attr, schema, xml_writer,
-                                               top_level=True)
+                    _dump_attribute_attributes(attr.attribute, schema,
+                                               xml_writer, top_level=True)
 
         xml_writer.done()
