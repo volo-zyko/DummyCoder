@@ -51,6 +51,9 @@ $COVERAGE_APPEND_COMMAND \
     ../dumco.py -i UT/schemas/ODF12/ dumpxsd -o /tmp/dumco/ODF12/
 
 $COVERAGE_APPEND_COMMAND \
+    ../dumco.py -i UT/schemas/XHTML10/ dumpxsd -o /tmp/dumco/XHTML10/
+
+$COVERAGE_APPEND_COMMAND \
     ../dumco.py -i UT/schemas/FB20/ -n fb2 dumpxsd -o /tmp/dumco/FB20/
 
 $COVERAGE_APPEND_COMMAND \

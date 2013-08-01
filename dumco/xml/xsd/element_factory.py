@@ -258,21 +258,20 @@ class XsdElementFactory(object):
         try:
             location = factory._get_attribute(attrs, 'schemaLocation')
         except LookupError:
-            return (parent_element, None)
+            location = None
 
         namespace = factory._get_attribute(attrs, 'namespace')
 
-        assert (namespace is not None and location is not None), \
-            'Cannot import XSD document in {0}'.format(schema_path)
+        if (namespace != dumco.schema.checks.XML_NAMESPACE and
+            location is not None):
+            new_schema_path = os.path.realpath(
+                os.path.join(os.path.dirname(schema_path), location))
+            assert os.path.isfile(new_schema_path), \
+                'File {0} does not exist'.format(new_schema_path)
 
-        new_schema_path = os.path.realpath(
-            os.path.join(os.path.dirname(schema_path), location))
-        assert os.path.isfile(new_schema_path), \
-            'File {0} does not exist'.format(new_schema_path)
-
-        all_schemata[new_schema_path] = all_schemata[new_schema_path] \
-            if new_schema_path in all_schemata else None
-        all_schemata[schema_path].imports[new_schema_path] = None
+            all_schemata[new_schema_path] = all_schemata[new_schema_path] \
+                if new_schema_path in all_schemata else None
+            all_schemata[schema_path].imports[new_schema_path] = None
 
         return (parent_element, {
             'annotation': XsdElementFactory.noop_handler,

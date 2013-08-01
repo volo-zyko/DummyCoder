@@ -47,7 +47,7 @@ class ValidatingNameSet(set):
         super(ValidatingNameSet, self).add(name)
 
 
-class NameForgeException(Exception):
+class NameForgeException(BaseException):
     pass
 
 

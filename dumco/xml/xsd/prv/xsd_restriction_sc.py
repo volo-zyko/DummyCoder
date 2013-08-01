@@ -40,6 +40,7 @@ class XsdSimpleRestriction(xsd_restriction.XsdRestriction):
     def __init__(self, attrs, parent_schema):
         super(XsdSimpleRestriction, self).__init__(attrs, parent_schema)
 
+        self.base = None
         self.attributes = []
 
     @method_once
