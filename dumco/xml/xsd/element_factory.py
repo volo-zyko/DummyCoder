@@ -262,16 +262,18 @@ class XsdElementFactory(object):
 
         namespace = factory._get_attribute(attrs, 'namespace')
 
-        if (namespace != dumco.schema.checks.XML_NAMESPACE and
-            location is not None):
+        if location is not None:
             new_schema_path = os.path.realpath(
                 os.path.join(os.path.dirname(schema_path), location))
-            assert os.path.isfile(new_schema_path), \
+
+            assert (os.path.isfile(new_schema_path) or
+                    namespace == dumco.schema.checks.XML_NAMESPACE), \
                 'File {0} does not exist'.format(new_schema_path)
 
-            all_schemata[new_schema_path] = all_schemata[new_schema_path] \
-                if new_schema_path in all_schemata else None
-            all_schemata[schema_path].imports[new_schema_path] = None
+            if os.path.isfile(new_schema_path):
+                all_schemata[new_schema_path] = all_schemata[new_schema_path] \
+                    if new_schema_path in all_schemata else None
+                all_schemata[schema_path].imports[new_schema_path] = None
 
         return (parent_element, {
             'annotation': XsdElementFactory.noop_handler,

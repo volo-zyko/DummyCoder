@@ -187,7 +187,7 @@ License agreement version of: 30 January 2006
 	
 -->
 <xs:schema xmlns="http://iptc.org/std/NewsML/2003-10-10/" xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://iptc.org/std/NewsML/2003-10-10/" elementFormDefault="qualified">
-	<xs:import namespace="http://www.w3.org/XML/1998/namespace"/>
+	<xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="http://www.w3.org/2001/xml.xsd"/>
 	<xs:annotation>
 		<xs:documentation>IPTC NewsML 1.2 XML Schema, version 4</xs:documentation>
 		<xs:documentation>urn:iptc:std-draft:NewsML:1.0:spec:xmlschema:4</xs:documentation>

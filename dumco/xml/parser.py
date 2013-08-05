@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import os.path
 import xml.sax
+import xml.sax.handler
 
 from dumco.utils.file_utils import enumerate_files
 

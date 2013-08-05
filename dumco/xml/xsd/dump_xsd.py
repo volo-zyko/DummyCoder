@@ -2,9 +2,9 @@
 
 from __future__ import print_function
 
-import sys
-import shutil
 import os.path
+import shutil
+import sys
 import xml.sax.saxutils
 
 import dumco.schema.base as base
