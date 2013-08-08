@@ -4,17 +4,23 @@
 
 from __future__ import print_function
 
-import sys
+import argparse
 import os
 import os.path
+import sys
 import time
-import argparse
+
+import dumco.cxx.rfilter.gendriver
+from dumco.cxx.opacity_manager import OpacityManager
+
+import dumco.schema.fb2_namer
+import dumco.schema.oxml_namer
+
+from dumco.utils.ns_converter import NamespaceConverter
 
 from dumco.xml.parser import XmlLoader
 from dumco.xml.xsd.element_factory import XsdElementFactory
 from dumco.xml.xsd.dump_xsd import dump_xsd
-import dumco.schema.fb2_namer
-import dumco.schema.oxml_namer
 
 def process_arguments():
     parser = argparse.ArgumentParser()
@@ -43,6 +49,28 @@ def process_arguments():
 
     parser_rfilter = subparsers.add_parser(
         'rfilter', help='generate read-only filter for schema files')
+    parser_rfilter.add_argument('-o', '--output-dir', required=True,
+                                help='output directory')
+    parser_rfilter.add_argument('--root-namespaces',
+                                default='V', help='root C++ namespaces in '
+                                'which code will be generated '
+                                '{default: %(default)s}')
+    parser_rfilter.add_argument('--uri-to-namespaces',
+                                nargs='+', metavar='MAPPING',
+                                help='uri to C++ namespaces mappings, e.g. '
+                                'http://net/!a,b,c maps to a list [a,b,c]')
+    parser_rfilter.add_argument('--uri-prefices',
+                                nargs='+', metavar='PREFIX',
+                                help='uri prefices that must be removed from '
+                                'XML namespaces to form C++ namespaces, e.g. '
+                                'PREFIX http://net/ maps URI http://net/a/b/c '
+                                'to a list [a,b,c]')
+    parser_rfilter.add_argument('--context-class', required=True,
+                                help='fully qualified class name of filter '
+                                'specific context class')
+    parser_rfilter.add_argument('--context-class-header', required=True,
+                                help='path to the header with context class '
+                                'declaration')
 
     parser_dom = subparsers.add_parser(
         'dom', help='generate DOM corresponding to schema files')
@@ -79,9 +107,19 @@ if __name__ == '__main__':
 
     if args.mode == 'dumpxsd':
         dump_xsd(all_schemata, args.output_dir)
-    elif args.mode == 'rfilter':
-        assert False, 'Not implemented'
-    elif args.mode == 'dom':
-        assert False, 'Not implemented'
+    elif args.mode == 'rfilter' or args.mode == 'dom':
+        ns_converter = NamespaceConverter(args.root_namespaces.split(),
+                                          args.uri_to_namespaces,
+                                          args.uri_prefices)
+        opacity_manager = OpacityManager(args)
+
+        if args.mode == 'rfilter':
+            gd = dumco.cxx.rfilter.gendriver.RFilterGenerationDriver(
+                all_schemata, ns_converter, opacity_manager,
+                args.output_dir, args.context_class, args.context_class_header)
+        elif args.mode == 'dom':
+            assert False, 'Not implemented'
+
+        gd.generate()
 
     print('Done in {0:f} seconds!'.format(time.time() - start_time))
