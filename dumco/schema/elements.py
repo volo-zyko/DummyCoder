@@ -1,6 +1,7 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
 from dumco.utils.decorators import method_once, function_once
+import dumco.utils.string_utils
 
 import base
 import namer
@@ -45,7 +46,8 @@ class ComplexType(base.SchemaBase):
     def __init__(self, name, parent_schema):
         super(ComplexType, self).__init__(parent_schema)
 
-        self.name = name
+        self.name = (name if name == 'anyType' or name is None
+                     else dumco.utils.string_utils.upper_first_letter(name))
         self.attributes = []
         self.particle = None
         self.text = None
@@ -145,7 +147,8 @@ class SimpleType(base.SchemaBase):
     def __init__(self, name, parent_schema):
         super(SimpleType, self).__init__(parent_schema)
 
-        self.name = name
+        self.name = (name if name == 'anySimpleType' or name is None
+                     else dumco.utils.string_utils.upper_first_letter(name))
         self.restriction = None
         self.listitem = None
         self.union = []
