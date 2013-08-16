@@ -31,7 +31,7 @@ class XsdElementFactory(object):
         if prefix is not None and not dumco.schema.checks.is_xsd_namespace(uri):
             assert (uri not in self.all_named_ns or
                     self.all_named_ns[uri] == prefix), \
-                'Namespace prefix {0} is already defined as {1}'.format(
+                'Namespace prefix {} is already defined as {}'.format(
                     prefix, self.all_named_ns[uri])
             self.all_named_ns[uri] = prefix
 
@@ -49,7 +49,7 @@ class XsdElementFactory(object):
         self.element_stack.append(self.element)
 
         assert name[1] in self.dispatcher, \
-            '"{0}" is not supported in {1}'.format(
+            '"{}" is not supported in {}'.format(
                 name[1], self.element.__class__.__name__)
 
         (element, self.dispatcher) = self.dispatcher[name[1]](
@@ -268,7 +268,7 @@ class XsdElementFactory(object):
 
             assert (os.path.isfile(new_schema_path) or
                     namespace == dumco.schema.checks.XML_NAMESPACE), \
-                'File {0} does not exist'.format(new_schema_path)
+                'File {} does not exist'.format(new_schema_path)
 
             if os.path.isfile(new_schema_path):
                 all_schemata[new_schema_path] = all_schemata[new_schema_path] \

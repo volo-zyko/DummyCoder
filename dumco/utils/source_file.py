@@ -10,21 +10,24 @@ import time
 import zlib
 
 
-nl = lambda sf: '{0}{1}'.format(sf._nl1(), sf._make_indentation())
-nl2 = lambda sf: '{0}{1}'.format(sf._nl2(), sf._make_indentation())
+nl = lambda sf: '{}{}'.format(sf._nl1(), sf._make_indentation())
+nl2 = lambda sf: '{}{}'.format(sf._nl2(), sf._make_indentation())
 idt = lambda sf: sf._indent()
 uidt = lambda sf: sf._unindent()
-nl_idt = lambda sf: '{0}{1}{2}'.format(sf._nl1(), sf._indent(),
+nl_idt = lambda sf: '{}{}{}'.format(sf._nl1(), sf._indent(),
+                                    sf._make_indentation())
+nl_idt2 = lambda sf: '{}{}{}{}'.format(sf._nl1(), sf._indent(),
+                                       sf._indent(),
                                        sf._make_indentation())
-nl_idt2 = lambda sf: '{0}{1}{2}{3}'.format(sf._nl1(), sf._indent(),
-                                           sf._indent(),
-                                           sf._make_indentation())
-nl_uidt = lambda sf: '{0}{1}{2}'.format(sf._nl1(), sf._unindent(),
+nl_uidt = lambda sf: '{}{}{}'.format(sf._nl1(), sf._unindent(),
+                                     sf._make_indentation())
+nl_uidt2 = lambda sf: '{}{}{}{}'.format(sf._nl1(), sf._unindent(),
+                                        sf._unindent(),
                                         sf._make_indentation())
-nl_uidt2 = lambda sf: '{0}{1}{2}{3}'.format(sf._nl1(), sf._unindent(),
-                                            sf._unindent(),
-                                            sf._make_indentation())
-nl2_uidt = lambda sf: '{0}{1}{2}'.format(sf._nl2(), sf._unindent(),
+nl2_uidt = lambda sf: '{}{}{}'.format(sf._nl2(), sf._unindent(),
+                                      sf._make_indentation())
+nl2_uidt2 = lambda sf: '{}{}{}{}'.format(sf._nl2(), sf._unindent(),
+                                         sf._unindent(),
                                          sf._make_indentation())
 nl2_uidt2 = lambda sf: '{0}{1}{2}{3}'.format(sf._nl2(), sf._unindent(),
                                              sf._unindent(),
@@ -115,7 +118,8 @@ class SourceFile(object):
         if is_same_content:
             os.utime(self.filename, (file_time, file_time))
 
-        assert self.indentation == 0
+        assert self.indentation == 0, \
+            'Broken indentation in {}'.format(self.filename)
 
     def __lshift__(self, obj):
         if hasattr(obj, '__call__'):
@@ -145,7 +149,8 @@ class SourceFile(object):
         return ''
 
     def _unindent(self):
-        assert self.indentation != 0
+        assert self.indentation != 0, \
+            'Cannot unindent in {}'.format(self.filename)
         self.indentation -= 1
         return ''
 

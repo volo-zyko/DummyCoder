@@ -90,7 +90,7 @@ class XsdComplexType(xsd_base.XsdBase):
                 dumco.schema.base.xsd_builtin_types()['string'])
 
         assert not _has_duplicate_attributes(self.schema_element.attributes), \
-            'Duplicate attributes in CT in {0}'.format(
+            'Duplicate attributes in CT in {}'.format(
                 self.schema_element.schema.path)
 
         def attr_key(attr):
@@ -113,7 +113,7 @@ def _has_duplicate_attributes(attrs):
         if dumco.schema.checks.is_any(a.attribute):
             continue
 
-        name = '{0}:{1}'.format(
+        name = '{}:{}'.format(
             'xml' if dumco.schema.checks.is_xmlattribute(a.attribute)
             else a.attribute.schema.target_ns, a.attribute.name)
         attrnames.append((name, a))

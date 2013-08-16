@@ -1,6 +1,7 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
-import dumco.utils.string_utils
+from dumco.utils.string_utils import *
+
 
 class NamingManager(object):
     def __init__(self, ns_converter):
@@ -16,8 +17,7 @@ class NamingManager(object):
 
         if nss == current_nss:
             return name_formatter(ct)
-        return '{0}{1}'.format(dumco.utils.string_utils.cxx_namespaces(nss),
-                               name_formatter(ct))
+        return '{}{}'.format(cxx_namespaces(nss), name_formatter(ct))
 
     def consumer_class(self, ct):
         return '{0}_AbstractConsumer'.format(ct.name)

@@ -42,9 +42,9 @@ class _LocationManager(object):
 
         return self.file_prefices[schema.target_ns]
 
-    def _consumer_file_name(self, ct):
-        return '{0}_{1}.h'.format(self._schema_file_prefix(ct.schema),
-                                  self.naming.consumer_class(ct))
+    def _consumer_header_name(self, ct):
+        return '{}_{}.h'.format(self._schema_file_prefix(ct.schema),
+                                self.naming.consumer_class(ct))
 
     def consumer_full_path(self, ct):
         return os.path.join(self.output_path, self._consumer_file_name(ct))

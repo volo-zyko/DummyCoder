@@ -55,7 +55,7 @@ class CppSourceFile(dumco.utils.source_file.SourceFile):
             self << nl
         for ns in reversed(namespaces):
             self << '} // ' << ('anon namespace' if ns == ''
-                                else 'namespace {0}'.format(ns)) << nl
+                                else 'namespace {}'.format(ns)) << nl
 
 
 class CppHeaderFile(CppSourceFile):

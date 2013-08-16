@@ -35,14 +35,14 @@ class ValidatingNameSet(set):
 
         prefix = ''
         if element.schema is not None:
-            prefix = '{{{0}}}:'.format(element.schema.target_ns)
-        name = '{0}{1}'.format(prefix, elem.name)
+            prefix = '{{{}}}:'.format(element.schema.target_ns)
+        name = '{}{}'.format(prefix, elem.name)
 
         if name in self:
             raise NameForgeException()
 
         assert name not in self, \
-            'Name {0} was already defined'.format(name)
+            'Name {} was already defined'.format(name)
 
         super(ValidatingNameSet, self).add(name)
 

@@ -19,7 +19,7 @@ _VFILE_NS = 'dumco'
 
 
 class _XmlWriter(object):
-    ENTITIES = {chr(x): '&#{0};'.format(x) for x in xrange(127, 256)}
+    ENTITIES = {chr(x): '&#{};'.format(x) for x in xrange(127, 256)}
 
     def __init__(self, filename):
         self.indentation = 0
@@ -52,7 +52,7 @@ class _XmlWriter(object):
         self.complex_content.append(False)
         self.prev_opened = True
         self._indent()
-        self.fhandle.write('<{0}:{1}'.format(ns, tag))
+        self.fhandle.write('<{}:{}'.format(ns, tag))
         self.define_namespace(ns, uri)
         self.indentation += 1
 
@@ -60,7 +60,7 @@ class _XmlWriter(object):
         self.indentation -= 1
         if self.complex_content[-1]:
             self._indent()
-            self.fhandle.write('</{0}:{1}>\n'.format(ns, tag))
+            self.fhandle.write('</{}:{}>\n'.format(ns, tag))
         else:
             self.fhandle.write('/>\n')
         self.complex_content.pop()
@@ -69,15 +69,15 @@ class _XmlWriter(object):
     def define_namespace(self, ns, uri):
         if not ns in self.namespaces:
             self.namespaces[ns] = uri
-            real_ns = '' if ns is None else (':{0}'.format(ns))
-            self.fhandle.write(' xmlns{0}="{1}"'.format(real_ns, uri))
+            real_ns = '' if ns is None else (':{}'.format(ns))
+            self.fhandle.write(' xmlns{}="{}"'.format(real_ns, uri))
 
     def add_attribute(self, name, value, ns=''):
         esc_value = xml.sax.saxutils.quoteattr(str(value), self.ENTITIES)
         if ns != '':
-            self.fhandle.write(' {0}:{1}={2}'.format(ns, name, esc_value))
+            self.fhandle.write(' {}:{}={}'.format(ns, name, esc_value))
         else:
-            self.fhandle.write(' {0}={1}'.format(name, esc_value))
+            self.fhandle.write(' {}={}'.format(name, esc_value))
 
     def add_comment(self, comment):
         if self.prev_opened:
@@ -85,7 +85,7 @@ class _XmlWriter(object):
             self.complex_content[-1:] = [True]
         self.prev_opened = False
         self._indent()
-        self.fhandle.write('<!-- {0} -->\n'.format(comment))
+        self.fhandle.write('<!-- {} -->\n'.format(comment))
 
 
 class _TagGuard(object):
@@ -107,7 +107,7 @@ def _qname(name, own_schema, other_schema, ns=_XSD_NS):
         prefix = ns
         if own_schema is not None:
             prefix = own_schema.prefix
-        return '{0}:{1}'.format(prefix, name)
+        return '{}:{}'.format(prefix, name)
     return name
 
 
@@ -276,7 +276,7 @@ def _dump_any(elem, schema, xml_writer):
 
 
 def dump_xsd(schemata, output_dir):
-    print('Dumping XML Schema files to {0}...'.format(
+    print('Dumping XML Schema files to {}...'.format(
         os.path.realpath(output_dir)))
 
     if os.path.exists(output_dir):
@@ -284,7 +284,7 @@ def dump_xsd(schemata, output_dir):
 
     for (schema_file, schema) in schemata.iteritems():
         file_path = os.path.join(output_dir, os.path.basename(schema_file))
-        file_path = '{0}.xsd'.format(file_path.rpartition('.')[0])
+        file_path = '{}.xsd'.format(file_path.rpartition('.')[0])
 
         xml_writer = _XmlWriter(file_path)
         with _TagGuard('schema', xml_writer):

@@ -13,7 +13,7 @@ def function_once(func):
 
 def method_once(func):
     def decorated(self, *args, **kwargs):
-        method_name = '{0}.0x{1:x}.0x{2:x}'.format(
+        method_name = '{}.0x{:x}.0x{:x}'.format(
             self.__module__, id(self), id(func))
 
         if method_name not in decorated.run_map:

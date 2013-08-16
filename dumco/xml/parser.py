@@ -39,7 +39,7 @@ class XmlLoader(object):
         self.element_factory = element_factory
 
     def load_xml(self, xml_path):
-        print('Loading XML files from {0}...'.format(
+        print('Loading XML files from {}...'.format(
             os.path.realpath(xml_path)))
 
         documents = {os.path.realpath(filepath): None

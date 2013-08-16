@@ -45,7 +45,7 @@ class RelaxElementFactory(object):
         # if prefix is not None and not dumco.schema.checks.is_xsd_namespace(uri):
         #     assert (not self.all_named_ns.has_key(uri) or
         #             self.all_named_ns[uri] == prefix), \
-        #         'Namespace prefix {0} is already defined as {1}'.format(
+        #         'Namespace prefix {} is already defined as {}'.format(
         #             prefix, self.all_named_ns[uri])
         #     self.all_named_ns[uri] = prefix
 
@@ -58,12 +58,12 @@ class RelaxElementFactory(object):
                     schema_path, all_schemata):
         # # Here we don't support anything non-XSD.
         # assert name[0] == dumco.schema.checks.XSD_NAMESPACE, \
-        #     'Uknown elment {0}:{1}'.format(name[0], name[1])
+        #     'Uknown elment {}:{}'.format(name[0], name[1])
 
         self.dispatcher_stack.append(self.dispatcher)
 
         assert self.dispatcher.has_key(name[1]), \
-            '"{0}" is not supported in {1}'.format(
+            '"{}" is not supported in {}'.format(
                 name[1], parent_element.__class__.__name__)
 
         (element, self.dispatcher) = self.dispatcher[name[1]](

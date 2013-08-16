@@ -45,7 +45,7 @@ class NamespaceConverter(object):
             return result
 
         assert hasattr(self.ns_mapping, uri), \
-            'There is no namespace mapping for uri {0}'.format(uri)
+            'There is no namespace mapping for uri {}'.format(uri)
 
     @staticmethod
     def _normalize(name):
