@@ -1,7 +1,5 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
-import os.path
-
 import dumco.schema.base
 import dumco.schema.checks
 import dumco.schema.elements
@@ -48,14 +46,15 @@ class XsdElementFactory(object):
         self.dispatcher_stack.append(self.dispatcher)
         self.element_stack.append(self.element)
 
-        assert name[1] in self.dispatcher, \
+        assert self.dispatcher is None or name[1] in self.dispatcher, \
             '"{}" is not supported in {}'.format(
                 name[1], self.element.__class__.__name__)
 
-        (element, self.dispatcher) = self.dispatcher[name[1]](
-            attrs, self.element, self, schema_path, all_schemata)
+        if self.dispatcher is not None:
+            (element, self.dispatcher) = self.dispatcher[name[1]](
+                attrs, self.element, self, schema_path, all_schemata)
 
-        self.element = element
+            self.element = element
 
     def finalize_current_element(self):
         self.element = self.element_stack.pop()
@@ -84,11 +83,13 @@ class XsdElementFactory(object):
     def add_to_parent_schema(self, element, attrs, schema,
                              fieldname, is_type=False):
         try:
-            name = self._get_attribute(attrs, 'name')
-            assert name is not None, 'Name cannot be None'
+            # Add to parent schema only top-level components or types.
+            if isinstance(self.element, prv.xsd_schema.XsdSchema) or is_type:
+                name = self.get_attribute(attrs, 'name')
+                assert name is not None, 'Name cannot be None'
 
-            elements = getattr(schema, fieldname)
-            elements[name] = element
+                elements = getattr(schema, fieldname)
+                elements[name] = element
         except LookupError:
             def fold_elements(accum, e):
                 checks = dumco.schema.checks
@@ -109,14 +110,14 @@ class XsdElementFactory(object):
 
     def particle_min_occurs(self, attrs):
         try:
-            min_occurs = self._get_attribute(attrs, 'minOccurs')
+            min_occurs = self.get_attribute(attrs, 'minOccurs')
             return int(min_occurs)
         except LookupError:
             return 1
 
     def particle_max_occurs(self, attrs):
         try:
-            max_occurs = self._get_attribute(attrs, 'maxOccurs')
+            max_occurs = self.get_attribute(attrs, 'maxOccurs')
             return (dumco.schema.base.UNBOUNDED if max_occurs == 'unbounded'
                     else int(max_occurs))
         except LookupError:
@@ -124,13 +125,13 @@ class XsdElementFactory(object):
 
     def attribute_default(self, attrs):
         try:
-            return self._get_attribute(attrs, 'default')
+            return self.get_attribute(attrs, 'default')
         except LookupError:
             return None
 
     def attribute_required(self, attrs):
         try:
-            return self._get_attribute(attrs, 'use') == 'required'
+            return self.get_attribute(attrs, 'use') == 'required'
         except LookupError:
             return None
 
@@ -207,7 +208,7 @@ class XsdElementFactory(object):
         except KeyError:
             return self.resolve_complex_type(qname, schema, finalize=finalize)
 
-    def _get_attribute(self, attrs, localname, uri=None):
+    def get_attribute(self, attrs, localname, uri=None):
         if (uri, localname) not in attrs:
             raise LookupError
         return attrs.get((uri, localname))
@@ -222,91 +223,12 @@ class XsdElementFactory(object):
     @staticmethod
     def noop_handler(attrs, parent_element, factory,
                      schema_path, all_schemata):
-        return (parent_element, {
-            'appinfo': factory.noop_handler,
-            'documentation': factory.noop_handler,
-            'field': factory.noop_handler,
-            'selector': factory.noop_handler,
-        })
-
-    @staticmethod
-    def _value_handler(fieldname, attrs, parent_element, factory,
-                       schema_path, all_schemata):
-        assert hasattr(parent_element.schema_element, fieldname)
-        setattr(parent_element.schema_element, fieldname,
-                factory._get_attribute(attrs, 'value'))
-
-        return (parent_element, {
-            'annotation': factory.noop_handler,
-        })
+        return (parent_element, None)
 
     @staticmethod
     def xsd_annotation(attrs, parent_element, factory,
                        schema_path, all_schemata):
         return (parent_element, {
-            'documentation': factory._xsd_documentation,
+            'appinfo': factory.noop_handler,
+            'documentation': factory.noop_handler,
         })
-
-    @staticmethod
-    def _xsd_documentation(attrs, parent_element, factory,
-                           schema_path, all_schemata):
-        return (parent_element, None)
-
-    @staticmethod
-    def xsd_import(attrs, parent_element, factory,
-                   schema_path, all_schemata):
-        try:
-            location = factory._get_attribute(attrs, 'schemaLocation')
-        except LookupError:
-            location = None
-
-        namespace = factory._get_attribute(attrs, 'namespace')
-
-        if location is not None:
-            new_schema_path = os.path.realpath(
-                os.path.join(os.path.dirname(schema_path), location))
-
-            assert (os.path.isfile(new_schema_path) or
-                    namespace == dumco.schema.checks.XML_NAMESPACE), \
-                'File {} does not exist'.format(new_schema_path)
-
-            if os.path.isfile(new_schema_path):
-                all_schemata[new_schema_path] = all_schemata[new_schema_path] \
-                    if new_schema_path in all_schemata else None
-                all_schemata[schema_path].imports[new_schema_path] = None
-
-        return (parent_element, {
-            'annotation': XsdElementFactory.noop_handler,
-        })
-
-    xsd_length = lambda _x, attrs, parent_element, factory, schema_path, \
-        all_schemata: XsdElementFactory._value_handler('length', attrs,
-            parent_element, factory, schema_path, all_schemata)
-
-    xsd_maxExclusive = lambda _x, attrs, parent_element, factory, schema_path, \
-        all_schemata: XsdElementFactory._value_handler('max_exclusive', attrs,
-            parent_element, factory, schema_path, all_schemata)
-
-    xsd_maxInclusive = lambda _x, attrs, parent_element, factory, schema_path, \
-        all_schemata: XsdElementFactory._value_handler('max_inclusive', attrs,
-            parent_element, factory, schema_path, all_schemata)
-
-    xsd_maxLength = lambda _x, attrs, parent_element, factory, schema_path, \
-        all_schemata: XsdElementFactory._value_handler('max_length', attrs,
-            parent_element, factory, schema_path, all_schemata)
-
-    xsd_minExclusive = lambda _x, attrs, parent_element, factory, schema_path, \
-        all_schemata: XsdElementFactory._value_handler('min_exclusive', attrs,
-            parent_element, factory, schema_path, all_schemata)
-
-    xsd_minInclusive = lambda _x, attrs, parent_element, factory, schema_path, \
-        all_schemata: XsdElementFactory._value_handler('min_inclusive', attrs,
-            parent_element, factory, schema_path, all_schemata)
-
-    xsd_minLength = lambda _x, attrs, parent_element, factory, schema_path, \
-        all_schemata: XsdElementFactory._value_handler('min_length', attrs,
-            parent_element, factory, schema_path, all_schemata)
-
-    xsd_pattern = lambda _x, attrs, parent_element, factory, schema_path, \
-        all_schemata: XsdElementFactory._value_handler('pattern', attrs,
-            parent_element, factory, schema_path, all_schemata)

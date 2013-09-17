@@ -1,5 +1,8 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
+import copy
+import os.path
+
 from dumco.utils.decorators import method_once
 
 import dumco.schema.checks
@@ -31,8 +34,10 @@ def xsd_schema(attrs, parent_element, factory, schema_path, all_schemata):
         'complexType': xsd_complex_type.xsd_complexType,
         'element': xsd_element.xsd_element,
         'group': xsd_group.xsd_group,
-        'import': factory.xsd_import,
+        'import': XsdSchema.xsd_import,
+        'include': XsdSchema.xsd_include,
         'notation': factory.noop_handler,
+        'redefine': factory.noop_handler,
         'simpleType': xsd_simple_type.xsd_simpleType,
     })
 
@@ -54,6 +59,7 @@ class XsdSchema(xsd_base.XsdBase):
         self.complex_types = {}
         self.elements = {}
         self.groups = {}
+        self.includes = {}
         self.imports = {}
         self.namespaces = {}
         self.simple_types = {}
@@ -68,8 +74,20 @@ class XsdSchema(xsd_base.XsdBase):
             all_schemata[path].schema_element.target_ns: all_schemata[path]
             for path in self.imports.iterkeys()}
 
+    def is_included(self, all_schemata):
+        for schema in all_schemata.itervalues():
+            if self.schema_element.path in schema.includes:
+                return True
+
+        return False
+
     @method_once
     def finalize(self, all_schemata, factory):
+        if self.is_included(all_schemata):
+            # Don't finalize schema which is included from other schema.
+            # It's not an entity on its own.
+            return
+
         forged_names = dumco.schema.namer.ValidatingNameSet()
 
         for name in sorted(self.simple_types.iterkeys()):
@@ -102,3 +120,55 @@ class XsdSchema(xsd_base.XsdBase):
             schema_attr = attr.finalize(factory)
             name = schema_attr.attribute.name
             self.schema_element.attributes[name] = schema_attr
+
+    @staticmethod
+    def _get_schema_location(attrs, factory, schema_path):
+        try:
+            location = factory.get_attribute(attrs, 'schemaLocation')
+
+            return os.path.realpath(
+                os.path.join(os.path.dirname(schema_path), location))
+        except LookupError:
+            return None
+
+    @staticmethod
+    def xsd_import(attrs, parent_element, factory,
+                   schema_path, all_schemata):
+        namespace = factory.get_attribute(attrs, 'namespace')
+
+        new_schema_path = XsdSchema._get_schema_location(attrs, factory,
+                                                         schema_path)
+
+        if new_schema_path is not None:
+            assert (os.path.isfile(new_schema_path) or
+                    namespace == dumco.schema.checks.XML_NAMESPACE), \
+                'File {} does not exist'.format(new_schema_path)
+
+            if os.path.isfile(new_schema_path):
+                all_schemata[new_schema_path] = all_schemata[new_schema_path] \
+                    if new_schema_path in all_schemata else None
+                all_schemata[schema_path].imports[new_schema_path] = None
+
+        return (parent_element, {
+            'annotation': factory.noop_handler,
+        })
+
+    @staticmethod
+    def xsd_include(attrs, parent_element, factory,
+                    schema_path, all_schemata):
+        new_schema_path = XsdSchema._get_schema_location(attrs, factory,
+                                                         schema_path)
+
+        if new_schema_path is not None:
+            assert (os.path.isfile(new_schema_path) or
+                    namespace == dumco.schema.checks.XML_NAMESPACE), \
+                'File {} does not exist'.format(new_schema_path)
+
+            if os.path.isfile(new_schema_path):
+                all_schemata[new_schema_path] = all_schemata[new_schema_path] \
+                    if new_schema_path in all_schemata else None
+                all_schemata[schema_path].includes[new_schema_path] = None
+
+        return (parent_element, {
+            'annotation': factory.noop_handler,
+        })

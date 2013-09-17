@@ -17,15 +17,16 @@ def xsd_restriction(attrs, parent_element, factory, schema_path, all_schemata):
     return (new_element, {
         'annotation': factory.noop_handler,
         'enumeration': xsd_enumeration.xsd_enumeration,
-        'length': factory.xsd_length,
-        'maxExclusive': factory.xsd_maxExclusive,
-        'maxInclusive': factory.xsd_maxInclusive,
-        'maxLength': factory.xsd_maxLength,
-        'minExclusive': factory.xsd_minExclusive,
-        'minInclusive': factory.xsd_minInclusive,
-        'minLength': factory.xsd_minLength,
-        'pattern': factory.xsd_pattern,
+        'length': new_element.xsd_length,
+        'maxExclusive': new_element.xsd_maxExclusive,
+        'maxInclusive': new_element.xsd_maxInclusive,
+        'maxLength': new_element.xsd_maxLength,
+        'minExclusive': new_element.xsd_minExclusive,
+        'minInclusive': new_element.xsd_minInclusive,
+        'minLength': new_element.xsd_minLength,
+        'pattern': new_element.xsd_pattern,
         'simpleType': xsd_simple_type.xsd_simpleType,
+        'whiteSpace': new_element.xsd_whiteSpace,
     })
 
 
@@ -83,7 +84,73 @@ class XsdRestriction(xsd_base.XsdBase):
             merge('min_inclusive')
             merge('min_length')
             merge('pattern')
+            merge('white_space')
 
             base = self._merge_base_restriction(base.restriction.base)
 
         return base
+
+    @staticmethod
+    def _value_handler(fieldname, attrs, parent_element, factory,
+                       schema_path, all_schemata):
+        assert hasattr(parent_element.schema_element, fieldname)
+        setattr(parent_element.schema_element, fieldname,
+                factory.get_attribute(attrs, 'value'))
+
+        return (parent_element, {
+            'annotation': factory.noop_handler,
+        })
+
+    xsd_length = lambda _x, attrs, parent_element, factory, schema_path, \
+        all_schemata: XsdRestriction._value_handler('length', attrs,
+            parent_element, factory, schema_path, all_schemata)
+
+    xsd_maxExclusive = lambda _x, attrs, parent_element, factory, schema_path, \
+        all_schemata: XsdRestriction._value_handler('max_exclusive', attrs,
+            parent_element, factory, schema_path, all_schemata)
+
+    xsd_maxInclusive = lambda _x, attrs, parent_element, factory, schema_path, \
+        all_schemata: XsdRestriction._value_handler('max_inclusive', attrs,
+            parent_element, factory, schema_path, all_schemata)
+
+    xsd_maxLength = lambda _x, attrs, parent_element, factory, schema_path, \
+        all_schemata: XsdRestriction._value_handler('max_length', attrs,
+            parent_element, factory, schema_path, all_schemata)
+
+    xsd_minExclusive = lambda _x, attrs, parent_element, factory, schema_path, \
+        all_schemata: XsdRestriction._value_handler('min_exclusive', attrs,
+            parent_element, factory, schema_path, all_schemata)
+
+    xsd_minInclusive = lambda _x, attrs, parent_element, factory, schema_path, \
+        all_schemata: XsdRestriction._value_handler('min_inclusive', attrs,
+            parent_element, factory, schema_path, all_schemata)
+
+    xsd_minLength = lambda _x, attrs, parent_element, factory, schema_path, \
+        all_schemata: XsdRestriction._value_handler('min_length', attrs,
+            parent_element, factory, schema_path, all_schemata)
+
+    xsd_pattern = lambda _x, attrs, parent_element, factory, schema_path, \
+        all_schemata: XsdRestriction._value_handler('pattern', attrs,
+            parent_element, factory, schema_path, all_schemata)
+
+    @staticmethod
+    def xsd_whiteSpace(attrs, parent_element, factory,
+                       schema_path, all_schemata):
+        assert hasattr(parent_element.schema_element, 'white_space')
+
+        value = factory.get_attribute(attrs, 'value')
+        if value == 'preserve':
+            parent_element.schema_element.white_space = \
+                dumco.schema.elements.Restriction.WS_PRESERVE
+        elif value == 'replace':
+            parent_element.schema_element.white_space = \
+                dumco.schema.elements.Restriction.WS_REPLACE
+        elif value == 'collapse':
+            parent_element.schema_element.white_space = \
+                dumco.schema.elements.Restriction.WS_COLLAPSE
+        else: # pragma: no cover
+            assert False
+
+        return (parent_element, {
+            'annotation': factory.noop_handler,
+        })
