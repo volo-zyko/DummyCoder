@@ -93,6 +93,10 @@ class Element(base.SchemaBase):
 
 
 class Restriction(base.SchemaBase):
+    WS_PRESERVE = 1
+    WS_REPLACE = 2
+    WS_COLLAPSE = 3
+
     def __init__(self, parent_schema):
         super(Restriction, self).__init__(parent_schema)
 
@@ -107,6 +111,7 @@ class Restriction(base.SchemaBase):
         self.min_inclusive = None
         self.min_length = None
         self.pattern = None
+        self.white_space = None
 
 
 class Schema(base.SchemaBase):

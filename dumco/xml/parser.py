@@ -58,12 +58,20 @@ class XmlLoader(object):
 
     @staticmethod
     def _load_document(filepath, documents, element_factory):
-        parser = xml.sax.make_parser()
-        parser.setFeature(xml.sax.handler.feature_namespaces, 1)
+        try:
+            parser = xml.sax.make_parser()
+            parser.setFeature(xml.sax.handler.feature_namespaces, 1)
 
-        handler = _XmlContentHandler(filepath, documents,
-                                     element_factory)
-        parser.setContentHandler(handler)
+            handler = _XmlContentHandler(filepath, documents, element_factory)
+            parser.setContentHandler(handler)
 
-        with open(filepath, 'r') as fl:
-            parser.parse(fl)
+            with open(filepath, 'r') as fl:
+                parser.parse(fl)
+        except ParseRestart as e:
+            XmlLoader._load_document(e.new_path, documents, element_factory)
+
+
+class ParseRestart(BaseException):
+    def __init__(self, original_path, new_path):
+        self.original_path = original_path
+        self.new_path = new_path

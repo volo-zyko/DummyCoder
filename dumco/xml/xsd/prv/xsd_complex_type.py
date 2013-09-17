@@ -114,7 +114,7 @@ def _has_duplicate_attributes(attrs):
             continue
 
         name = '{}:{}'.format(
-            'xml' if dumco.schema.checks.is_xmlattribute(a.attribute)
+            'xml' if dumco.schema.checks.is_xml_attribute(a.attribute)
             else a.attribute.schema.target_ns, a.attribute.name)
         attrnames.append((name, a))
         attrset[name] = a

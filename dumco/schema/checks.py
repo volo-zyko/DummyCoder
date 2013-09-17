@@ -2,6 +2,7 @@
 
 import base
 import elements
+import enums
 import uses
 
 
@@ -10,67 +11,93 @@ XML_NAMESPACE = 'http://www.w3.org/XML/1998/namespace'
 XSD_NAMESPACE = 'http://www.w3.org/2001/XMLSchema'
 
 
+def _attribute_count(schema_type):
+    if is_complex_type(schema_type):
+        return len(list(enums.enum_attribute_uses(schema_type)))
+    return 0
+
+
 # General checks.
 def is_xsd_namespace(uri):
     return uri == XSD_NAMESPACE
 
 
 # Type checks.
-def has_complex_content(xsdtype):
-    return (is_complex_type(xsdtype) and
-            xsdtype.particle is not None and xsdtype.text is None)
+def has_complex_content(schema_type):
+    return (is_complex_type(schema_type) and
+            schema_type.particle is not None and schema_type.text is None)
 
 
-def has_simple_content(xsdtype):
-    return (is_complex_type(xsdtype) and
-            xsdtype.particle is None and xsdtype.text is not None)
+def has_empty_content(schema_type):
+    return (is_complex_type(schema_type) and
+            schema_type.particle is None and schema_type.text is None)
 
 
-def is_native_type(xsdtype):
-    return isinstance(xsdtype, base.XsdNativeType)
+def has_simple_content(schema_type):
+    return (is_complex_type(schema_type) and
+            schema_type.particle is None and schema_type.text is not None)
 
 
-def is_complex_type(xsdtype):
-    return isinstance(xsdtype, elements.ComplexType)
+def is_attributed_complex_type(schema_type):
+    return (has_empty_content(schema_type) and
+            _attribute_count(schema_type) == 1)
 
 
-def is_complex_urtype(xsdtype):
-    return (is_complex_type(xsdtype) and xsdtype.schema is None and
-            xsdtype.name == 'anyType')
+def is_complex_type(schema_type):
+    return isinstance(schema_type, elements.ComplexType)
 
 
-def is_list_type(xsdtype):
-    return (is_simple_type(xsdtype) and xsdtype.listitem is not None)
+def is_complex_urtype(schema_type):
+    return (is_complex_type(schema_type) and schema_type.schema is None and
+            schema_type.name == 'anyType')
 
 
-def is_primitive_type(xsdtype):
-    return (is_native_type(xsdtype) or is_simple_type(xsdtype))
+def is_empty_complex_type(schema_type):
+    return (has_empty_content(schema_type) and
+            _attribute_count(schema_type) == 0)
 
 
-def is_restriction_type(xsdtype):
-    return (is_simple_type(xsdtype) and xsdtype.restriction is not None)
+def is_list_type(schema_type):
+    return (is_simple_type(schema_type) and schema_type.listitem is not None)
 
 
-def is_simple_type(xsdtype):
-    return isinstance(xsdtype, elements.SimpleType)
+def is_native_type(schema_type):
+    return isinstance(schema_type, base.schema_NativeType)
 
 
-def is_simple_urtype(xsdtype):
-    return (is_simple_type(xsdtype) and xsdtype.schema is None and
-            xsdtype.name == 'anySimpleType')
+def is_primitive_type(schema_type):
+    return (is_native_type(schema_type) or is_simple_type(schema_type))
 
 
-def is_union_type(xsdtype):
-    return (is_simple_type(xsdtype) and xsdtype.union)
+def is_restriction_type(schema_type):
+    return (is_simple_type(schema_type) and schema_type.restriction is not None)
+
+
+def is_simple_type(schema_type):
+    return isinstance(schema_type, elements.SimpleType)
+
+
+def is_simple_urtype(schema_type):
+    return (is_simple_type(schema_type) and schema_type.schema is None and
+            schema_type.name == 'anySimpleType')
+
+
+def is_text_complex_type(schema_type):
+    return (has_simple_content(schema_type) and
+            _attribute_count(schema_type) == 0)
+
+
+def is_union_type(schema_type):
+    return (is_simple_type(schema_type) and schema_type.union)
 
 
 # Element checks.
-def is_all(xsdAll):
-    return isinstance(xsdAll, elements.All)
+def is_all(schema_all):
+    return isinstance(schema_all, elements.All)
 
 
-def is_any(xsdAny):
-    return isinstance(xsdAny, elements.Any)
+def is_any(schema_any):
+    return isinstance(schema_any, elements.Any)
 
 
 def is_attribute(attr):
@@ -79,6 +106,10 @@ def is_attribute(attr):
 
 def is_attribute_use(attr):
     return isinstance(attr, uses.AttributeUse)
+
+
+def is_base(schema):
+    return isinstance(schema, base.SchemaBase)
 
 
 def is_choice(choice):
@@ -94,8 +125,8 @@ def is_element(element):
     return isinstance(element, elements.Element)
 
 
-def is_particle(xsdtype):
-    return isinstance(xsdtype, uses.Particle)
+def is_particle(particle):
+    return isinstance(particle, uses.Particle)
 
 
 def is_sequence(sequence):
@@ -106,5 +137,9 @@ def is_schema(schema):
     return isinstance(schema, elements.Schema)
 
 
-def is_xmlattribute(xsdtype):
-    return isinstance(xsdtype, base.XmlAttribute)
+def is_text(text):
+    return isinstance(text, base.SchemaText)
+
+
+def is_xml_attribute(attr):
+    return isinstance(attr, base.XmlAttribute)

@@ -111,7 +111,7 @@ if __name__ == '__main__':
         ns_converter = NamespaceConverter(args.root_namespaces.split(),
                                           args.uri_to_namespaces,
                                           args.uri_prefices)
-        opacity_manager = OpacityManager(args)
+        opacity_manager = OpacityManager(None)
 
         if args.mode == 'rfilter':
             gd = dumco.cxx.rfilter.gendriver.RFilterGenerationDriver(

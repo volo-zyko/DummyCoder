@@ -15,6 +15,8 @@ nl_uidt = dumco.utils.source_file.nl_uidt
 nl_uidt2 = dumco.utils.source_file.nl_uidt2
 nl2_uidt = dumco.utils.source_file.nl2_uidt
 nl2_uidt2 = dumco.utils.source_file.nl2_uidt2
+valid = dumco.utils.source_file.valid
+ValidatingSourceWrapper = dumco.utils.source_file.ValidatingSourceWrapper
 FileGuard = dumco.utils.source_file.FileGuard
 
 

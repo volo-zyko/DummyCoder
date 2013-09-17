@@ -208,7 +208,7 @@ def _dump_particle(particle, schema, xml_writer, names):
 
 def _dump_attribute(attr, schema, xml_writer):
     assert (checks.is_attribute(attr.attribute) or
-            checks.is_xmlattribute(attr.attribute))
+            checks.is_xml_attribute(attr.attribute))
 
     with _TagGuard('attribute', xml_writer):
         _dump_attribute_attributes(attr.attribute, schema, xml_writer)
@@ -222,9 +222,9 @@ def _dump_attribute(attr, schema, xml_writer):
 
 def _dump_attribute_attributes(attr, schema, xml_writer, top_level=False):
     attrs = []
-    if not checks.is_xmlattribute(attr):
+    if not checks.is_xml_attribute(attr):
         attrs = [a.attribute for a in attr.schema.attributes.itervalues()]
-    if top_level or (not checks.is_xmlattribute(attr) and
+    if top_level or (not checks.is_xml_attribute(attr) and
                      attr.schema == schema and attr not in attrs):
         xml_writer.add_attribute('name',
             _qname(attr.name, attr.schema, schema))
@@ -236,7 +236,7 @@ def _dump_attribute_attributes(attr, schema, xml_writer, top_level=False):
             'qualified' if attr.qualified else 'unqualified')
     else:
         ns = _XSD_NS
-        if checks.is_xmlattribute(attr):
+        if checks.is_xml_attribute(attr):
             ns = _XML_NS
         xml_writer.add_attribute('ref',
             _qname(attr.name, attr.schema, schema, ns=ns))

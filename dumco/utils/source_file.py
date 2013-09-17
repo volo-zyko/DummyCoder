@@ -29,9 +29,7 @@ nl2_uidt = lambda sf: '{}{}{}'.format(sf._nl2(), sf._unindent(),
 nl2_uidt2 = lambda sf: '{}{}{}{}'.format(sf._nl2(), sf._unindent(),
                                          sf._unindent(),
                                          sf._make_indentation())
-nl2_uidt2 = lambda sf: '{0}{1}{2}{3}'.format(sf._nl2(), sf._unindent(),
-                                             sf._unindent(),
-                                             sf._make_indentation())
+valid = lambda sf: ''
 
 
 class SourceFile(object):
@@ -158,7 +156,26 @@ class SourceFile(object):
         return ' ' * (self.indentation * self.spaces_per_tab)
 
 
+class ValidatingSourceWrapper(object):
+    """Adds code to Source object only after receiving of 'valid' token"""
+    def __init__(self, source):
+        self.source = source
+        self.pending = []
+
+    def __lshift__(self, obj):
+        if self.pending is None:
+            self.source << obj
+        elif obj == valid:
+            for o in self.pending:
+                self.source << o
+            self.pending = None
+        else:
+            self.pending.append(obj)
+        return self
+
+
 class FileGuard(object):
+    """Makes sure that done() is called on Source object"""
     def __init__(self, source):
         self.source = source
 
