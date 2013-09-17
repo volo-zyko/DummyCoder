@@ -1,0 +1,3362 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Revision 3.0 Final, September 25, 2006-->
+<!-- Revision 3.0.1 Final, October 24, 2006-->
+<!-- Removed duplicate of normal, cneter_point and axis_vector from unknown_feature_nominal and unknown_feature_actual -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+	<xs:complexType name="adj_normalType">
+		<xs:annotation>
+			<xs:documentation>The vector normal pointing away from the surface adjacent to and edge point.</xs:documentation>
+		</xs:annotation>
+		<xs:attributeGroup ref="vectorAttGroup"/>
+	</xs:complexType>
+	<xs:element name="adj_normal" type="adj_normalType"/>
+	<xs:complexType name="aelpr_analysisType">
+		<xs:annotation>
+			<xs:documentation>Feature data fitting mode for arc, ellipse, line, plane, rectangle</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="setting">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="LSTSQR"/>
+					<xs:enumeration value="MINMAX"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="analysis_dofsType">
+		<xs:annotation>
+			<xs:documentation>Some analysis software allows the release of degrees of freedom when analyzing GD and T tolerances.  This element records the settings for the DOFs for a paricular tolerance.  It overrides the default setting established with the analysis_dofs_default element.  Only needed if the DOFs for the particular tolerance differ from the default.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="transx" type="dofType"/>
+			<xs:element name="transy" type="dofType"/>
+			<xs:element name="transz" type="dofType"/>
+			<xs:element name="rotx" type="dofType"/>
+			<xs:element name="roty" type="dofType"/>
+			<xs:element name="rotz" type="dofType"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="analysis_dofs_defaultType">
+		<xs:annotation>
+			<xs:documentation>Some analysis software allows the release of degrees of freedom when analyzing GD and T tolerances.  This element records the default settings for all tolerances unless an analysis_dofs element is specified on a particular tolerance.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="transx" type="dofType" minOccurs="0"/>
+			<xs:element name="transy" type="dofType" minOccurs="0"/>
+			<xs:element name="transz" type="dofType" minOccurs="0"/>
+			<xs:element name="rotx" type="dofType" minOccurs="0"/>
+			<xs:element name="roty" type="dofType" minOccurs="0"/>
+			<xs:element name="rotz" type="dofType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="analysis_program_infoType">
+		<xs:annotation>
+			<xs:documentation>Records information about the software used to generate the actual records in the DML data set.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="vendor_name" type="xs:string" use="required"/>
+		<xs:attribute name="application_name" type="xs:string" use="required"/>
+		<xs:attribute name="application_version" type="xs:string" use="required"/>
+	</xs:complexType>
+	<xs:element name="angle" type="xs:decimal">
+		<xs:annotation>
+			<xs:documentation>Used to specify angle values for other elements.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="angle_actualType">
+		<xs:annotation>
+			<xs:documentation>Used to record the measured included angle of a cone feature.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="angle" type="xs:decimal" use="required"/>
+		<xs:attribute name="min_angle" type="xs:decimal" use="optional"/>
+		<xs:attribute name="max_angle" type="xs:decimal" use="optional"/>
+	</xs:complexType>
+	<xs:complexType name="angle_between_actualType">
+		<xs:annotation>
+			<xs:documentation>Used to record the measured angle between two features</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="angle" type="xs:decimal" use="required"/>
+		<xs:attribute name="min_angle" type="xs:decimal" use="optional"/>
+		<xs:attribute name="max_angle" type="xs:decimal" use="optional"/>
+	</xs:complexType>
+	<xs:complexType name="angle_between_deltaType">
+		<xs:annotation>
+			<xs:documentation>Used to define an angle delta tolerance (i.e. 10 +/- 0.5) between two features</xs:documentation>
+		</xs:annotation>
+		<xs:sequence minOccurs="0">
+			<xs:element name="hinge_axis" type="hinge_axisType"/>
+		</xs:sequence>
+		<xs:attribute name="nominal" type="xs:decimal" use="required"/>
+		<xs:attribute name="lower_delta" type="xs:decimal" use="required"/>
+		<xs:attribute name="upper_delta" type="xs:decimal" use="required"/>
+		<xs:attribute name="origin_feature" type="xs:IDREF" use="required"/>
+		<xs:attribute name="origin_flag" default="ACTUAL">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="NOMINAL"/>
+					<xs:enumeration value="ACTUAL"/>
+					<xs:enumeration value="DATUM"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attributeGroup ref="vectorAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="angle_between_limitType">
+		<xs:annotation>
+			<xs:documentation>Used to define an angle limit tolerance (i.e. 9.95 10.05) between two features</xs:documentation>
+		</xs:annotation>
+		<xs:sequence minOccurs="0">
+			<xs:element name="hinge_axis" type="hinge_axisType"/>
+		</xs:sequence>
+		<xs:attribute name="lower_limit" type="xs:decimal" use="required"/>
+		<xs:attribute name="upper_limit" type="xs:decimal" use="required"/>
+		<xs:attribute name="nominal" type="xs:decimal"/>
+		<xs:attribute name="origin_feature" type="xs:IDREF" use="required"/>
+		<xs:attribute name="origin_flag" default="ACTUAL">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="NOMINAL"/>
+					<xs:enumeration value="ACTUAL"/>
+					<xs:enumeration value="DATUM"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attributeGroup ref="vectorAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="angle_deltaType">
+		<xs:annotation>
+			<xs:documentation>Used to define a delta angle tolerance (i.e. 45 +/- 0.1) to the included angle of a cone</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="nominal" type="xs:decimal" use="required"/>
+		<xs:attribute name="lower_delta" type="xs:decimal" use="required"/>
+		<xs:attribute name="upper_delta" type="xs:decimal" use="required"/>
+		<xs:attribute name="perfect_form_at_mmc" default="YES">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="YES"/>
+					<xs:enumeration value="NO"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="angle_limitType">
+		<xs:annotation>
+			<xs:documentation>Used to define a limit angle tolerance (i.e. 44.5 45.5) to the included angle of a cone</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="lower_limit" type="xs:decimal" use="required"/>
+		<xs:attribute name="upper_limit" type="xs:decimal" use="required"/>
+		<xs:attribute name="nominal" type="xs:decimal"/>
+		<xs:attribute name="perfect_form_at_mmc" default="YES">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="YES"/>
+					<xs:enumeration value="NO"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="angularity_cyl_actualType">
+		<xs:annotation>
+			<xs:documentation>Used to record the measured value of a GD and T angularity for a feature with a cylidrical zone shape.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="zone_data" type="zone_dataType"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="tolerance1AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="angularity_cyl_zoneType">
+		<xs:annotation>
+			<xs:documentation>Used to define a GD and T angularity tolerance with a cylindrical zone.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="datum_reference_frame" type="datum_reference_frameType"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="tolerance2AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="angularity_pln_actualType">
+		<xs:annotation>
+			<xs:documentation>Used to record the measured value of a GD and T angularity tolerance with a planar zone shape.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="zone_data" type="zone_dataType"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="tolerance1AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="angularity_pln_zoneType">
+		<xs:annotation>
+			<xs:documentation>Used to define a GD and T angularity tolerance with a planar zone.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="datum_reference_frame" type="datum_reference_frameType"/>
+		</xs:sequence>
+		<xs:attribute name="tolerance_value" type="xs:decimal" use="required"/>
+		<xs:attribute name="material_condition" default="NONE">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="NONE"/>
+					<xs:enumeration value="RFS"/>
+					<xs:enumeration value="MMC"/>
+					<xs:enumeration value="LMC"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attributeGroup ref="vectorAttGroup"/>
+		<xs:attribute name="grouping_requirement" default="SIMULTANEOUS">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="SEPARATE"/>
+					<xs:enumeration value="SIMULTANEOUS"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="datums_virtual_condition" default="VIRTUAL">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="MMC"/>
+					<xs:enumeration value="VIRTUAL"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="applied_tolerancesType">
+		<xs:annotation>
+			<xs:documentation>Used to list all of the tolerances applied to a feature.  Most useful when the tolerance has not been analyzed and therefore there is no tolerance actual to tie the tolerance to the feature.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="tolerance_id" type="tolerance_idType" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="arc_featureType">
+		<xs:annotation>
+			<xs:documentation>Used to define a circular arc which is less than 360 degrees.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="arc_feature_nominal" type="arc_feature_nominalType" minOccurs="0"/>
+			<xs:element name="arc_feature_actual" type="arc_feature_actualType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="type" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="INNER"/>
+					<xs:enumeration value="OUTER"/>
+					<xs:enumeration value="UNKNOWN"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="arc_feature_actualType">
+		<xs:annotation>
+			<xs:documentation>Used to record the measured arc feature.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="center_point" type="center_pointType"/>
+			<xs:element name="normal" type="normalType"/>
+			<xs:element ref="diameter"/>
+			<xs:element ref="diameter_min" minOccurs="0"/>
+			<xs:element ref="diameter_max" minOccurs="0"/>
+			<xs:sequence minOccurs="0">
+				<xs:element name="start_vector" type="start_vectorType"/>
+				<xs:element ref="angle"/>
+			</xs:sequence>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="sequence_id" type="xs:string"/>
+		<xs:attribute name="reporting_transform" type="xs:IDREF"/>
+		<xs:attribute name="coordinate_type" default="CARTESIAN">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="CARTESIAN"/>
+					<xs:enumeration value="CYLINDRICAL"/>
+					<xs:enumeration value="POLAR"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="arc_feature_nominalType">
+		<xs:annotation>
+			<xs:documentation>Used to define the nominal information for an arc feature.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="center_point" type="center_pointType"/>
+			<xs:element name="normal" type="normalType"/>
+			<xs:element ref="diameter"/>
+			<xs:element name="start_vector" type="start_vectorType"/>
+			<xs:element ref="angle"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="sequence_id" type="xs:string"/>
+		<xs:attribute name="reporting_transform" type="xs:IDREF"/>
+		<xs:attribute name="coordinate_type" default="CARTESIAN">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="CARTESIAN"/>
+					<xs:enumeration value="CYLINDRICAL"/>
+					<xs:enumeration value="POLAR"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="axis_methodType">
+		<xs:annotation>
+			<xs:documentation>An analysis setting </xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="setting">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="MIN_RAD"/>
+					<xs:enumeration value="LEAST_SQUARES"/>
+					<xs:enumeration value="XSECT_CENTERS"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="axis_pointType">
+		<xs:annotation>
+			<xs:documentation>A point on the axis for axial features</xs:documentation>
+		</xs:annotation>
+		<xs:attributeGroup ref="pointAttGroup"/>
+		<xs:attribute name="end" use="optional">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="1"/>
+					<xs:enumeration value="2"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:element name="axis_point" type="axis_pointType"/>
+	<xs:complexType name="axis_vectorType">
+		<xs:annotation>
+			<xs:documentation>The direction vector for axes</xs:documentation>
+		</xs:annotation>
+		<xs:attributeGroup ref="vectorAttGroup"/>
+	</xs:complexType>
+	<xs:element name="axis_vector" type="axis_vectorType"/>
+	<xs:element name="ball_radius" type="xs:decimal">
+		<xs:annotation>
+			<xs:documentation>When measured point data is reported, including the radius allows an application to switch between tip comp'ed and tip center. </xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="base_featType">
+		<xs:annotation>
+			<xs:documentation>Records the feature IDs which constructed features are built from.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="feat" type="xs:IDREF"/>
+		<xs:attribute name="using" default="ACTUAL">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="ACTUAL"/>
+					<xs:enumeration value="NOMINAL"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:element name="cad_identifier" type="xs:string">
+		<xs:annotation>
+			<xs:documentation>Used to store the indentifier of the geometry which the feature is based on.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="cad_infoType">
+		<xs:annotation>
+			<xs:documentation>Used to identify a CAD model associated to the inspection program.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="transform_3d" type="transform_3dType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="id" type="xs:ID" use="required"/>
+		<xs:attribute name="name" type="xs:string" use="required"/>
+		<xs:attribute name="revision" type="xs:string" use="required"/>
+		<xs:attribute name="vendor" type="xs:string"/>
+		<xs:attribute name="serial_no" type="xs:string"/>
+		<xs:attribute name="lot_no" type="xs:string"/>
+	</xs:complexType>
+	<xs:complexType name="cccpst_analysisType">
+		<xs:annotation>
+			<xs:documentation>Feature data fitting mode for circle, cone, cylinder, parpln, sphere, torus</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="setting">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="LSTSQR"/>
+					<xs:enumeration value="MINMAX"/>
+					<xs:enumeration value="MINCIR"/>
+					<xs:enumeration value="MAXINS"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="center_pointType">
+		<xs:annotation>
+			<xs:documentation>Used to store the XYZ point.</xs:documentation>
+		</xs:annotation>
+		<xs:attributeGroup ref="pointAttGroup"/>
+	</xs:complexType>
+	<xs:element name="center_point" type="center_pointType"/>
+	<xs:complexType name="circle_featureType">
+		<xs:annotation>
+			<xs:documentation>Used to define a complete circle.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="circle_feature_nominal" type="circle_feature_nominalType" minOccurs="0"/>
+			<xs:element name="circle_feature_actual" type="circle_feature_actualType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="type" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="INNER"/>
+					<xs:enumeration value="OUTER"/>
+					<xs:enumeration value="UNKNOWN"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="circle_feature_actualType">
+		<xs:annotation>
+			<xs:documentation>Used to define the measured circle feature.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="center_point" type="center_pointType"/>
+			<xs:element name="normal" type="normalType"/>
+			<xs:element ref="diameter"/>
+			<xs:element ref="diameter_min" minOccurs="0"/>
+			<xs:element ref="diameter_max" minOccurs="0"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="circle_feature_nominalType">
+		<xs:annotation>
+			<xs:documentation>Used to define the nominal information for a circle feature.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="center_point" type="center_pointType"/>
+			<xs:element name="normal" type="normalType"/>
+			<xs:element ref="diameter"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="circular_runout_actualType">
+		<xs:annotation>
+			<xs:documentation>Used to define the circular runout GDandT tolerance type.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="spread" type="xs:decimal" use="optional"/>
+		<xs:attribute name="deviation" type="xs:decimal" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="circular_runout_zoneType">
+		<xs:annotation>
+			<xs:documentation>Used to define the indivdual runouts for a circular runout tolerance.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="datum_reference_frame" type="datum_reference_frameType"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="tolerance2AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="circularityType">
+		<xs:annotation>
+			<xs:documentation>Used to define the circularity GDandT tolerance type.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="tolerance_value" type="xs:decimal" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="circularity_actualType">
+		<xs:annotation>
+			<xs:documentation>Used to record the measured output of a circularity tolerance.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence maxOccurs="unbounded">
+			<xs:element name="zone_radii" type="zone_radiiType" minOccurs="0"/>
+			<xs:element name="zone_axis" type="zone_axisType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="spread" type="xs:decimal" use="optional"/>
+		<xs:attribute name="deviation" type="xs:decimal" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="closed_slot_featureType">
+		<xs:annotation>
+			<xs:documentation>Used to define a slot or tab when both width and length are going to be measured.  These are also referred to as elongated holes.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="closed_slot_feature_nominal" type="closed_slot_feature_nominalType" minOccurs="0"/>
+			<xs:element name="closed_slot_feature_actual" type="closed_slot_feature_actualType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="type" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="INNER"/>
+					<xs:enumeration value="OUTER"/>
+					<xs:enumeration value="UNKNOWN"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="end_type" default="ROUND">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="ROUND"/>
+					<xs:enumeration value="SQUARE"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="closed_slot_feature_actualType">
+		<xs:annotation>
+			<xs:documentation>Used to record the measured information for a closed_slot feature.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="center_point" type="center_pointType"/>
+			<xs:element name="axis_vector" type="axis_vectorType"/>
+			<xs:element name="length_vector" type="length_vectorType"/>
+			<xs:element ref="width"/>
+			<xs:element ref="width_min" minOccurs="0"/>
+			<xs:element ref="width_max" minOccurs="0"/>
+			<xs:element ref="length"/>
+			<xs:element ref="length_min" minOccurs="0"/>
+			<xs:element ref="length_max" minOccurs="0"/>
+			<xs:element ref="depth" minOccurs="0"/>
+			<xs:element name="normal" type="normalType" minOccurs="0"/>
+			<xs:element ref="offset" minOccurs="0"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="closed_slot_feature_nominalType">
+		<xs:annotation>
+			<xs:documentation>Used to define the nominal information for a closed_slot feature.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="center_point" type="center_pointType"/>
+			<xs:element name="axis_vector" type="axis_vectorType"/>
+			<xs:element name="length_vector" type="length_vectorType"/>
+			<xs:element ref="width"/>
+			<xs:element ref="length"/>
+			<xs:element ref="depth" minOccurs="0"/>
+			<xs:element name="normal" type="normalType" minOccurs="0"/>
+			<xs:element ref="offset" minOccurs="0"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="compensated_defaultType">
+		<xs:annotation>
+			<xs:documentation>Used to define if the point data has been compensated for tip radius.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="compensated" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="YES"/>
+					<xs:enumeration value="NO"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="composite_positionType">
+		<xs:annotation>
+			<xs:documentation>Used to store the lower callout in a composite position tolerance.  It is an optional element for a position tolerance.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="datum_reference_frame" type="datum_reference_frameType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="type" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="SYMMETRY"/>
+					<xs:enumeration value="POSITION_CYL"/>
+					<xs:enumeration value="POSITION_PLN"/>
+					<xs:enumeration value="POSITION_RAD"/>
+					<xs:enumeration value="POSITION_ANG"/>
+					<xs:enumeration value="POSITION_SPH"/>
+					<xs:enumeration value="POSITION_ELONG"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="tolerance_value" type="xs:decimal" use="required"/>
+		<xs:attribute name="material_condition" default="RFS">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="NONE"/>
+					<xs:enumeration value="RFS"/>
+					<xs:enumeration value="MMC"/>
+					<xs:enumeration value="LMC"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="composite_position_actualType">
+		<xs:annotation>
+			<xs:documentation>used to record the lower callout value in a composite position tolerance.  If is an optional element to position_actual element</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="zone_data" type="zone_dataType" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="tolerance1AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="composite_profileType">
+		<xs:annotation>
+			<xs:documentation>Used to store the lower callout in a composite profile tolerance.  It is an optional element to the profile tolerance</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="datum_reference_frame" type="datum_reference_frameType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="tolerance_value" type="xs:decimal" use="required"/>
+		<xs:attribute name="outer_disposition" type="xs:decimal"/>
+	</xs:complexType>
+	<xs:complexType name="composite_profile_actualType">
+		<xs:annotation>
+			<xs:documentation>Used to record the lower callout value in a composite position tolerance.  It is an optional element to the profile_actual element.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="zone_point" type="zone_pointType" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="worst_negative_distance" type="xs:decimal" use="optional"/>
+		<xs:attribute name="worst_positive_distance" type="xs:decimal" use="optional"/>
+		<xs:attributeGroup ref="tolerance1AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="compound_datumType">
+		<xs:annotation>
+			<xs:documentation>Used to store the references to two datums.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:choice>
+				<xs:element name="datum_letter" type="datum_letterType" minOccurs="0"/>
+				<xs:element name="datum_feature" type="datum_featureType" minOccurs="0"/>
+			</xs:choice>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="concentricity_actualType">
+		<xs:sequence>
+			<xs:element name="zone_data" type="zone_dataType" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="tolerance1AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="concentricity_zoneType">
+		<xs:sequence>
+			<xs:element name="datum_reference_frame" type="datum_reference_frameType"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="tolerance2AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="cone_featureType">
+		<xs:sequence>
+			<xs:element name="cone_feature_nominal" type="cone_feature_nominalType" minOccurs="0"/>
+			<xs:element name="cone_feature_actual" type="cone_feature_actualType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="type" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="INNER"/>
+					<xs:enumeration value="OUTER"/>
+					<xs:enumeration value="UNKNOWN"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="cone_feature_actualType">
+		<xs:sequence>
+			<xs:element name="axis_point" type="axis_pointType"/>
+			<xs:element name="axis_vector" type="axis_vectorType"/>
+			<xs:element ref="diameter"/>
+			<xs:element ref="diameter_min" minOccurs="0"/>
+			<xs:element ref="diameter_max" minOccurs="0"/>
+			<xs:element ref="start_length" minOccurs="0"/>
+			<xs:element ref="end_length"/>
+			<xs:element name="start_vector" type="start_vectorType" minOccurs="0"/>
+			<xs:element ref="angle" minOccurs="0"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="cone_feature_nominalType">
+		<xs:sequence>
+			<xs:element name="axis_point" type="axis_pointType"/>
+			<xs:element name="axis_vector" type="axis_vectorType"/>
+			<xs:element ref="diameter"/>
+			<xs:element ref="start_length" minOccurs="0"/>
+			<xs:element ref="end_length"/>
+			<xs:element name="start_vector" type="start_vectorType" minOccurs="0"/>
+			<xs:element ref="angle" minOccurs="0"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="constant_xsect_featureType">
+		<xs:annotation>
+			<xs:documentation>This an older wireframe based feature type.  Most systems today use faces and surfaces, so this feature type is close to obsolete.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="constant_xsect_feature_nominal" type="constant_xsect_feature_nominalType" minOccurs="0"/>
+			<xs:element name="constant_xsect_feature_actual" type="constant_xsect_feature_actualType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="constant_xsect_feature_actualType">
+		<xs:sequence>
+			<xs:element name="direction" type="directionType"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="constant_xsect_feature_nominalType">
+		<xs:sequence>
+			<xs:element name="direction" type="directionType"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="constructed_circle_featureType">
+		<xs:annotation>
+			<xs:documentation>Refer to the DMIS standard for rules to construct the circle.</xs:documentation>
+		</xs:annotation>
+		<xs:choice>
+			<xs:sequence>
+				<xs:element name="base_feat" type="base_featType" maxOccurs="unbounded"/>
+				<xs:element name="circle_feature" type="circle_featureType"/>
+				<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+			</xs:sequence>
+		</xs:choice>
+		<xs:attribute name="nominals_calculated" default="YES">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="YES"/>
+					<xs:enumeration value="NO"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute ref="method" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="constructed_closed_slot_featureType">
+		<xs:annotation>
+			<xs:documentation>Refer to the DMIS standard for rules to construct the closed slot.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="base_feat" type="base_featType" maxOccurs="unbounded"/>
+			<xs:element name="closed_slot_feature" type="closed_slot_featureType"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="nominals_calculated" default="YES">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="YES"/>
+					<xs:enumeration value="NO"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute ref="method" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="constructed_open_slot_featureType">
+		<xs:annotation>
+			<xs:documentation>Refer to the DMIS standard for rules to construct the open slot.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="base_feat" type="base_featType" maxOccurs="unbounded"/>
+			<xs:element name="open_slot_feature" type="closed_slot_featureType"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="nominals_calculated" default="YES">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="YES"/>
+					<xs:enumeration value="NO"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute ref="method" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="constructed_cone_featureType">
+		<xs:annotation>
+			<xs:documentation>Refer to the DMIS standard for rules to construct the cone.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="base_feat" type="base_featType" maxOccurs="unbounded"/>
+			<xs:element name="cone_feature" type="cone_featureType"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="nominals_calculated" default="YES">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="YES"/>
+					<xs:enumeration value="NO"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute ref="method" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="constructed_cylinder_featureType">
+		<xs:annotation>
+			<xs:documentation>Refer to the DMIS standard for rules to construct the cylinder</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="base_feat" type="base_featType" maxOccurs="unbounded"/>
+			<xs:element name="cylinder_feature" type="cylinder_featureType"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="nominals_calculated" default="YES">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="YES"/>
+					<xs:enumeration value="NO"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute ref="method" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="constructed_line_featureType">
+		<xs:sequence>
+			<xs:element name="base_feat" type="base_featType" maxOccurs="unbounded"/>
+			<xs:element name="line_feature" type="line_featureType"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="nominals_calculated" default="YES">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="YES"/>
+					<xs:enumeration value="NO"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute ref="method" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="constructed_pattern_featureType">
+		<xs:sequence>
+			<xs:element name="base_feat" type="base_featType" maxOccurs="unbounded"/>
+			<xs:element name="pattern_feature" type="pattern_featureType"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="nominals_calculated" default="YES">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="YES"/>
+					<xs:enumeration value="NO"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute ref="method" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="constructed_plane_featureType">
+		<xs:sequence>
+			<xs:element name="base_feat" type="base_featType" maxOccurs="unbounded"/>
+			<xs:element name="plane_feature" type="plane_featureType"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="nominals_calculated" default="YES">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="YES"/>
+					<xs:enumeration value="NO"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute ref="method" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="constructed_point_surface_featureType">
+		<xs:sequence>
+			<xs:element name="base_feat" type="base_featType" maxOccurs="unbounded"/>
+			<xs:element name="point_surface_feature" type="point_surface_featureType"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="nominals_calculated" default="YES">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="YES"/>
+					<xs:enumeration value="NO"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute ref="method" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="constructed_point_curve_featureType">
+		<xs:sequence>
+			<xs:element name="base_feat" type="base_featType" maxOccurs="unbounded"/>
+			<xs:element name="point_curve_feature" type="point_curve_featureType"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="nominals_calculated" default="YES">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="YES"/>
+					<xs:enumeration value="NO"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute ref="method" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="constructed_point_featureType">
+		<xs:sequence>
+			<xs:element name="base_feat" type="base_featType" maxOccurs="unbounded"/>
+			<xs:element name="point_feature" type="point_featureType"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="nominals_calculated" default="YES">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="YES"/>
+					<xs:enumeration value="NO"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute ref="method" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="constructed_sphere_featureType">
+		<xs:sequence>
+			<xs:element name="base_feat" type="base_featType" maxOccurs="unbounded"/>
+			<xs:element name="sphere_feature" type="sphere_featureType"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="nominals_calculated" default="YES">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="YES"/>
+					<xs:enumeration value="NO"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute ref="method" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="cortol_actualType">
+		<xs:attribute name="deviation" type="xs:decimal" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="cortol_deltaType">
+		<xs:attribute name="nominal" type="xs:decimal" use="required"/>
+		<xs:attribute name="lower_delta" type="xs:decimal" use="required"/>
+		<xs:attribute name="upper_delta" type="xs:decimal" use="required"/>
+		<xs:attribute name="base_pcs" type="xs:IDREF" use="required"/>
+		<xs:attribute name="direction" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="XAXIS"/>
+					<xs:enumeration value="YAXIS"/>
+					<xs:enumeration value="ZAXIS"/>
+					<xs:enumeration value="RADIAL"/>
+					<xs:enumeration value="RADIUS"/>
+					<xs:enumeration value="ANGLE"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="cortol_limitType">
+		<xs:attribute name="lower_limit" type="xs:decimal" use="required"/>
+		<xs:attribute name="upper_limit" type="xs:decimal" use="required"/>
+		<xs:attribute name="nominal" type="xs:decimal"/>
+		<xs:attribute name="base_pcs" type="xs:IDREF" use="required"/>
+		<xs:attribute name="direction" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="XAXIS"/>
+					<xs:enumeration value="YAXIS"/>
+					<xs:enumeration value="ZAXIS"/>
+					<xs:enumeration value="RADIAL"/>
+					<xs:enumeration value="RADIUS"/>
+					<xs:enumeration value="ANGLE"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="curve_analysisType">
+		<xs:attribute name="setting">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="LSTSQR"/>
+					<xs:enumeration value="MINMAX"/>
+					<xs:enumeration value="BSPLIN"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="cylinder_featureType">
+		<xs:sequence>
+			<xs:element name="cylinder_feature_nominal" type="cylinder_feature_nominalType" minOccurs="0"/>
+			<xs:element name="cylinder_feature_actual" type="cylinder_feature_actualType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="type" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="INNER"/>
+					<xs:enumeration value="OUTER"/>
+					<xs:enumeration value="UNKNOWN"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="cylinder_feature_actualType">
+		<xs:sequence>
+			<xs:element name="axis_point" type="axis_pointType"/>
+			<xs:element name="axis_vector" type="axis_vectorType"/>
+			<xs:element ref="length" minOccurs="0"/>
+			<xs:element ref="diameter"/>
+			<xs:element ref="diameter_min" minOccurs="0"/>
+			<xs:element ref="diameter_max" minOccurs="0"/>
+			<xs:element name="start_vector" type="start_vectorType" minOccurs="0"/>
+			<xs:element ref="angle" minOccurs="0"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="cylinder_feature_nominalType">
+		<xs:sequence>
+			<xs:element name="axis_point" type="axis_pointType"/>
+			<xs:element name="axis_vector" type="axis_vectorType"/>
+			<xs:element ref="length" minOccurs="0"/>
+			<xs:element ref="diameter"/>
+			<xs:element name="start_vector" type="start_vectorType" minOccurs="0"/>
+			<xs:element ref="angle" minOccurs="0"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="cylindricityType">
+		<xs:attribute name="tolerance_value" type="xs:decimal" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="cylindricity_actualType">
+		<xs:sequence>
+			<xs:element name="zone_axis" type="zone_axisType"/>
+		</xs:sequence>
+		<xs:attribute name="min_radius" type="xs:decimal" use="required"/>
+		<xs:attribute name="max_radius" type="xs:decimal" use="required"/>
+		<xs:attribute name="spread" type="xs:decimal" use="required"/>
+		<xs:attribute name="deviation" type="xs:decimal" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="datum_definition_listType">
+		<xs:annotation>
+			<xs:documentation>Used to define datums.  This is important if applications want to recreate GD and T control frames.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="datum_label" type="datum_labelType" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="datum_featureType">
+		<xs:attribute name="feature_ref" type="xs:IDREF" use="required"/>
+		<xs:attribute name="material_condition" default="NONE">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="NONE"/>
+					<xs:enumeration value="RFS"/>
+					<xs:enumeration value="MMC"/>
+					<xs:enumeration value="LMC"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="reference_flag" default="ACTUAL">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="NOMINAL"/>
+					<xs:enumeration value="ACTUAL"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="precedence">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="PRIMARY"/>
+					<xs:enumeration value="SECONDARY"/>
+					<xs:enumeration value="TERTIARY"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="datum_labelType">
+		<xs:attribute name="id" type="xs:ID" use="required"/>
+		<xs:attribute name="label" type="xs:string"/>
+		<xs:attribute name="feature_ref" type="xs:IDREF"/>
+	</xs:complexType>
+	<xs:complexType name="datum_letterType">
+		<xs:attribute name="letter" type="xs:IDREF" use="required"/>
+		<xs:attribute name="material_condition" default="NONE">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="NONE"/>
+					<xs:enumeration value="RFS"/>
+					<xs:enumeration value="MMC"/>
+					<xs:enumeration value="LMC"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="precedence">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="PRIMARY"/>
+					<xs:enumeration value="SECONDARY"/>
+					<xs:enumeration value="TERTIARY"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="datum_reference_frameType">
+		<xs:sequence maxOccurs="3">
+			<xs:choice>
+				<xs:element name="datum_letter" type="datum_letterType"/>
+				<xs:element name="datum_feature" type="datum_featureType"/>
+				<xs:element name="compound_datum" type="compound_datumType"/>
+			</xs:choice>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="depth" type="xs:decimal"/>
+	<xs:element name="diameter" type="xs:decimal">
+		<xs:annotation>
+			<xs:documentation>Used to specify the diameter for circular or cylindrical features</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="diameter_actualType">
+		<xs:annotation>
+			<xs:documentation>Used to specify the calculated diameter for circular or cylindrical features</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="zone_axis" type="zone_axisType"/>
+		</xs:sequence>
+		<xs:attribute name="diameter" type="xs:decimal" use="required"/>
+		<xs:attribute name="min_diameter" type="xs:decimal" use="optional"/>
+		<xs:attribute name="max_diameter" type="xs:decimal" use="optional"/>
+	</xs:complexType>
+	<xs:complexType name="diameter_deltaType">
+		<xs:annotation>
+			<xs:documentation>Used to define a delta type diameter tolerance, 5.0 +0.2 -0.1</xs:documentation>
+		</xs:annotation>
+		<xs:attributeGroup ref="size_deltaAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="diameter_limitType">
+		<xs:annotation>
+			<xs:documentation>Used to define a limit type diameter tolerance, 4.9 5.2</xs:documentation>
+		</xs:annotation>
+		<xs:attributeGroup ref="size_limitAttGroup"/>
+	</xs:complexType>
+	<xs:element name="diameter_max" type="xs:decimal">
+		<xs:annotation>
+			<xs:documentation>Used when an analysis package applies a fitting algorythm that has a high and low value.  For example a least squares fit might record the +2 STD. Dev.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="diameter_min" type="xs:decimal">
+		<xs:annotation>
+			<xs:documentation>Used when an analysis package applies a fitting algorythm that has a high and low value.  For example a least squares fit might record the -2 STD. Dev.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="dimensional_inspection_results">
+		<xs:annotation>
+			<xs:documentation source="www.dmlspec.org">The very main element that all data is attached.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="results_header" type="results_headerType">
+					<xs:annotation>
+						<xs:documentation>This is the element that stores all non dimensional data for dataset.</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="transform_list" type="transform_listType" minOccurs="0"/>
+				<xs:element name="datum_definition_list" type="datum_definition_listType" minOccurs="0"/>
+				<xs:element name="tolerance_nominal_list" type="tolerance_nominal_listType" minOccurs="0"/>
+				<xs:element name="feature_list" type="feature_listType"/>
+			</xs:sequence>
+			<xs:attribute name="version" type="xs:string" use="required"/>
+			<xs:attribute name="id" type="xs:ID"/>
+		</xs:complexType>
+	</xs:element>
+	<xs:complexType name="directionType">
+		<xs:attributeGroup ref="vectorAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="distance_between_actualType">
+		<xs:annotation>
+			<xs:documentation>Used to record the measured distance between two features.  If the nominal tolerance is a limit, the distance is the total distance between the two features.  If the nominal tolerance is a delta, the distance is the deviation from nominal (actual - nominal).</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="distance" type="xs:decimal" use="required"/>
+		<xs:attribute name="min_distance" type="xs:decimal" use="optional"/>
+		<xs:attribute name="max_distance" type="xs:decimal" use="optional"/>
+	</xs:complexType>
+	<xs:complexType name="distance_between_deltaType">
+		<xs:annotation>
+			<xs:documentation>Used to define a delta type distance between two features tolerance, 5.0 +0.2 -0.1</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="nominal" type="xs:decimal" use="required"/>
+		<xs:attribute name="lower_delta" type="xs:decimal" use="required"/>
+		<xs:attribute name="upper_delta" type="xs:decimal" use="required"/>
+		<xs:attribute name="origin_feature" type="xs:IDREF" use="required"/>
+		<xs:attribute name="origin_flag" default="ACTUAL">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="NOMINAL"/>
+					<xs:enumeration value="ACTUAL"/>
+					<xs:enumeration value="DATUM"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attributeGroup ref="vectorAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="distance_between_limitType">
+		<xs:annotation>
+			<xs:documentation>Used to define a limit type distance between two features tolerance, 4.9 5.2</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="lower_limit" type="xs:decimal" use="required"/>
+		<xs:attribute name="upper_limit" type="xs:decimal" use="required"/>
+		<xs:attribute name="nominal" type="xs:decimal"/>
+		<xs:attribute name="origin_feature" type="xs:IDREF" use="required"/>
+		<xs:attribute name="origin_flag" default="ACTUAL">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="NOMINAL"/>
+					<xs:enumeration value="ACTUAL"/>
+					<xs:enumeration value="DATUM"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attributeGroup ref="vectorAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="dofType">
+		<xs:annotation>
+			<xs:documentation>A sub element to analysis DOF element which specifies whether the particular limit is on, off or bounded by limits.</xs:documentation>
+		</xs:annotation>
+		<xs:attributeGroup ref="settingAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="drf_transform_actualType">
+		<xs:annotation>
+			<xs:documentation>This transform is used to place the tolerance zones in their actual position relative to common space.  For GD and T tolerances that have datums, it is the transform that maps common space to DRF space.</xs:documentation>
+		</xs:annotation>
+		<xs:choice>
+			<xs:element name="datum_reference_frame" type="datum_reference_frameType"/>
+			<xs:element name="transform_3d" type="transform_3dType"/>
+			<xs:element name="transform_id" type="transform_idType"/>
+		</xs:choice>
+	</xs:complexType>
+	<xs:complexType name="drf_transform_nominalType">
+		<xs:annotation>
+			<xs:documentation>This transform is used to place the tolerance zones in their nominal position relative to common space.</xs:documentation>
+		</xs:annotation>
+		<xs:choice>
+			<xs:element name="datum_reference_frame" type="datum_reference_frameType"/>
+			<xs:element name="transform_3d" type="transform_3dType"/>
+			<xs:element name="transform_id" type="transform_idType"/>
+		</xs:choice>
+	</xs:complexType>
+	<xs:complexType name="edge_point_featureType">
+		<xs:annotation>
+			<xs:documentation>This is used to define a point on the edge of a surface.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="edge_point_feature_nominal" type="edge_point_feature_nominalType" minOccurs="0"/>
+			<xs:element name="edge_point_feature_actual" type="edge_point_feature_actualType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="point_type">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="TEDGE"/>
+					<xs:enumeration value="HEDGE"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="edge_point_feature_actualType">
+		<xs:sequence>
+			<xs:element name="point" type="pointType"/>
+			<xs:element name="normal" type="normalType" minOccurs="0"/>
+			<xs:element name="adj_normal" type="adj_normalType" minOccurs="0"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="sequence_id" type="xs:string"/>
+		<xs:attribute name="reporting_transform" type="xs:IDREF"/>
+		<xs:attribute name="coordinate_type" default="CARTESIAN">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="CARTESIAN"/>
+					<xs:enumeration value="CYLINDRICAL"/>
+					<xs:enumeration value="POLAR"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="edge_point_feature_nominalType">
+		<xs:sequence>
+			<xs:element name="point" type="pointType"/>
+			<xs:element name="normal" type="normalType" minOccurs="0"/>
+			<xs:element name="adj_normal" type="adj_normalType"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="sequence_id" type="xs:string"/>
+		<xs:attribute name="reporting_transform" type="xs:IDREF"/>
+		<xs:attribute name="coordinate_type" default="CARTESIAN">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="CARTESIAN"/>
+					<xs:enumeration value="CYLINDRICAL"/>
+					<xs:enumeration value="POLAR"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="ellipse_featureType">
+		<xs:sequence>
+			<xs:element name="ellipse_feature_nominal" type="ellipse_feature_nominalType" minOccurs="0"/>
+			<xs:element name="ellipse_feature_actual" type="ellipse_feature_actualType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="type" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="INNER"/>
+					<xs:enumeration value="OUTER"/>
+					<xs:enumeration value="UNKNOWN"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="ellipse_feature_actualType">
+		<xs:sequence>
+			<xs:element name="focus_point" type="focus_pointType" minOccurs="2" maxOccurs="2"/>
+			<xs:element name="normal" type="normalType"/>
+			<xs:sequence>
+				<xs:element ref="minor_diameter" minOccurs="0"/>
+				<xs:element ref="major_diameter" minOccurs="0"/>
+			</xs:sequence>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="ellipse_feature_nominalType">
+		<xs:sequence>
+			<xs:element name="focus_point" type="focus_pointType" minOccurs="2" maxOccurs="2"/>
+			<xs:element name="normal" type="normalType"/>
+			<xs:sequence>
+				<xs:element ref="minor_diameter" minOccurs="0"/>
+				<xs:element ref="major_diameter" minOccurs="0"/>
+			</xs:sequence>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:element name="end_length" type="xs:decimal">
+		<xs:annotation>
+			<xs:documentation>Used in the definition of a cone feature.  It records the distance of the small end of the cone from the base point.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="end_pointType">
+		<xs:annotation>
+			<xs:documentation>A point at one end of a line feature</xs:documentation>
+		</xs:annotation>
+		<xs:attributeGroup ref="pointAttGroup"/>
+		<xs:attribute name="end" use="optional">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="1"/>
+					<xs:enumeration value="2"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:element name="error_message" type="xs:string"/>
+	<xs:complexType name="extrapolate_axisType">
+		<xs:attribute name="setting">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="YES"/>
+					<xs:enumeration value="NO"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="featureType">
+		<xs:annotation>
+			<xs:documentation>Used to define a feature.  All the information relative to the feature is added and children elements.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="feature_analysis_modes" type="feature_analysis_modesType" minOccurs="0"/>
+			<xs:element name="applied_tolerances" type="applied_tolerancesType" minOccurs="0"/>
+			<xs:choice>
+				<xs:element name="point_feature" type="point_featureType"/>
+				<xs:element name="edge_point_feature" type="edge_point_featureType"/>
+				<xs:element name="plane_feature" type="plane_featureType"/>
+				<xs:element name="line_feature" type="line_featureType"/>
+				<xs:element name="arc_feature" type="arc_featureType"/>
+				<xs:element name="circle_feature" type="circle_featureType"/>
+				<xs:element name="ellipse_feature" type="ellipse_featureType"/>
+				<xs:element name="cylinder_feature" type="cylinder_featureType"/>
+				<xs:element name="sphere_feature" type="sphere_featureType"/>
+				<xs:element name="cone_feature" type="cone_featureType"/>
+				<xs:element name="pattern_feature" type="pattern_featureType"/>
+				<xs:element name="open_slot_feature" type="open_slot_featureType"/>
+				<xs:element name="closed_slot_feature" type="closed_slot_featureType"/>
+				<xs:element name="point_curve_feature" type="point_curve_featureType"/>
+				<xs:element name="point_surface_feature" type="point_surface_featureType"/>
+				<xs:element name="constant_xsect_feature" type="constant_xsect_featureType"/>
+				<xs:element name="surface_of_revolution_feature" type="surface_of_revolution_featureType"/>
+				<xs:element name="torus_feature" type="torus_featureType"/>
+				<xs:element name="constructed_point_feature" type="constructed_point_featureType"/>
+				<xs:element name="constructed_line_feature" type="constructed_line_featureType"/>
+				<xs:element name="constructed_plane_feature" type="constructed_plane_featureType"/>
+				<xs:element name="constructed_circle_feature" type="constructed_circle_featureType"/>
+				<xs:element name="constructed_cylinder_feature" type="constructed_cylinder_featureType"/>
+				<xs:element name="constructed_sphere_feature" type="constructed_sphere_featureType"/>
+				<xs:element name="constructed_cone_feature" type="constructed_cone_featureType"/>
+				<xs:element name="constructed_pattern_feature" type="constructed_pattern_featureType"/>
+				<xs:element name="constructed_closed_slot_feature" type="constructed_closed_slot_featureType"/>
+				<xs:element name="constructed_open_slot_feature" type="constructed_open_slot_featureType"/>
+				<xs:element name="constructed_point_surface_feature" type="constructed_point_surface_featureType"/>
+				<xs:element name="constructed_point_curve_feature" type="constructed_point_curve_featureType"/>
+				<xs:element name="unknown_feature" type="unknown_featureType"/>
+			</xs:choice>
+			<xs:element name="tolerance_actual_list" type="tolerance_actual_listType" minOccurs="0"/>
+			<xs:element name="point_list" type="point_listType" minOccurs="0"/>
+			<xs:sequence minOccurs="0">
+				<xs:element name="model_name" type="model_nameType"/>
+				<xs:element ref="cad_identifier" maxOccurs="unbounded"/>
+			</xs:sequence>
+		</xs:sequence>
+		<xs:attribute name="id" type="xs:ID" use="required"/>
+		<xs:attribute name="name" type="xs:string"/>
+		<xs:attribute name="common_space">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="YES"/>
+					<xs:enumeration value="NO"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="description" type="xs:string"/>
+	</xs:complexType>
+	<xs:complexType name="feature_analysis_modesType">
+		<xs:annotation>
+			<xs:documentation>Used to record the analysis modes specific to calculating feature actuals from point lists.  This overrides the default settings.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="aelpr_analysis" type="aelpr_analysisType" minOccurs="0"/>
+			<xs:element name="cccpst_analysis" type="cccpst_analysisType" minOccurs="0"/>
+			<xs:element name="curve_analysis" type="curve_analysisType" minOccurs="0"/>
+			<xs:element name="surface_analysis" type="surface_analysisType" minOccurs="0"/>
+			<xs:element name="limits_of_size" type="limits_of_sizeType" minOccurs="0"/>
+			<xs:element name="axis_method" type="axis_methodType" minOccurs="0"/>
+			<xs:element name="extrapolate_axis" type="extrapolate_axisType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="feature_analysis_modes_defaultType">
+		<xs:annotation>
+			<xs:documentation>Used to record the analysis modes specific to calculating feature actuals from point lists.  Applies to all features that don't explicity state their own modes.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="aelpr_analysis" type="aelpr_analysisType" minOccurs="0"/>
+			<xs:element name="cccpst_analysis" type="cccpst_analysisType" minOccurs="0"/>
+			<xs:element name="curve_analysis" type="curve_analysisType" minOccurs="0"/>
+			<xs:element name="surface_analysis" type="surface_analysisType" minOccurs="0"/>
+			<xs:element name="limits_of_size" type="limits_of_sizeType" minOccurs="0"/>
+			<xs:element name="axis_method" type="axis_methodType" minOccurs="0"/>
+			<xs:element name="extrapolate_axis" type="extrapolate_axisType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="feature_idType">
+		<xs:attribute name="id" type="xs:IDREF" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="feature_listType">
+		<xs:annotation>
+			<xs:documentation>This is the element that stores all feature elements.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="feature_analysis_modes_default" type="feature_analysis_modes_defaultType" minOccurs="0"/>
+			<xs:element name="tolerance_analysis_modes_default" type="tolerance_analysis_modes_defaultType" minOccurs="0"/>
+			<xs:element name="analysis_dofs_default" type="analysis_dofs_defaultType" minOccurs="0"/>
+			<xs:element name="feature" type="featureType" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="flatnessType">
+		<xs:attribute name="tolerance_value" type="xs:decimal" use="required"/>
+		<xs:attribute name="unit_tolerance_value" type="xs:decimal"/>
+		<xs:attribute name="unit_area_x_value" type="xs:decimal"/>
+		<xs:attribute name="unit_area_y_value" type="xs:decimal"/>
+	</xs:complexType>
+	<xs:complexType name="flatness_actualType">
+		<xs:sequence>
+			<xs:element name="zone_plane" type="zone_planeType"/>
+		</xs:sequence>
+		<xs:attribute name="max_flatness" type="xs:decimal" use="required"/>
+		<xs:attribute name="spread" type="xs:decimal" use="required"/>
+		<xs:attribute name="deviation" type="xs:decimal" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="focus_pointType">
+		<xs:attributeGroup ref="pointAttGroup"/>
+	</xs:complexType>
+	<xs:element name="focus_point" type="focus_pointType"/>
+	<xs:complexType name="hinge_axisType">
+		<xs:annotation>
+			<xs:documentation>This is used when defining angle between tolerances when the intersection might be ambiguous.  For example when the included angle is close to zero or 180.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="axis_point" type="axis_pointType"/>
+			<xs:element name="axis_vector" type="axis_vectorType"/>
+			<xs:element ref="length"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="inspection_endType">
+		<xs:annotation>
+			<xs:documentation>This records the time in GMT (not local time) when the inspection completed.  For systems that do both inspection and analysis, it would imply completion of both inspection and the analysis.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="date_time" type="xs:dateTime" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="inspection_locationType">
+		<xs:attribute name="name" type="xs:string" use="required"/>
+		<xs:attribute name="machine" type="xs:string" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="inspection_machine_operatorType">
+		<xs:attribute name="name" type="xs:string" use="required"/>
+		<xs:attribute name="id_number" type="xs:string"/>
+		<xs:attribute name="shift" type="xs:string"/>
+	</xs:complexType>
+	<xs:complexType name="inspection_program_infoType">
+		<xs:attribute name="vendor_name" type="xs:string" use="required"/>
+		<xs:attribute name="application_name" type="xs:string" use="required"/>
+		<xs:attribute name="application_version" type="xs:string" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="inspection_startType">
+		<xs:annotation>
+			<xs:documentation>This records the time in GMT (not local time) when the inspection started.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="date_time" type="xs:dateTime" use="required"/>
+	</xs:complexType>
+	<xs:element name="length" type="xs:decimal">
+		<xs:annotation>
+			<xs:documentation>Used to define the length of an axis or line.  A positive value would mean in the direction of the associated vector and a negative value would mean in the opposite direction.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="length_actualType">
+		<xs:sequence>
+			<xs:element name="zone_plane" type="zone_planeType"/>
+		</xs:sequence>
+		<xs:attribute name="length" type="xs:decimal" use="required"/>
+		<xs:attribute name="min_length" type="xs:decimal" use="optional"/>
+		<xs:attribute name="max_length" type="xs:decimal" use="optional"/>
+	</xs:complexType>
+	<xs:complexType name="length_deltaType">
+		<xs:attribute name="nominal" type="xs:decimal" use="required"/>
+		<xs:attribute name="lower_delta" type="xs:decimal" use="required"/>
+		<xs:attribute name="upper_delta" type="xs:decimal" use="required"/>
+		<xs:attributeGroup ref="vectorAttGroup"/>
+		<xs:attribute name="perfect_form_at_mmc" default="YES">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="YES"/>
+					<xs:enumeration value="NO"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="length_limitType">
+		<xs:attribute name="lower_limit" type="xs:decimal" use="required"/>
+		<xs:attribute name="upper_limit" type="xs:decimal" use="required"/>
+		<xs:attribute name="nominal" type="xs:decimal"/>
+		<xs:attributeGroup ref="vectorAttGroup"/>
+		<xs:attribute name="perfect_form_at_mmc" default="YES">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="YES"/>
+					<xs:enumeration value="NO"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:element name="length_max" type="xs:decimal"/>
+	<xs:element name="length_min" type="xs:decimal"/>
+	<xs:complexType name="length_vectorType">
+		<xs:attributeGroup ref="vectorAttGroup"/>
+	</xs:complexType>
+	<xs:element name="length_vector" type="length_vectorType"/>
+	<xs:complexType name="limits_of_sizeType">
+		<xs:attribute name="setting">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="FUNCTIONAL"/>
+					<xs:enumeration value="MRS_AVERAGE"/>
+					<xs:enumeration value="TWO_POINT"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="line_featureType">
+		<xs:sequence>
+			<xs:element name="line_feature_nominal" type="line_feature_nominalType" minOccurs="0"/>
+			<xs:element name="line_feature_actual" type="line_feature_actualType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="line_feature_actualType">
+		<xs:sequence>
+			<xs:element name="point" type="pointType"/>
+			<xs:element name="direction" type="directionType"/>
+			<xs:element ref="length" minOccurs="0"/>
+			<xs:element name="normal" type="normalType" minOccurs="0"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="line_feature_nominalType">
+		<xs:sequence>
+			<xs:element name="point" type="pointType"/>
+			<xs:element name="direction" type="directionType"/>
+			<xs:element ref="length" minOccurs="0"/>
+			<xs:element name="normal" type="normalType" minOccurs="0"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="line_profile_actualType">
+		<xs:attribute name="worst_negative_distance" type="xs:decimal" use="optional">
+			<xs:annotation>
+				<xs:documentation>This is the worst deviation on the inside of material.  It is negative if the devation represents a point inside of material and positive if outside.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="worst_positive_distance" type="xs:decimal" use="optional">
+			<xs:annotation>
+				<xs:documentation>The largest devation outside of material.  Positive if the point is outside material and negative if inside.  A negative value implies that all deviation is inside material.</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attributeGroup ref="tolerance1AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="line_profile_zoneType">
+		<xs:sequence minOccurs="0">
+			<xs:element name="datum_reference_frame" type="datum_reference_frameType"/>
+		</xs:sequence>
+		<xs:attribute name="tolerance_value" type="xs:decimal" use="required"/>
+		<xs:attribute name="outer_disposition" type="xs:decimal"/>
+		<xs:attributeGroup ref="vectorAttGroup"/>
+		<xs:attribute name="grouping_requirement" default="SIMULTANEOUS">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="SEPARATE"/>
+					<xs:enumeration value="SIMULTANEOUS"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="datums_virtual_condition" default="VIRTUAL">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="MMC"/>
+					<xs:enumeration value="VIRTUAL"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:element name="local_arc_feature">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="local_arc_feature_nominal" minOccurs="0" maxOccurs="1"/>
+				<xs:element ref="local_arc_feature_actual" minOccurs="0" maxOccurs="1"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_arc_feature_actual">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="center_point"/>
+				<xs:element name="normal"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_arc_feature_nominal">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="center_point"/>
+				<xs:element name="normal"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_circle_feature">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="local_circle_feature_nominal" minOccurs="0" maxOccurs="1"/>
+				<xs:element ref="local_circle_feature_actual" minOccurs="0" maxOccurs="1"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_circle_feature_actual">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="center_point"/>
+				<xs:element name="normal"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_circle_feature_nominal">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="center_point"/>
+				<xs:element name="normal"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_closed_slot_feature">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="local_closed_slot_feature_nominal" minOccurs="0" maxOccurs="1"/>
+				<xs:element ref="local_closed_slot_feature_actual" minOccurs="0" maxOccurs="1"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_closed_slot_feature_actual">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="center_point" minOccurs="2" maxOccurs="2"/>
+				<xs:element name="normal"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_closed_slot_feature_nominal">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="center_point" minOccurs="2" maxOccurs="2"/>
+				<xs:element name="normal"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_cone_feature">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="local_cone_feature_nominal" minOccurs="0" maxOccurs="1"/>
+				<xs:element ref="local_cone_feature_actual" minOccurs="0" maxOccurs="1"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_cone_feature_actual">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="axis_point" maxOccurs="2"/>
+				<xs:element name="axis_vector"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_cone_feature_nominal">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="axis_point" maxOccurs="2"/>
+				<xs:element name="axis_vector"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_cylinder_feature">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="local_cylinder_feature_nominal" minOccurs="0" maxOccurs="1"/>
+				<xs:element ref="local_cylinder_feature_actual" minOccurs="0" maxOccurs="1"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_cylinder_feature_actual">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="axis_point" type="axis_pointType" maxOccurs="2"/>
+				<xs:element name="axis_vector" type="axis_vectorType"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_cylinder_feature_nominal">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="axis_point" type="axis_pointType" maxOccurs="2"/>
+				<xs:element name="axis_vector" type="axis_vectorType"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_line_feature">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="local_line_feature_nominal" minOccurs="0" maxOccurs="1"/>
+				<xs:element ref="local_line_feature_actual" minOccurs="0" maxOccurs="1"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_line_feature_actual">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="point" type="pointType"/>
+				<xs:element name="vector" type="vectorType"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_line_feature_nominal">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="point" minOccurs="2" maxOccurs="2"/>
+				<xs:element name="vector"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_feature">
+		<xs:complexType>
+			<xs:choice>
+				<xs:element ref="local_arc_feature"/>
+				<xs:element ref="local_circle_feature"/>
+				<xs:element ref="local_closed_slot_feature"/>
+				<xs:element ref="local_cone_feature"/>
+				<xs:element ref="local_cylinder_feature"/>
+				<xs:element ref="local_line_feature"/>
+				<xs:element ref="local_open_slot_feature"/>
+				<xs:element ref="local_plane_feature"/>
+				<xs:element ref="local_point_feature"/>
+				<xs:element ref="local_sphere_feature"/>
+			</xs:choice>
+			<xs:attribute name="defined_by" type="xs:IDREF" use="required"/>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_open_slot_feature">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="local_open_slot_feature_nominal" minOccurs="0" maxOccurs="1"/>
+				<xs:element ref="local_open_slot_feature_actual" minOccurs="0" maxOccurs="1"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_open_slot_feature_actual">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="center_point"/>
+				<xs:element name="normal"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_open_slot_feature_nominal">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="center_point"/>
+				<xs:element name="normal"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_plane_feature">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="local_plane_feature_nominal" minOccurs="0" maxOccurs="1"/>
+				<xs:element ref="local_plane_feature_actual" minOccurs="0" maxOccurs="1"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_plane_feature_actual">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="point"/>
+				<xs:element name="normal"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_plane_feature_nominal">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="point"/>
+				<xs:element name="normal"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_point_feature">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="local_point_feature_nominal" minOccurs="0" maxOccurs="1"/>
+				<xs:element ref="local_point_feature_actual" minOccurs="0" maxOccurs="1"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_point_feature_actual">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="point"/>
+				<xs:element name="normal"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_point_feature_nominal">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="point"/>
+				<xs:element name="normal"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_sphere_feature">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="local_sphere_feature_nominal" minOccurs="0" maxOccurs="1"/>
+				<xs:element ref="local_sphere_feature_actual" minOccurs="0" maxOccurs="1"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_sphere_feature_actual">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="center_point"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="local_sphere_feature_nominal">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="center_point"/>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="major_diameter" type="xs:decimal"/>
+	<xs:complexType name="measured_pointType">
+		<xs:sequence>
+			<xs:element name="point" type="pointType"/>
+			<xs:element name="normal" type="normalType" minOccurs="0"/>
+			<xs:element ref="ball_radius" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="compensated">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="YES"/>
+					<xs:enumeration value="NO"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:element name="minor_diameter" type="xs:decimal">
+		<xs:annotation>
+			<xs:documentation>Used in the definition of an ellipse.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="model_nameType">
+		<xs:attribute name="id" type="xs:IDREF" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="nominal_pointType">
+		<xs:sequence>
+			<xs:element name="point" type="pointType"/>
+			<xs:element name="normal" type="normalType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="normalType">
+		<xs:attributeGroup ref="vectorAttGroup"/>
+	</xs:complexType>
+	<xs:element name="normal" type="normalType"/>
+	<xs:complexType name="normal_deviation_actualType">
+		<xs:annotation>
+			<xs:documentation>Records the scalar deviation for a distance.  Used for systems that can record a distance, but does not have direction information.</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="deviation" type="xs:decimal" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="normal_deviation_deltaType">
+		<xs:attribute name="nominal" type="xs:decimal" use="required"/>
+		<xs:attribute name="lower_delta" type="xs:decimal" use="required"/>
+		<xs:attribute name="upper_delta" type="xs:decimal" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="normal_deviation_limitType">
+		<xs:attribute name="lower_limit" type="xs:decimal" use="required"/>
+		<xs:attribute name="upper_limit" type="xs:decimal" use="required"/>
+		<xs:attribute name="nominal" type="xs:decimal"/>
+	</xs:complexType>
+	<xs:complexType name="north_pole_vectorType">
+		<xs:attributeGroup ref="vectorAttGroup"/>
+	</xs:complexType>
+	<xs:element name="north_pole_vector" type="north_pole_vectorType"/>
+	<xs:element name="offset" type="xs:decimal"/>
+	<xs:complexType name="open_slot_featureType">
+		<xs:sequence>
+			<xs:element name="open_slot_feature_nominal" type="open_slot_feature_nominalType" minOccurs="0"/>
+			<xs:element name="open_slot_feature_actual" type="open_slot_feature_actualType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="type" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="INNER"/>
+					<xs:enumeration value="OUTER"/>
+					<xs:enumeration value="UNKNOWN"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="open_slot_feature_actualType">
+		<xs:sequence>
+			<xs:element name="center_point" type="center_pointType"/>
+			<xs:element name="normal" type="normalType"/>
+			<xs:element ref="width"/>
+			<xs:element ref="width_min" minOccurs="0"/>
+			<xs:element ref="width_max" minOccurs="0"/>
+			<xs:choice minOccurs="2" maxOccurs="2">
+				<xs:element name="plane_feature_actual" type="plane_feature_actualType"/>
+				<xs:element name="feature_id" type="feature_idType"/>
+			</xs:choice>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="open_slot_feature_nominalType">
+		<xs:sequence>
+			<xs:element name="center_point" type="center_pointType"/>
+			<xs:element name="normal" type="normalType"/>
+			<xs:element ref="width"/>
+			<xs:choice minOccurs="2" maxOccurs="2">
+				<xs:element name="plane_feature_nominal" type="plane_feature_nominalType"/>
+				<xs:element name="feature_id" type="feature_idType"/>
+			</xs:choice>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="parallel_cyl_actualType">
+		<xs:sequence>
+			<xs:element name="zone_data" type="zone_dataType"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="tolerance1AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="parallel_cyl_zoneType">
+		<xs:sequence>
+			<xs:element name="datum_reference_frame" type="datum_reference_frameType"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="tolerance2AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="parallel_pln_actualType">
+		<xs:sequence>
+			<xs:element name="zone_data" type="zone_dataType"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="tolerance1AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="parallel_pln_zoneType">
+		<xs:sequence>
+			<xs:element name="datum_reference_frame" type="datum_reference_frameType"/>
+		</xs:sequence>
+		<xs:attribute name="tolerance_value" type="xs:decimal" use="required"/>
+		<xs:attribute name="material_condition" default="NONE">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="NONE"/>
+					<xs:enumeration value="RFS"/>
+					<xs:enumeration value="MMC"/>
+					<xs:enumeration value="LMC"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attributeGroup ref="vectorAttGroup"/>
+		<xs:attribute name="grouping_requirement" default="SIMULTANEOUS">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="SEPARATE"/>
+					<xs:enumeration value="SIMULTANEOUS"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="datums_virtual_condition" default="VIRTUAL">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="MMC"/>
+					<xs:enumeration value="VIRTUAL"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:element name="part_coordinate_system">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="transform_3d" type="transform_3dType"/>
+			</xs:sequence>
+			<xs:attribute name="pcs_id" type="xs:ID" use="required"/>
+		</xs:complexType>
+	</xs:element>
+	<xs:complexType name="part_inspection_statusType">
+		<xs:annotation>
+			<xs:documentation>Used to record the overall status of an inspection.  For example to have a status of PASS, all tolerance in the program must has status of PASS.</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element ref="error_message" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="status" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="PASS"/>
+					<xs:enumeration value="FAIL"/>
+					<xs:enumeration value="REWORK"/>
+					<xs:enumeration value="ERROR"/>
+					<xs:enumeration value="UNKNOWN"/>
+					<xs:enumeration value="NOT_CALCULATED"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="part_program_infoType">
+		<xs:sequence>
+			<xs:element name="program_author" type="program_authorType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="name" type="xs:string" use="required"/>
+		<xs:attribute name="revision" type="xs:string" use="required"/>
+		<xs:attribute name="url" type="xs:string"/>
+		<xs:attribute name="tolerance_std" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="ANSI"/>
+					<xs:enumeration value="ASME"/>
+					<xs:enumeration value="ISO"/>
+					<xs:enumeration value="BIS"/>
+					<xs:enumeration value="JIS"/>
+					<xs:enumeration value="DIN"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="linear_units" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="INCH"/>
+					<xs:enumeration value="FEET"/>
+					<xs:enumeration value="MM"/>
+					<xs:enumeration value="CM"/>
+					<xs:enumeration value="M"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="angular_units" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="DEGREES"/>
+					<xs:enumeration value="RADIANS"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="pattern_featureType">
+		<xs:sequence>
+			<xs:element name="feature_id" type="feature_idType" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="perpendicularity_cyl_actualType">
+		<xs:sequence>
+			<xs:element name="zone_data" type="zone_dataType"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="tolerance1AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="perpendicularity_cyl_zoneType">
+		<xs:sequence>
+			<xs:element name="datum_reference_frame" type="datum_reference_frameType"/>
+			<xs:element name="projected_tol_zone" type="projected_tol_zoneType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="tolerance_value" type="xs:decimal" use="required"/>
+		<xs:attribute name="tolerance_max_value" type="xs:decimal"/>
+		<xs:attribute name="material_condition" default="RFS">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="NONE"/>
+					<xs:enumeration value="RFS"/>
+					<xs:enumeration value="MMC"/>
+					<xs:enumeration value="LMC"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="grouping_requirement" default="SIMULTANEOUS">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="SEPARATE"/>
+					<xs:enumeration value="SIMULTANEOUS"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="datums_virtual_condition" default="VIRTUAL">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="MMC"/>
+					<xs:enumeration value="VIRTUAL"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="perpendicularity_pln_actualType">
+		<xs:sequence>
+			<xs:element name="zone_data" type="zone_dataType"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="tolerance1AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="perpendicularity_pln_zoneType">
+		<xs:sequence>
+			<xs:element name="datum_reference_frame" type="datum_reference_frameType"/>
+			<xs:element name="projected_tol_zone" type="projected_tol_zoneType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="tolerance_value" type="xs:decimal" use="required"/>
+		<xs:attribute name="tangent_plane" default="NO">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="YES"/>
+					<xs:enumeration value="NO"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="material_condition" default="NONE">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="NONE"/>
+					<xs:enumeration value="RFS"/>
+					<xs:enumeration value="MMC"/>
+					<xs:enumeration value="LMC"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attributeGroup ref="vectorAttGroup"/>
+		<xs:attribute name="grouping_requirement" default="SIMULTANEOUS">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="SEPARATE"/>
+					<xs:enumeration value="SIMULTANEOUS"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="datums_virtual_condition" default="VIRTUAL">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="MMC"/>
+					<xs:enumeration value="VIRTUAL"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="planar_optionType">
+		<xs:attribute name="setting">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="HIGH_POINT"/>
+					<xs:enumeration value="BEST_FIT"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="plane_featureType">
+		<xs:sequence>
+			<xs:element name="plane_feature_nominal" type="plane_feature_nominalType" minOccurs="0"/>
+			<xs:element name="plane_feature_actual" type="plane_feature_actualType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="plane_feature_actualType">
+		<xs:sequence>
+			<xs:element name="point" type="pointType"/>
+			<xs:element name="normal" type="normalType"/>
+			<xs:element name="poly_line" type="poly_lineType" minOccurs="0"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="plane_feature_nominalType">
+		<xs:sequence>
+			<xs:element name="point" type="pointType"/>
+			<xs:element name="normal" type="normalType"/>
+			<xs:element name="poly_line" type="poly_lineType" minOccurs="0"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="pointType">
+		<xs:attributeGroup ref="pointAttGroup"/>
+	</xs:complexType>
+	<xs:element name="point" type="pointType"/>
+	<xs:complexType name="point_curve_featureType">
+		<xs:sequence>
+			<xs:element name="point_curve_feature_nominal" type="point_curve_feature_nominalType" minOccurs="0"/>
+			<xs:element name="point_curve_feature_actual" type="point_curve_feature_actualType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="point_curve_feature_actualType">
+		<xs:sequence>
+			<xs:element name="point_list" type="point_listType" minOccurs="0"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="point_curve_feature_nominalType">
+		<xs:sequence>
+			<xs:element name="point_list" type="point_listType" minOccurs="0"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="point_dataType">
+		<xs:sequence>
+			<xs:element name="nominal_point" type="nominal_pointType" minOccurs="0"/>
+			<xs:element name="measured_point" type="measured_pointType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="id" type="xs:ID" use="required"/>
+		<xs:attribute name="sequence_id" type="xs:string"/>
+	</xs:complexType>
+	<xs:complexType name="point_featureType">
+		<xs:sequence>
+			<xs:element name="point_feature_nominal" type="point_feature_nominalType" minOccurs="0"/>
+			<xs:element name="point_feature_actual" type="point_feature_actualType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="point_feature_actualType">
+		<xs:sequence>
+			<xs:element name="point" type="pointType"/>
+			<xs:element name="normal" type="normalType" minOccurs="0"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="point_feature_nominalType">
+		<xs:sequence>
+			<xs:element name="point" type="pointType"/>
+			<xs:element name="normal" type="normalType" minOccurs="0"/>
+			<xs:element name="adj_normal" type="adj_normalType" minOccurs="0"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="point_listType">
+		<xs:sequence>
+			<xs:element name="point_data" type="point_dataType" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="point_surface_featureType">
+		<xs:sequence>
+			<xs:element name="point_surface_feature_nominal" type="point_surface_feature_nominalType" minOccurs="0"/>
+			<xs:element name="point_surface_feature_actual" type="point_surface_feature_actualType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="point_surface_feature_actualType">
+		<xs:sequence>
+			<xs:element name="point_list" type="point_listType" minOccurs="0"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="point_surface_feature_nominalType">
+		<xs:sequence>
+			<xs:element name="point_list" type="point_listType" minOccurs="0"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="polar_location_videoType">
+		<xs:attribute name="tilt" type="xs:decimal" use="required"/>
+		<xs:attribute name="rot" type="xs:decimal" use="required"/>
+		<xs:attribute name="ram_i" type="xs:decimal" use="required"/>
+		<xs:attribute name="ram_j" type="xs:decimal" use="required"/>
+		<xs:attribute name="ram_k" type="xs:decimal" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="poly_lineType">
+		<xs:sequence>
+			<xs:element name="point" type="pointType" minOccurs="3" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="poly_line" type="poly_lineType"/>
+	<xs:complexType name="position_ang_actualType">
+		<xs:sequence>
+			<xs:element name="zone_data" type="zone_dataType" maxOccurs="unbounded"/>
+			<xs:element name="composite_position_actual" type="composite_position_actualType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="tolerance1AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="position_ang_zoneType">
+		<xs:sequence>
+			<xs:element name="datum_reference_frame" type="datum_reference_frameType"/>
+			<xs:element name="projected_tol_zone" type="projected_tol_zoneType" minOccurs="0"/>
+			<xs:element name="composite_position" type="composite_positionType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="tolerance3AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="position_cyl_actualType">
+		<xs:sequence>
+			<xs:element name="zone_data" type="zone_dataType" maxOccurs="unbounded"/>
+			<xs:element name="composite_position_actual" type="composite_position_actualType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="tolerance1AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="position_cyl_zoneType">
+		<xs:sequence>
+			<xs:element name="datum_reference_frame" type="datum_reference_frameType" minOccurs="0"/>
+			<xs:element name="projected_tol_zone" type="projected_tol_zoneType" minOccurs="0"/>
+			<xs:element name="composite_position" type="composite_positionType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="tolerance3AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="position_elong_actualType">
+		<xs:sequence>
+			<xs:element name="zone_data" type="zone_dataType" maxOccurs="unbounded"/>
+			<xs:element name="composite_position_actual" type="composite_position_actualType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="tolerance1AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="position_elong_zoneType">
+		<xs:sequence>
+			<xs:element name="datum_reference_frame" type="datum_reference_frameType" minOccurs="0"/>
+			<xs:element name="projected_tol_zone" type="projected_tol_zoneType" minOccurs="0"/>
+			<xs:element name="composite_position" type="composite_positionType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="tolerance3AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="position_pln_actualType">
+		<xs:sequence>
+			<xs:element name="zone_data" type="zone_dataType" maxOccurs="unbounded"/>
+			<xs:element name="composite_position_actual" type="composite_position_actualType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="tolerance1AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="position_pln_zoneType">
+		<xs:sequence>
+			<xs:element name="datum_reference_frame" type="datum_reference_frameType" minOccurs="0"/>
+			<xs:element name="projected_tol_zone" type="projected_tol_zoneType" minOccurs="0"/>
+			<xs:element name="composite_position" type="composite_positionType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="tolerance_value" type="xs:decimal" use="required"/>
+		<xs:attribute name="material_condition" default="NONE">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="NONE"/>
+					<xs:enumeration value="RFS"/>
+					<xs:enumeration value="MMC"/>
+					<xs:enumeration value="LMC"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="geo_type" default="3D">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="2D"/>
+					<xs:enumeration value="3D"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attributeGroup ref="vectorAttGroup"/>
+		<xs:attribute name="grouping_requirement" default="SIMULTANEOUS">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="SEPARATE"/>
+					<xs:enumeration value="SIMULTANEOUS"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="datums_virtual_condition" default="VIRTUAL">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="MMC"/>
+					<xs:enumeration value="VIRTUAL"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="position_rad_actualType">
+		<xs:sequence>
+			<xs:element name="zone_data" type="zone_dataType" maxOccurs="unbounded"/>
+			<xs:element name="composite_position_actual" type="composite_position_actualType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="tolerance1AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="position_rad_zoneType">
+		<xs:sequence>
+			<xs:element name="datum_reference_frame" type="datum_reference_frameType"/>
+			<xs:element name="projected_tol_zone" type="projected_tol_zoneType" minOccurs="0"/>
+			<xs:element name="composite_position" type="composite_positionType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="tolerance3AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="position_sph_actualType">
+		<xs:sequence>
+			<xs:element name="zone_data" type="zone_dataType" maxOccurs="unbounded"/>
+			<xs:element name="composite_position_actual" type="composite_position_actualType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="tolerance1AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="position_sph_zoneType">
+		<xs:sequence>
+			<xs:element name="datum_reference_frame" type="datum_reference_frameType" minOccurs="0"/>
+			<xs:element name="composite_position" type="composite_positionType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="tolerance2AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="program_authorType">
+		<xs:attribute name="name" type="xs:string" use="required"/>
+		<xs:attribute name="id_number" type="xs:string"/>
+		<xs:attribute name="shift" type="xs:string"/>
+	</xs:complexType>
+	<xs:complexType name="projected_tol_zoneType">
+		<xs:attribute name="length" type="xs:decimal" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="qis_dataType">
+		<xs:sequence maxOccurs="unbounded">
+			<xs:element name="qis_item" type="qis_itemType" minOccurs="0"/>
+			<xs:element name="qis_def" type="qis_defType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="qis_defType">
+		<xs:attribute name="label" type="xs:string" use="required"/>
+		<xs:attribute name="type" type="xs:string" use="required"/>
+		<xs:attribute name="value" type="xs:string"/>
+	</xs:complexType>
+	<xs:complexType name="qis_itemType">
+		<xs:attribute name="label" type="xs:string" use="required"/>
+		<xs:attribute name="type" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="CUTTER_COMPENSATION_NAME"/>
+					<xs:enumeration value="CLAMP_NAME"/>
+					<xs:enumeration value="CLAMP_SERIAL_NUMBER"/>
+					<xs:enumeration value="DME_NAME"/>
+					<xs:enumeration value="DME_SOFTWARE_NAME"/>
+					<xs:enumeration value="DME_SOFTWARE_VERSION"/>
+					<xs:enumeration value="FIXTURE_NAME"/>
+					<xs:enumeration value="FIXTURE_SERIAL_NUMBER"/>
+					<xs:enumeration value="PART_LOT_NAME"/>
+					<xs:enumeration value="MANUFACTURING_DEVICE_NAME"/>
+					<xs:enumeration value="OPERATOR_NAME"/>
+					<xs:enumeration value="PROCESS_ID"/>
+					<xs:enumeration value="INSPECTION_PLAN_ID"/>
+					<xs:enumeration value="PART_ID"/>
+					<xs:enumeration value="PART_REVISION_LEVEL"/>
+					<xs:enumeration value="PART_SERIAL_NUMBER"/>
+					<xs:enumeration value="PREVIOUS_OPERATION"/>
+					<xs:enumeration value="TOOL_USED"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="value" type="xs:string"/>
+	</xs:complexType>
+	<xs:complexType name="radius_actualType">
+		<xs:sequence>
+			<xs:element name="zone_axis" type="zone_axisType"/>
+		</xs:sequence>
+		<xs:attribute name="radius" type="xs:decimal" use="required"/>
+		<xs:attribute name="min_radius" type="xs:decimal" use="optional"/>
+		<xs:attribute name="max_radius" type="xs:decimal" use="optional"/>
+	</xs:complexType>
+	<xs:complexType name="radius_deltaType">
+		<xs:attributeGroup ref="size_deltaAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="radius_limitType">
+		<xs:attributeGroup ref="size_limitAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="report_dataType">
+		<xs:choice maxOccurs="unbounded">
+			<xs:element name="qis_data" type="qis_dataType"/>
+			<xs:element name="report_item" type="report_itemType"/>
+		</xs:choice>
+		<xs:attribute name="label" type="xs:string" use="required"/>
+		<xs:attribute name="value" type="xs:decimal"/>
+	</xs:complexType>
+	<xs:complexType name="report_data_listType">
+		<xs:sequence>
+			<xs:element name="report_data" type="report_dataType" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="report_data_list" type="report_data_listType"/>
+	<xs:complexType name="report_itemType">
+		<xs:attribute name="type" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="ALGORITHM"/>
+					<xs:enumeration value="DATE"/>
+					<xs:enumeration value="HUMIDITY"/>
+					<xs:enumeration value="DME_OUTPUT_MODE"/>
+					<xs:enumeration value="TEMPERATURE_C"/>
+					<xs:enumeration value="TEMPERATURE_F"/>
+					<xs:enumeration value="TEMPERATURE_W_C"/>
+					<xs:enumeration value="TEMPERATURE_W_F"/>
+					<xs:enumeration value="TIME"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="value" type="xs:decimal"/>
+	</xs:complexType>
+	<xs:complexType name="results_headerType">
+		<xs:sequence>
+			<xs:element name="cad_info" type="cad_infoType" maxOccurs="unbounded"/>
+			<xs:element name="part_inspection_status" type="part_inspection_statusType" minOccurs="0"/>
+			<xs:element name="part_program_info" type="part_program_infoType"/>
+			<xs:element name="inspection_program_info" type="inspection_program_infoType" minOccurs="0"/>
+			<xs:element name="analysis_program_info" type="analysis_program_infoType" minOccurs="0"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+			<xs:element name="compensated_default" type="compensated_defaultType"/>
+			<xs:element name="inspection_start" type="inspection_startType"/>
+			<xs:element name="inspection_end" type="inspection_endType"/>
+			<xs:element name="inspection_machine_operator" type="inspection_machine_operatorType" minOccurs="0"/>
+			<xs:element name="inspection_location" type="inspection_locationType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="sphere_featureType">
+		<xs:sequence>
+			<xs:element name="sphere_feature_nominal" type="sphere_feature_nominalType" minOccurs="0"/>
+			<xs:element name="sphere_feature_actual" type="sphere_feature_actualType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="type" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="INNER"/>
+					<xs:enumeration value="OUTER"/>
+					<xs:enumeration value="UNKNOWN"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="sphere_feature_actualType">
+		<xs:sequence>
+			<xs:element name="center_point" type="center_pointType"/>
+			<xs:element ref="diameter"/>
+			<xs:element ref="diameter_min" minOccurs="0"/>
+			<xs:element ref="diameter_max" minOccurs="0"/>
+			<xs:element name="north_pole_vector" type="north_pole_vectorType" minOccurs="0"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="sphere_feature_nominalType">
+		<xs:sequence>
+			<xs:element name="center_point" type="center_pointType"/>
+			<xs:element ref="diameter"/>
+			<xs:element name="north_pole_vector" type="north_pole_vectorType" minOccurs="0"/>
+			<xs:element ref="angle" minOccurs="0"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:element name="start_length" type="xs:decimal" default="0">
+		<xs:annotation>
+			<xs:documentation>Used in the definition of a cone feature.  It records the offset of the large end of the cone from the base point.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="start_vectorType">
+		<xs:attribute name="i">
+			<xs:simpleType>
+				<xs:restriction base="xs:decimal">
+					<xs:minInclusive value="-1.0"/>
+					<xs:maxInclusive value="1.0"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="j">
+			<xs:simpleType>
+				<xs:restriction base="xs:decimal">
+					<xs:minInclusive value="-1.0"/>
+					<xs:maxInclusive value="1.0"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="k">
+			<xs:simpleType>
+				<xs:restriction base="xs:decimal">
+					<xs:minInclusive value="-1.0"/>
+					<xs:maxInclusive value="1.0"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:element name="start_vector" type="start_vectorType"/>
+	<xs:complexType name="straightnessType">
+		<xs:attribute name="tolerance_value" type="xs:decimal" use="required"/>
+		<xs:attribute name="unit_tolerance_value" type="xs:decimal"/>
+		<xs:attribute name="unit_length_value" type="xs:decimal"/>
+		<xs:attribute name="material_condition" default="NONE">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="NONE"/>
+					<xs:enumeration value="RFS"/>
+					<xs:enumeration value="MMC"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attributeGroup ref="vectorAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="straightness_actualType">
+		<xs:sequence maxOccurs="unbounded">
+			<xs:element name="zone_line" type="zone_lineType"/>
+			<xs:element name="zone_plane" type="zone_planeType"/>
+		</xs:sequence>
+		<xs:attribute name="max_straightness" type="xs:decimal" use="required"/>
+		<xs:attribute name="spread" type="xs:decimal" use="required"/>
+		<xs:attribute name="deviation" type="xs:decimal" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="straightness_cyl_actualType">
+		<xs:sequence>
+			<xs:element name="zone_data" type="zone_dataType"/>
+			<xs:element name="zone_axis" type="zone_axisType"/>
+		</xs:sequence>
+		<xs:attribute name="max_straightness" type="xs:decimal" use="required"/>
+		<xs:attribute name="spread" type="xs:decimal" use="required"/>
+		<xs:attribute name="deviation" type="xs:decimal" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="straightness_cyl_zoneType">
+		<xs:attribute name="tolerance_value" type="xs:decimal" use="required"/>
+		<xs:attribute name="unit_tolerance_value" type="xs:decimal"/>
+		<xs:attribute name="unit_length_value" type="xs:decimal"/>
+		<xs:attribute name="material_condition" default="RFS">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="NONE"/>
+					<xs:enumeration value="RFS"/>
+					<xs:enumeration value="MMC"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="surface_analysisType">
+		<xs:attribute name="setting">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="LSTSQR"/>
+					<xs:enumeration value="MINMAX"/>
+					<xs:enumeration value="NURBS"/>
+					<xs:enumeration value="BEZIER"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="surface_of_revolution_featureType">
+		<xs:sequence>
+			<xs:element name="surface_of_revolution_feature_nominal" type="surface_of_revolution_feature_nominalType" minOccurs="0"/>
+			<xs:element name="surface_of_revolution_feature_actual" type="surface_of_revolution_feature_actualType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="surface_of_revolution_feature_actualType">
+		<xs:sequence>
+			<xs:element name="axis_point" type="axis_pointType"/>
+			<xs:element name="axis_vector" type="axis_vectorType"/>
+			<xs:element ref="length"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="surface_of_revolution_feature_nominalType">
+		<xs:sequence>
+			<xs:element name="axis_point" type="axis_pointType"/>
+			<xs:element name="axis_vector" type="axis_vectorType"/>
+			<xs:element ref="length"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="surface_profile_actualType">
+		<xs:sequence>
+			<xs:element name="zone_point" type="zone_pointType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="composite_profile_actual" type="composite_profile_actualType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="worst_negative_distance" type="xs:decimal" use="optional"/>
+		<xs:attribute name="worst_positive_distance" type="xs:decimal" use="optional"/>
+		<xs:attributeGroup ref="tolerance1AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="surface_profile_methodType">
+		<xs:attribute name="setting">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="STANDARD"/>
+					<xs:enumeration value="MINDEV_3D"/>
+					<xs:enumeration value="LSQ_NRM"/>
+					<xs:enumeration value="LSQ_3D"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="surface_profile_offsetType">
+		<xs:attribute name="setting">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="STANDARD"/>
+					<xs:enumeration value="INNER"/>
+					<xs:enumeration value="OUTER"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="surface_profile_zoneType">
+		<xs:sequence>
+			<xs:element name="datum_reference_frame" type="datum_reference_frameType" minOccurs="0"/>
+			<xs:element name="composite_profile" type="composite_profileType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="tolerance_value" type="xs:decimal" use="required"/>
+		<xs:attribute name="outer_disposition" type="xs:decimal"/>
+		<xs:attribute name="grouping_requirement" default="SIMULTANEOUS">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="SEPARATE"/>
+					<xs:enumeration value="SIMULTANEOUS"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="datums_virtual_condition" default="VIRTUAL">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="MMC"/>
+					<xs:enumeration value="VIRTUAL"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="symmetry_actualType">
+		<xs:sequence>
+			<xs:element name="zone_data" type="zone_dataType" maxOccurs="unbounded"/>
+			<xs:element name="composite_position_actual" type="composite_position_actualType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="tolerance1AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="symmetry_zoneType">
+		<xs:sequence>
+			<xs:element name="datum_reference_frame" type="datum_reference_frameType"/>
+			<xs:element name="composite_position" type="composite_positionType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="tolerance2AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="tolerance_actualType">
+		<xs:sequence>
+			<xs:choice>
+				<xs:element name="diameter_actual" type="diameter_actualType"/>
+				<xs:element name="radius_actual" type="radius_actualType"/>
+				<xs:element name="length_actual" type="length_actualType"/>
+				<xs:element name="width_actual" type="width_actualType"/>
+				<xs:element name="angle_actual" type="angle_actualType"/>
+				<xs:element name="distance_between_actual" type="distance_between_actualType"/>
+				<xs:element name="angle_between_actual" type="angle_between_actualType"/>
+				<xs:element name="cortol_actual" type="cortol_actualType"/>
+				<xs:element name="normal_deviation_actual" type="normal_deviation_actualType"/>
+				<xs:element name="straightness_actual" type="straightness_actualType"/>
+				<xs:element name="straightness_cyl_actual" type="straightness_cyl_actualType"/>
+				<xs:element name="flatness_actual" type="flatness_actualType"/>
+				<xs:element name="cylindricity_actual" type="cylindricity_actualType"/>
+				<xs:element name="circularity_actual" type="circularity_actualType"/>
+				<xs:element name="perpendicularity_cyl_actual" type="perpendicularity_cyl_actualType"/>
+				<xs:element name="perpendicularity_pln_actual" type="perpendicularity_pln_actualType"/>
+				<xs:element name="angularity_cyl_actual" type="angularity_cyl_actualType"/>
+				<xs:element name="angularity_pln_actual" type="angularity_pln_actualType"/>
+				<xs:element name="parallel_cyl_actual" type="parallel_cyl_actualType"/>
+				<xs:element name="parallel_pln_actual" type="parallel_pln_actualType"/>
+				<xs:element name="surface_profile_actual" type="surface_profile_actualType"/>
+				<xs:element name="line_profile_actual" type="line_profile_actualType"/>
+				<xs:element name="position_cyl_actual" type="position_cyl_actualType"/>
+				<xs:element name="position_pln_actual" type="position_pln_actualType"/>
+				<xs:element name="position_rad_actual" type="position_rad_actualType"/>
+				<xs:element name="position_ang_actual" type="position_ang_actualType"/>
+				<xs:element name="position_sph_actual" type="position_sph_actualType"/>
+				<xs:element name="position_elong_actual" type="position_elong_actualType"/>
+				<xs:element name="concentricity_actual" type="concentricity_actualType"/>
+				<xs:element name="symmetry_actual" type="symmetry_actualType"/>
+				<xs:element name="total_runout_actual" type="total_runout_actualType"/>
+				<xs:element name="circular_runout_actual" type="circular_runout_actualType"/>
+				<xs:element ref="unknown_tolerance_type"/>
+			</xs:choice>
+			<xs:element name="drf_transform_nominal" type="drf_transform_nominalType" minOccurs="0"/>
+			<xs:element name="drf_transform_actual" type="drf_transform_actualType" minOccurs="0"/>
+			<xs:element name="tolerance_transform_actual" type="tolerance_transform_actualType" minOccurs="0"/>
+			<xs:element name="tolerance_analysis_modes" type="tolerance_analysis_modesType" minOccurs="0"/>
+			<xs:element name="analysis_dofs" type="analysis_dofsType" minOccurs="0"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+			<xs:element ref="local_feature" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="defined_by" type="xs:IDREF" use="required"/>
+		<xs:attribute name="status" default="UNKNOWN">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="UNKNOWN"/>
+					<xs:enumeration value="NOT_ANALYZED"/>
+					<xs:enumeration value="PASSED"/>
+					<xs:enumeration value="FAILED"/>
+					<xs:enumeration value="REWORK"/>
+					<xs:enumeration value="INCOMPLETE"/>
+					<xs:enumeration value="ERROR"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attributeGroup ref="featureAttGroup"/>
+		<xs:attribute name="simultaneous_group" type="xs:string"/>
+		<xs:attribute name="spc_level" use="optional">
+			<xs:simpleType>
+				<xs:restriction base="xs:integer">
+					<xs:minInclusive value="1"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="tolerance_actual_listType">
+		<xs:sequence>
+			<xs:element name="tolerance_actual" type="tolerance_actualType" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="tolerance_analysis_modesType">
+		<xs:sequence>
+			<xs:element name="planar_option" type="planar_optionType" minOccurs="0"/>
+			<xs:element name="surface_profile_method" type="surface_profile_methodType" minOccurs="0"/>
+			<xs:element name="surface_profile_offset" type="surface_profile_offsetType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="tolerance_analysis_modes_defaultType">
+		<xs:sequence>
+			<xs:element name="planar_option" type="planar_optionType" minOccurs="0"/>
+			<xs:element name="surface_profile_method" type="surface_profile_methodType" minOccurs="0"/>
+			<xs:element name="surface_profile_offset" type="surface_profile_offsetType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="tolerance_coordinate_systemType">
+		<xs:choice>
+			<xs:element name="datum_reference_frame" type="datum_reference_frameType"/>
+			<xs:element name="transform_3d" type="transform_3dType"/>
+			<xs:element name="transform_id" type="transform_idType"/>
+		</xs:choice>
+	</xs:complexType>
+	<xs:complexType name="tolerance_idType">
+		<xs:attribute name="id" type="xs:IDREF" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="tolerance_nominalType">
+		<xs:sequence>
+			<xs:element name="tolerance_coordinate_system" type="tolerance_coordinate_systemType" minOccurs="0"/>
+			<xs:element name="tolerance_analysis_modes" type="tolerance_analysis_modesType" minOccurs="0"/>
+			<xs:element name="analysis_dofs" type="analysis_dofsType" minOccurs="0"/>
+			<xs:choice>
+				<xs:element name="diameter_limit" type="diameter_limitType"/>
+				<xs:element name="diameter_delta" type="diameter_deltaType"/>
+				<xs:element name="radius_limit" type="radius_limitType"/>
+				<xs:element name="radius_delta" type="radius_deltaType"/>
+				<xs:element name="length_limit" type="length_limitType"/>
+				<xs:element name="length_delta" type="length_deltaType"/>
+				<xs:element name="width_limit" type="width_limitType"/>
+				<xs:element name="width_delta" type="width_deltaType"/>
+				<xs:element name="angle_limit" type="angle_limitType"/>
+				<xs:element name="angle_delta" type="angle_deltaType"/>
+				<xs:element name="distance_between_limit" type="distance_between_limitType"/>
+				<xs:element name="distance_between_delta" type="distance_between_deltaType"/>
+				<xs:element name="cortol_limit" type="cortol_limitType"/>
+				<xs:element name="cortol_delta" type="cortol_deltaType"/>
+				<xs:element name="normal_deviation_limit" type="normal_deviation_limitType"/>
+				<xs:element name="normal_deviation_delta" type="normal_deviation_deltaType"/>
+				<xs:element name="angle_between_limit" type="angle_between_limitType"/>
+				<xs:element name="angle_between_delta" type="angle_between_deltaType"/>
+				<xs:element name="straightness" type="straightnessType"/>
+				<xs:element name="straightness_cyl_zone" type="straightness_cyl_zoneType"/>
+				<xs:element name="flatness" type="flatnessType"/>
+				<xs:element name="cylindricity" type="cylindricityType"/>
+				<xs:element name="circularity" type="circularityType"/>
+				<xs:element name="perpendicularity_cyl_zone" type="perpendicularity_cyl_zoneType"/>
+				<xs:element name="perpendicularity_pln_zone" type="perpendicularity_pln_zoneType"/>
+				<xs:element name="angularity_cyl_zone" type="angularity_cyl_zoneType"/>
+				<xs:element name="angularity_pln_zone" type="angularity_pln_zoneType"/>
+				<xs:element name="parallel_cyl_zone" type="parallel_cyl_zoneType"/>
+				<xs:element name="parallel_pln_zone" type="parallel_pln_zoneType"/>
+				<xs:element name="surface_profile_zone" type="surface_profile_zoneType"/>
+				<xs:element name="line_profile_zone" type="line_profile_zoneType"/>
+				<xs:element name="position_cyl_zone" type="position_cyl_zoneType"/>
+				<xs:element name="position_pln_zone" type="position_pln_zoneType"/>
+				<xs:element name="position_rad_zone" type="position_rad_zoneType"/>
+				<xs:element name="position_ang_zone" type="position_ang_zoneType"/>
+				<xs:element name="position_sph_zone" type="position_sph_zoneType"/>
+				<xs:element name="position_elong_zone" type="position_elong_zoneType"/>
+				<xs:element name="concentricity_zone" type="concentricity_zoneType"/>
+				<xs:element name="symmetry_zone" type="symmetry_zoneType"/>
+				<xs:element name="total_runout_zone" type="total_runout_zoneType"/>
+				<xs:element name="circular_runout_zone" type="circular_runout_zoneType"/>
+				<xs:element ref="unknown_tolerance_type"/>
+			</xs:choice>
+		</xs:sequence>
+		<xs:attribute name="id" type="xs:ID" use="required"/>
+		<xs:attribute name="name" type="xs:string"/>
+		<xs:attribute name="features" type="xs:IDREFS" use="required"/>
+		<xs:attribute name="description" type="xs:string"/>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="tolerance_nominal_listType">
+		<xs:sequence>
+			<xs:element name="tolerance_nominal" type="tolerance_nominalType" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="tolerance_transform_actualType">
+		<xs:choice>
+			<xs:element name="datum_reference_frame" type="datum_reference_frameType"/>
+			<xs:element name="transform_3d" type="transform_3dType"/>
+			<xs:element name="transform_id" type="transform_idType"/>
+		</xs:choice>
+	</xs:complexType>
+	<xs:complexType name="torus_featureType">
+		<xs:sequence>
+			<xs:element name="torus_feature_nominal" type="torus_feature_nominalType" minOccurs="0"/>
+			<xs:element name="torus_feature_actual" type="torus_feature_actualType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="type" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="INNER"/>
+					<xs:enumeration value="OUTER"/>
+					<xs:enumeration value="UNKNOWN"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="torus_feature_actualType">
+		<xs:sequence>
+			<xs:element name="center_point" type="center_pointType"/>
+			<xs:element name="normal" type="normalType"/>
+			<xs:element ref="minor_diameter"/>
+			<xs:element ref="major_diameter"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="torus_feature_nominalType">
+		<xs:sequence>
+			<xs:element name="center_point" type="center_pointType"/>
+			<xs:element name="normal" type="normalType"/>
+			<xs:element ref="minor_diameter"/>
+			<xs:element ref="major_diameter"/>
+			<xs:element name="report_data_list" type="report_data_listType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="total_runout_actualType">
+		<xs:attribute name="spread" type="xs:decimal" use="optional"/>
+		<xs:attribute name="deviation" type="xs:decimal" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="total_runout_zoneType">
+		<xs:sequence>
+			<xs:element name="datum_reference_frame" type="datum_reference_frameType"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="tolerance2AttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="transformType">
+		<xs:choice>
+			<xs:element name="datum_reference_frame" type="datum_reference_frameType"/>
+			<xs:element name="transform_3d" type="transform_3dType"/>
+		</xs:choice>
+		<xs:attribute name="id" type="xs:ID" use="required"/>
+		<xs:attribute name="name" type="xs:string"/>
+		<xs:attribute name="sequence_id" type="xs:string"/>
+	</xs:complexType>
+	<xs:complexType name="transform_3dType">
+		<xs:sequence>
+			<xs:element name="vector" type="vectorType" minOccurs="3" maxOccurs="3"/>
+			<xs:element name="point" type="pointType"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="transform_idType">
+		<xs:attribute name="id" type="xs:IDREF" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="transform_listType">
+		<xs:sequence>
+			<xs:element name="transform" type="transformType" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="unknown_featureType">
+		<xs:sequence>
+			<xs:element name="unknown_feature_nominal" type="unknown_feature_nominalType" minOccurs="0"/>
+			<xs:element name="unknown_feature_actual" type="unknown_feature_actualType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="type" type="xs:string"/>
+	</xs:complexType>
+	<xs:complexType name="unknown_feature_actualType">
+		<xs:sequence>
+			<xs:element ref="point" minOccurs="0"/>
+			<xs:element ref="normal" minOccurs="0"/>
+			<xs:element ref="center_point" minOccurs="0"/>
+			<xs:element ref="diameter" minOccurs="0"/>
+			<xs:element ref="length" minOccurs="0"/>
+			<xs:element ref="width" minOccurs="0"/>
+			<xs:element ref="axis_vector" minOccurs="0"/>
+			<xs:element ref="length_vector" minOccurs="0"/>
+			<xs:element ref="depth" minOccurs="0"/>
+			<xs:element ref="offset" minOccurs="0"/>
+			<xs:element ref="axis_point" minOccurs="0"/>
+			<xs:element ref="start_length" minOccurs="0"/>
+			<xs:element ref="end_length" minOccurs="0"/>
+			<xs:element ref="start_vector" minOccurs="0"/>
+			<xs:element ref="angle" minOccurs="0"/>
+			<xs:element ref="adj_normal" minOccurs="0"/>
+			<xs:element ref="focus_point" minOccurs="0"/>
+			<xs:element ref="minor_diameter" minOccurs="0"/>
+			<xs:element ref="major_diameter" minOccurs="0"/>
+			<xs:element ref="poly_line" minOccurs="0"/>
+			<xs:element ref="north_pole_vector" minOccurs="0"/>
+			<xs:element ref="report_data_list" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:complexType name="unknown_feature_nominalType">
+		<xs:sequence>
+			<xs:element ref="point" minOccurs="0"/>
+			<xs:element ref="normal" minOccurs="0"/>
+			<xs:element ref="center_point" minOccurs="0"/>
+			<xs:element ref="diameter" minOccurs="0"/>
+			<xs:element ref="length" minOccurs="0"/>
+			<xs:element ref="width" minOccurs="0"/>
+			<xs:element ref="axis_vector" minOccurs="0"/>
+			<xs:element ref="length_vector" minOccurs="0"/>
+			<xs:element ref="depth" minOccurs="0"/>
+			<xs:element ref="offset" minOccurs="0"/>
+			<xs:element ref="axis_point" minOccurs="0"/>
+			<xs:element ref="start_length" minOccurs="0"/>
+			<xs:element ref="end_length" minOccurs="0"/>
+			<xs:element ref="start_vector" minOccurs="0"/>
+			<xs:element ref="angle" minOccurs="0"/>
+			<xs:element ref="adj_normal" minOccurs="0"/>
+			<xs:element ref="focus_point" minOccurs="0"/>
+			<xs:element ref="minor_diameter" minOccurs="0"/>
+			<xs:element ref="major_diameter" minOccurs="0"/>
+			<xs:element ref="poly_line" minOccurs="0"/>
+			<xs:element ref="north_pole_vector" minOccurs="0"/>
+			<xs:element ref="report_data_list" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="featureAttGroup"/>
+	</xs:complexType>
+	<xs:element name="unknown_tolerance_type">
+		<xs:complexType mixed="true"/>
+	</xs:element>
+	<xs:complexType name="vectorType">
+		<xs:attributeGroup ref="vectorAttGroup"/>
+		<xs:attribute name="axis">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="X"/>
+					<xs:enumeration value="Y"/>
+					<xs:enumeration value="Z"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:element name="width" type="xs:decimal"/>
+	<xs:complexType name="width_actualType">
+		<xs:sequence>
+			<xs:element name="zone_plane" type="zone_planeType"/>
+		</xs:sequence>
+		<xs:attribute name="width" type="xs:decimal" use="required"/>
+		<xs:attribute name="min_width" type="xs:decimal" use="optional"/>
+		<xs:attribute name="max_width" type="xs:decimal" use="optional"/>
+	</xs:complexType>
+	<xs:complexType name="width_deltaType">
+		<xs:attribute name="nominal" type="xs:decimal" use="required"/>
+		<xs:attribute name="lower_delta" type="xs:decimal" use="required"/>
+		<xs:attribute name="upper_delta" type="xs:decimal" use="required"/>
+		<xs:attributeGroup ref="vectorAttGroup"/>
+		<xs:attribute name="perfect_form_at_mmc" default="YES">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="YES"/>
+					<xs:enumeration value="NO"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="width_limitType">
+		<xs:attribute name="lower_limit" type="xs:decimal" use="required"/>
+		<xs:attribute name="upper_limit" type="xs:decimal" use="required"/>
+		<xs:attribute name="nominal" type="xs:decimal"/>
+		<xs:attributeGroup ref="vectorAttGroup"/>
+		<xs:attribute name="perfect_form_at_mmc" default="YES">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="YES"/>
+					<xs:enumeration value="NO"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:element name="width_max" type="xs:decimal"/>
+	<xs:element name="width_min" type="xs:decimal"/>
+	<xs:complexType name="zone_axisType">
+		<xs:sequence>
+			<xs:element name="axis_point" type="axis_pointType"/>
+			<xs:element name="axis_vector" type="axis_vectorType"/>
+			<xs:element ref="length"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="zone_dataType">
+		<xs:attribute name="feature" type="xs:IDREF" use="required"/>
+		<xs:attribute name="distance" type="xs:decimal" use="required"/>
+		<xs:attribute name="mcm_bonus" type="xs:decimal" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="zone_lineType">
+		<xs:sequence>
+			<xs:element name="point" type="pointType"/>
+			<xs:element name="direction" type="vectorType"/>
+			<xs:element ref="length"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="zone_planeType">
+		<xs:attribute name="A" type="xs:decimal" use="required"/>
+		<xs:attribute name="B" type="xs:decimal" use="required"/>
+		<xs:attribute name="C" type="xs:decimal" use="required"/>
+		<xs:attribute name="D" type="xs:decimal" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="zone_pointType">
+		<xs:attribute name="point" type="xs:IDREF" use="required"/>
+		<xs:attribute name="deviation" type="xs:decimal" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="zone_radiiType">
+		<xs:attribute name="min_radius" type="xs:decimal" use="required"/>
+		<xs:attribute name="max_radius" type="xs:decimal" use="required"/>
+	</xs:complexType>
+	<xs:attributeGroup name="pointAttGroup">
+		<xs:attribute name="x" type="xs:decimal"/>
+		<xs:attribute name="y" type="xs:decimal"/>
+		<xs:attribute name="z" type="xs:decimal"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="featureAttGroup">
+		<xs:attribute name="sequence_id" type="xs:string"/>
+		<xs:attribute name="reporting_transform" type="xs:IDREF"/>
+		<xs:attribute name="coordinate_type" default="CARTESIAN">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="CARTESIAN"/>
+					<xs:enumeration value="CYLINDRICAL"/>
+					<xs:enumeration value="POLAR"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:attributeGroup>
+	<xs:attribute name="method">
+		<xs:simpleType>
+			<xs:restriction base="xs:NMTOKEN">
+				<xs:enumeration value="MIDDLE"/>
+				<xs:enumeration value="PROJECT"/>
+				<xs:enumeration value="INTERSECT"/>
+				<xs:enumeration value="TRANSLATE"/>
+				<xs:enumeration value="VERTEX"/>
+				<xs:enumeration value="BEST_FIT"/>
+				<xs:enumeration value="CENTROID"/>
+				<xs:enumeration value="PERPENDICULAR"/>
+				<xs:enumeration value="PARALLEL"/>
+				<xs:enumeration value="TANGENT"/>
+				<xs:enumeration value="TANGENT_THRU"/>
+				<xs:enumeration value="CURVE"/>
+				<xs:enumeration value="OFFSET"/>
+				<xs:enumeration value="OFFSET_PERP_TO_1"/>
+				<xs:enumeration value="OFFSET_PERP_TO_2"/>
+				<xs:enumeration value="PERPENDICULAR_TO_2"/>
+				<xs:enumeration value="INTERSECT_PT_LINE"/>
+				<xs:enumeration value="INTERSECT_PT_CYL"/>
+				<xs:enumeration value="INTERSECT_PT_PLANE"/>
+				<xs:enumeration value="INTERSECT_LINE_CYL"/>
+				<xs:enumeration value="INTERSECT_LINE_LINE"/>
+				<xs:enumeration value="PERPENDICULAR_DMIS"/>
+				<xs:enumeration value="PARALLEL_DMIS"/>
+				<xs:enumeration value="BEST_FIT_DMIS"/>
+				<xs:enumeration value="CONE"/>
+				<xs:enumeration value="MOVE_POINT"/>
+				<xs:enumeration value="EXTREM"/>
+				<xs:enumeration value="NEAR_POINT"/>
+				<xs:enumeration value="TANGENT_TO"/>
+				<xs:enumeration value="PIERCE"/>
+				<xs:enumeration value="COG"/>
+				<xs:enumeration value="SGAGE"/>
+				<xs:enumeration value="SPART"/>
+				<xs:enumeration value="UNKNOWN"/>
+			</xs:restriction>
+		</xs:simpleType>
+	</xs:attribute>
+	<xs:attributeGroup name="settingAttGroup">
+		<xs:attribute name="setting">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="ON"/>
+					<xs:enumeration value="OFF"/>
+					<xs:enumeration value="LIMITS"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="lower_limit" type="xs:decimal"/>
+		<xs:attribute name="upper_limit" type="xs:decimal"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="size_deltaAttGroup">
+		<xs:attribute name="lower_delta" type="xs:decimal" use="required"/>
+		<xs:attribute name="upper_delta" type="xs:decimal" use="required"/>
+		<xs:attribute name="nominal" type="xs:decimal"/>
+		<xs:attribute name="perfect_form_at_mmc" default="YES">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="YES"/>
+					<xs:enumeration value="NO"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="cone_end" default="SMALL">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="LARGE"/>
+					<xs:enumeration value="SMALL"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="size_limitAttGroup">
+		<xs:attribute name="lower_limit" type="xs:decimal" use="required"/>
+		<xs:attribute name="upper_limit" type="xs:decimal" use="required"/>
+		<xs:attribute name="nominal" type="xs:decimal"/>
+		<xs:attribute name="perfect_form_at_mmc" default="YES">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="YES"/>
+					<xs:enumeration value="NO"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="cone_end" default="SMALL">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="LARGE"/>
+					<xs:enumeration value="SMALL"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="tolerance1AttGroup">
+		<xs:attribute name="spread" type="xs:decimal" use="optional"/>
+		<xs:attribute name="deviation" type="xs:decimal" use="required"/>
+		<xs:attribute name="datums_ok" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="YES"/>
+					<xs:enumeration value="NO"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="tolerance2AttGroup">
+		<xs:attribute name="tolerance_value" type="xs:decimal" use="required"/>
+		<xs:attribute name="material_condition" default="RFS">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="NONE"/>
+					<xs:enumeration value="RFS"/>
+					<xs:enumeration value="MMC"/>
+					<xs:enumeration value="LMC"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="grouping_requirement" default="SIMULTANEOUS">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="SEPARATE"/>
+					<xs:enumeration value="SIMULTANEOUS"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="datums_virtual_condition" default="VIRTUAL">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="MMC"/>
+					<xs:enumeration value="VIRTUAL"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="tolerance3AttGroup">
+		<xs:attribute name="tolerance_value" type="xs:decimal" use="required"/>
+		<xs:attribute name="material_condition" default="RFS">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="NONE"/>
+					<xs:enumeration value="RFS"/>
+					<xs:enumeration value="MMC"/>
+					<xs:enumeration value="LMC"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="geo_type" default="3D">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="2D"/>
+					<xs:enumeration value="3D"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="grouping_requirement" default="SIMULTANEOUS">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="SEPARATE"/>
+					<xs:enumeration value="SIMULTANEOUS"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="datums_virtual_condition" default="VIRTUAL">
+			<xs:simpleType>
+				<xs:restriction base="xs:NMTOKEN">
+					<xs:enumeration value="MMC"/>
+					<xs:enumeration value="VIRTUAL"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="vectorAttGroup">
+		<xs:attribute name="i">
+			<xs:simpleType>
+				<xs:restriction base="xs:decimal">
+					<xs:minInclusive value="-1.0"/>
+					<xs:maxInclusive value="1.0"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="j">
+			<xs:simpleType>
+				<xs:restriction base="xs:decimal">
+					<xs:minInclusive value="-1.0"/>
+					<xs:maxInclusive value="1.0"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="k">
+			<xs:simpleType>
+				<xs:restriction base="xs:decimal">
+					<xs:minInclusive value="-1.0"/>
+					<xs:maxInclusive value="1.0"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:attributeGroup>
+</xs:schema>
