@@ -2,7 +2,7 @@
   <annotation>
     <documentation>linearRef.xsd, part of GML 3.3. Copyright (c) [2011] Open Geospatial Consortium, Inc. To obtain additional rights of use, visit http://www.opengeospatial.org/legal/.</documentation>
   </annotation>
-  <import namespace="http://www.opengis.net/gml/3.2" schemaLocation="http://schemas.opengis.net/gml/3.2.1/gml.xsd" />
+  <import namespace="http://www.opengis.net/gml/3.2" schemaLocation="gml/3.2.1/gml.xsd" />
   <complexType name="PositionExpressionType">
     <complexContent>
       <extension base="gml:AbstractGMLType">
