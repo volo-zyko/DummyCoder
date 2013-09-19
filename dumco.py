@@ -38,6 +38,9 @@ def process_arguments():
                         '{default: %(default)s}')
     parser.add_argument('-i', '--input-dir', required=True,
                         help='directory with schema files')
+    parser.add_argument('--max-dir-depth', default=1,
+                        help='max directory depth where schema files are '
+                        'searched {default: %(default)d}')
 
     subparsers = parser.add_subparsers(dest='mode',
                                        help='generation modes')
@@ -103,7 +106,7 @@ if __name__ == '__main__':
     elif args.input_syntax == 'rnc':
         assert False, 'Not implemented'
 
-    all_schemata = loader.load_xml(args.input_dir)
+    all_schemata = loader.load_xml(args.input_dir, args.max_dir_depth)
 
     if args.mode == 'dumpxsd':
         dump_xsd(all_schemata, args.output_dir)

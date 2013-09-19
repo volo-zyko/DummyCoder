@@ -41,13 +41,13 @@ class XmlLoader(object):
     def __init__(self, element_factory):
         self.element_factory = element_factory
 
-    def load_xml(self, xml_path):
+    def load_xml(self, xml_path, dir_depth):
         print('Loading XML files from {}...'.format(
             os.path.realpath(xml_path)))
 
         documents = {os.path.realpath(filepath): None
-                     for filepath in enumerate_files(
-                        xml_path, self.element_factory.extension)}
+            for filepath in enumerate_files(
+                xml_path, self.element_factory.extension, max_depth=dir_depth)}
 
         while any(map(lambda s: s is None, documents.itervalues())):
             for (filepath, document) in documents.items():

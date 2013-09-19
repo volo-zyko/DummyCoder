@@ -1,8 +1,12 @@
 #!/bin/bash
 
+cd "$(dirname "$BASH_SOURCE")/.."
+
+BASE_OUTPUT_DIR='/tmp/dumco'
+
 COVERAGE_BEGIN_COMMAND=''
 COVERAGE_APPEND_COMMAND=''
-COVERAGE_REPORT_DIR='/tmp/dumco/dumco_cov/'
+COVERAGE_REPORT_DIR="$BASE_OUTPUT_DIR/dumco_cov"
 
 function print_help()
 {
@@ -33,70 +37,92 @@ done
 
 function cont_s2c()
 {
-    run='../dumco.py'
+    run="$PWD/dumco.py"
 
     inp="$1"
-    out="/tmp/dumco/$(basename "$inp")"
-    aux="$2"
-    mode="$3"
+    out="$BASE_OUTPUT_DIR/$(basename "$inp")"
+    mode="$2"
 
     case "$mode" in
         dumpxsd)
-            run="$run -i $inp $aux $mode -o $out"
+            out="${out}${3}${4}"
+
+            cmd=("$run")
+            cmd+=('-i')
+            cmd+=("$inp")
+            cmd+=("$3")
+            cmd+=("$4")
+            cmd+=("$mode")
+            cmd+=('-o')
+            cmd+=("$out")
             ;;
         rfilter)
-            run="$run -i $inp $aux $mode -o $out-C++ $4"
+            out="${out}${3}${4}"
+
+            cmd=("$run")
+            cmd+=('-i')
+            cmd+=("$inp")
+            cmd+=("$3")
+            cmd+=("$4")
+            cmd+=("$mode")
+            cmd+=('-o')
+            cmd+=("$out-C++")
+            cmd+=("$5")
             ;;
     esac
 
-    echo "$run"
-    $COVERAGE_APPEND_COMMAND $run
+    echo "${cmd[@]}"
+    $COVERAGE_APPEND_COMMAND "${cmd[@]}"
+
+    if [ "$mode" = dumpxsd ]; then
+        again="$BASE_OUTPUT_DIR/again"
+
+        test -d "$again" && rm -rf "$again"
+
+        echo "$run -i $out dumpxsd -o $again"
+        $run -i "$out" dumpxsd -o "$again"
+
+        diff -ru "$out" "$again" >"$(basename "${out}").diff"
+    fi
 }
 
-cd "$(dirname "$BASH_SOURCE")"
+set -o errexit
 
 $COVERAGE_ERASE_COMMAND
 
-$COVERAGE_BEGIN_COMMAND ../dumco.py -h
-$COVERAGE_APPEND_COMMAND ../dumco.py --version
+$COVERAGE_BEGIN_COMMAND "$PWD/dumco.py" -h
+$COVERAGE_APPEND_COMMAND "$PWD/dumco.py" --version
 
-cont_s2c UT/schemas/OXMLTran2/ '' dumpxsd
+opts=('-n oxml')
+opts+=('-n fb2')
 
-cont_s2c UT/schemas/OXMLTran3/ '' dumpxsd
+for opt in "${opts[@]}"
+do
+    find "$PWD/UT/schemas" -type d -mindepth 1 -maxdepth 1 | while read dir
+    do
+        cont_s2c "$dir" dumpxsd $opt
+    done
+done
 
-cont_s2c UT/schemas/OPC3/ '' dumpxsd
+# content_class='--context-class V::None::LoadContext'
+# content_class_header='--context-class-header Formats/None/LoadContext.h'
 
-cont_s2c UT/schemas/ODF12/ '' dumpxsd
+# prefices='--uri-prefices http://schemas.openxmlformats.org/ urn:schemas-microsoft-com:'
+# cont_s2c UT/schemas/OXMLTran3/ '' rfilter "$prefices $content_class $content_class_header"
 
-cont_s2c UT/schemas/XHTML10/ '' dumpxsd
+# prefices='--uri-prefices http://schemas.openxmlformats.org/ http://purl.org/'
+# cont_s2c UT/schemas/OPC3/ '' rfilter "$prefices $content_class $content_class_header"
 
-cont_s2c UT/schemas/FB20/ '-n fb2' dumpxsd
+# prefices='--uri-prefices urn:oasis:names:tc:'
+# cont_s2c UT/schemas/ODF12/ '' rfilter "$prefices $content_class $content_class_header"
 
-cont_s2c UT/schemas/NewML12/ '-n fb2' dumpxsd
+# # prefices='--uri-prefices http://www.w3.org/'
+# # cont_s2c UT/schemas/XHTML10/ '' rfilter "$prefices $content_class $content_class_header"
 
-cont_s2c UT/schemas/ebXML204/ '-n fb2' dumpxsd
-
-cont_s2c UT/schemas/Docbook50/ '-n fb2' dumpxsd
-
-content_class='--context-class V::None::LoadContext'
-content_class_header='--context-class-header Formats/None/LoadContext.h'
-
-prefices='--uri-prefices http://schemas.openxmlformats.org/ urn:schemas-microsoft-com:'
-cont_s2c UT/schemas/OXMLTran3/ '' rfilter "$prefices $content_class $content_class_header"
-
-prefices='--uri-prefices http://schemas.openxmlformats.org/ http://purl.org/'
-cont_s2c UT/schemas/OPC3/ '' rfilter "$prefices $content_class $content_class_header"
-
-prefices='--uri-prefices urn:oasis:names:tc:'
-cont_s2c UT/schemas/ODF12/ '' rfilter "$prefices $content_class $content_class_header"
-
-# prefices='--uri-prefices http://www.w3.org/'
-# cont_s2c UT/schemas/XHTML10/ '' rfilter "$prefices $content_class $content_class_header"
-
-content_class='--context-class V::Fb2::LoadContext'
-content_class_header='--context-class-header Formats/Fb2/LoadContext.h'
-prefices='--uri-prefices http://www.gribuser.ru/'
-cont_s2c UT/schemas/FB20/ '-n fb2' rfilter "$prefices $content_class $content_class_header"
+# content_class='--context-class V::Fb2::LoadContext'
+# content_class_header='--context-class-header Formats/Fb2/LoadContext.h'
+# prefices='--uri-prefices http://www.gribuser.ru/'
+# cont_s2c UT/schemas/FB20/ '-n fb2' rfilter "$prefices $content_class $content_class_header"
 
 if [ "$COVERAGE_BEGIN_COMMAND" != '' ]; then
     test -d "$COVERAGE_REPORT_DIR" && rm -rf "$COVERAGE_REPORT_DIR"

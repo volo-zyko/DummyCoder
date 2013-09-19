@@ -31,9 +31,7 @@ def xsd_schema(attrs, parent_element, factory, schema_path, all_schemata):
     for (prefix, uri) in factory.namespaces.iteritems():
         schema.schema_element.set_namespace(prefix, uri)
 
-    if (factory.current_xsd is None or
-        (not isinstance(factory.current_xsd, StringIO.StringIO) and
-         factory.current_xsd != schema_path)):
+    if factory.current_xsd is None:
         factory.current_xsd = schema_path
 
     return (schema, {
@@ -139,15 +137,15 @@ class XsdSchema(xsd_base.XsdBase):
             path = os.path.realpath(
                 os.path.join(os.path.dirname(schema_path), location))
 
-        return (location, path)
+        return path
 
     @staticmethod
     def xsd_import(attrs, parent_element, factory,
                    schema_path, all_schemata):
         namespace = factory.get_attribute(attrs, 'namespace')
 
-        (_, new_schema_path) = XsdSchema._get_schema_location(attrs, factory,
-                                                              schema_path)
+        new_schema_path = XsdSchema._get_schema_location(attrs, factory,
+                                                         schema_path)
 
         if new_schema_path is not None:
             assert (os.path.isfile(new_schema_path) or
@@ -166,18 +164,22 @@ class XsdSchema(xsd_base.XsdBase):
     @staticmethod
     def xsd_include(attrs, parent_element, factory,
                     schema_path, all_schemata):
-        (location, new_schema_path) = \
+        new_schema_path = \
             XsdSchema._get_schema_location(attrs, factory, schema_path)
 
         if new_schema_path is not None:
             assert os.path.isfile(new_schema_path), \
                 'File {} does not exist'.format(new_schema_path)
 
-            if os.path.isfile(new_schema_path):
-                factory.included_schema_paths.add(new_schema_path)
+            inc_paths = \
+                factory.included_schema_paths.setdefault(schema_path, set())
+            if (os.path.isfile(new_schema_path) and
+                new_schema_path not in inc_paths and
+                new_schema_path not in factory.included_schema_paths):
+                inc_paths.add(new_schema_path)
 
                 string_stream = _merge_xsds(factory.current_xsd, schema_path,
-                                            new_schema_path, location, factory)
+                                            new_schema_path, factory)
 
                 # Restart parsing with a new xsd.
                 factory.reset()
@@ -190,7 +192,7 @@ class XsdSchema(xsd_base.XsdBase):
         })
 
 
-def _merge_xsds(curr_document, curr_path, new_path, location, factory):
+def _merge_xsds(curr_document, curr_path, new_path, factory):
     orig_dom = xml.dom.minidom.parse(curr_document)
     new_dom = xml.dom.minidom.parse(new_path)
 
@@ -211,24 +213,24 @@ def _merge_xsds(curr_document, curr_path, new_path, location, factory):
         if not is_schema_node(n, 'include'):
             continue
 
-        (l, _) = XsdSchema._get_schema_location(n, factory, curr_path)
-        if l is not None and l == location:
+        path = XsdSchema._get_schema_location(n, factory, curr_path)
+        if path is not None and path == new_path:
             found_include = True
             orig_root.removeChild(n)
             break
 
-    assert found_include, 'Cannot find include for removal'
+    assert found_include, 'Cannot find include {} for removal'.format(new_path)
 
     # Copy components from included xsd to including xsd.
     for n in new_root.childNodes:
         new = orig_dom.importNode(n, True)
 
         if is_schema_node(new, 'include'):
-            (_, path) = XsdSchema._get_schema_location(n, factory, new_path)
+            path = XsdSchema._get_schema_location(n, factory, new_path)
             new.setAttribute('schemaLocation', path)
 
         if is_schema_node(new, 'import'):
-            (_, path) = XsdSchema._get_schema_location(n, factory, new_path)
+            path = XsdSchema._get_schema_location(n, factory, new_path)
             new.setAttribute('schemaLocation', path)
 
         orig_root.appendChild(new)

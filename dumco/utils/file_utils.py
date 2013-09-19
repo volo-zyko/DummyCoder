@@ -5,8 +5,14 @@ import os.path
 import stat
 
 
-def enumerate_files(start_path, file_ending, exclude_writable=False):
+def enumerate_files(start_path, file_ending,
+                    exclude_writable=False, max_depth=None):
+    depth = 0
     for (root, dirs, files) in os.walk(start_path):
+        depth = depth + 1
+        if max_depth is not None and depth > max_depth:
+            return
+
         for f in files:
             if not f.endswith(file_ending):
                 continue

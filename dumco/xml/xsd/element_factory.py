@@ -13,7 +13,7 @@ class XsdElementFactory(object):
         self.reset()
 
         # These internals should not be reset.
-        self.included_schema_paths = set()
+        self.included_schema_paths = {}
         self.current_xsd = None
 
         # Set part of the factorie's interface.
@@ -70,8 +70,10 @@ class XsdElementFactory(object):
         self.dispatcher = self.dispatcher_stack.pop()
 
     def end_document(self):
-         # There might remain single xml namespace.
-        assert (len(self.namespaces) == 1 or len(self.namespaces) == 0)
+        self.current_xsd = None
+
+        # There might remain single xml namespace.
+        assert len(self.namespaces) == 1 or len(self.namespaces) == 0
         assert len(self.dispatcher_stack) == 0
         assert len(self.element_stack) == 0
 
@@ -80,8 +82,10 @@ class XsdElementFactory(object):
             self.element.schema_element.append_doc(text)
 
     def finalize_documents(self, all_schemata):
-        for p in self.included_schema_paths:
-            del all_schemata[p]
+        for inc_paths in self.included_schema_paths.itervalues():
+            for p in inc_paths:
+                if p in all_schemata:
+                    del all_schemata[p]
 
         for schema in all_schemata.itervalues():
             schema.set_imports(all_schemata)
