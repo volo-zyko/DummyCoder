@@ -9,7 +9,18 @@ import prv.xsd_schema
 
 class XsdElementFactory(object):
     def __init__(self, element_namer):
-        # Internals of this factory.
+        # Reset internals of this factory.
+        self.reset()
+
+        # These internals should not be reset.
+        self.included_schema_paths = set()
+        self.current_xsd = None
+
+        # Set part of the factorie's interface.
+        self.namer = element_namer
+        self.extension = '.xsd'
+
+    def reset(self, element_namer=None):
         self.dispatcher_stack = []
         self.dispatcher = {
             'schema': prv.xsd_schema.xsd_schema,
@@ -19,18 +30,12 @@ class XsdElementFactory(object):
         self.namespaces = {'xml': dumco.schema.checks.XML_NAMESPACE}
         self.all_named_ns = {dumco.schema.checks.XML_NAMESPACE: 'xml'}
 
-        # Part of the factorie's interface.
-        self.namer = element_namer
-        self.extension = '.xsd'
-
     def open_namespace(self, prefix, uri):
         self.namespaces[prefix] = uri
 
-        if prefix is not None and not dumco.schema.checks.is_xsd_namespace(uri):
-            assert (uri not in self.all_named_ns or
-                    self.all_named_ns[uri] == prefix), \
-                'Namespace prefix {} is already defined as {}'.format(
-                    prefix, self.all_named_ns[uri])
+        if (prefix is not None and
+            not dumco.schema.checks.is_xsd_namespace(uri) and
+            uri not in self.all_named_ns):
             self.all_named_ns[uri] = prefix
 
     def close_namespace(self, prefix):
@@ -56,15 +61,28 @@ class XsdElementFactory(object):
 
             self.element = element
 
-    def finalize_current_element(self):
+    def finalize_current_element(self, name):
+        # Here we don't support anything non-XSD.
+        if not dumco.schema.checks.is_xsd_namespace(name[0]):
+            return
+
         self.element = self.element_stack.pop()
         self.dispatcher = self.dispatcher_stack.pop()
+
+    def end_document(self):
+         # There might remain single xml namespace.
+        assert (len(self.namespaces) == 1 or len(self.namespaces) == 0)
+        assert len(self.dispatcher_stack) == 0
+        assert len(self.element_stack) == 0
 
     def current_element_append_text(self, text):
         if hasattr(self.element, 'schema_element'):
             self.element.schema_element.append_doc(text)
 
     def finalize_documents(self, all_schemata):
+        for p in self.included_schema_paths:
+            del all_schemata[p]
+
         for schema in all_schemata.itervalues():
             schema.set_imports(all_schemata)
 
@@ -162,6 +180,11 @@ class XsdElementFactory(object):
     def resolve_complex_type(self, qname, schema, finalize=False):
         (uri, localname) = self._parse_qname(
             qname, schema.schema_element.namespaces)
+
+        if (self._is_default_xsd_namespace(uri, schema) and
+            localname == 'anyType'):
+            return dumco.schema.elements.ComplexType.urtype()
+
         if uri is None or uri == schema.schema_element.target_ns:
             ct = schema.complex_types[localname]
             return (ct.finalize(self) if finalize else ct.schema_element)
@@ -192,13 +215,17 @@ class XsdElementFactory(object):
     def resolve_simple_type(self, qname, schema, finalize=False):
         (uri, localname) = self._parse_qname(
             qname, schema.schema_element.namespaces)
+
+        if self._is_default_xsd_namespace(uri, schema):
+            if localname == 'anySimpleType':
+                return dumco.schema.elements.SimpleType.urtype()
+            else:
+                return dumco.schema.base.xsd_builtin_types()[localname]
+
         if uri is None or uri == schema.schema_element.target_ns:
             st = schema.simple_types[localname]
             return (st.finalize(self) if finalize else st.schema_element)
         else:
-            if dumco.schema.checks.is_xsd_namespace(uri):
-                return dumco.schema.base.xsd_builtin_types()[localname]
-
             st = schema.imports[uri].simple_types[localname]
             return (st.finalize(self) if finalize else st.schema_element)
 
@@ -219,6 +246,14 @@ class XsdElementFactory(object):
             return (None, qname)
         else:
             return (namespaces[splitted[0]], splitted[1])
+
+    def _is_default_xsd_namespace(self, uri, schema):
+        checks = dumco.schema.checks
+        namespaces = schema.schema_element.namespaces
+
+        return ((uri is None and None in namespaces and
+                 checks.is_xsd_namespace(namespaces[None])) or
+                checks.is_xsd_namespace(uri))
 
     @staticmethod
     def noop_handler(attrs, parent_element, factory,

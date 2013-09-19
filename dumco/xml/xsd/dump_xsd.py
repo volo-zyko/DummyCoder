@@ -288,7 +288,8 @@ def dump_xsd(schemata, output_dir):
 
         xml_writer = _XmlWriter(file_path)
         with _TagGuard('schema', xml_writer):
-            xml_writer.add_attribute('targetNamespace', schema.target_ns)
+            if schema.target_ns is not None:
+                xml_writer.add_attribute('targetNamespace', schema.target_ns)
 
             xml_writer.define_namespace(_VFILE_NS, 'http://dumco.com/naming')
             for (ns, uri) in schema.namespaces.iteritems():

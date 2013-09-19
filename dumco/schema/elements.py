@@ -103,6 +103,7 @@ class Restriction(base.SchemaBase):
         # Either primitive type or simple type with list/union content.
         self.base = None
         self.enumeration = []
+        self.fraction_digits = None
         self.length = None
         self.max_exclusive = None
         self.max_inclusive = None
@@ -111,6 +112,7 @@ class Restriction(base.SchemaBase):
         self.min_inclusive = None
         self.min_length = None
         self.pattern = None
+        self.total_digits = None
         self.white_space = None
 
 

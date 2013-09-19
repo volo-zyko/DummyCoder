@@ -8,6 +8,7 @@ import uses
 
 # Constants.
 XML_NAMESPACE = 'http://www.w3.org/XML/1998/namespace'
+XML_XSD_URI = 'http://www.w3.org/2001/xml.xsd'
 XSD_NAMESPACE = 'http://www.w3.org/2001/XMLSchema'
 
 
@@ -62,7 +63,7 @@ def is_list_type(schema_type):
 
 
 def is_native_type(schema_type):
-    return isinstance(schema_type, base.schema_NativeType)
+    return isinstance(schema_type, base.XsdNativeType)
 
 
 def is_primitive_type(schema_type):

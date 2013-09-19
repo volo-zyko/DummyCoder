@@ -24,15 +24,18 @@ def xsd_restriction_in_simpleContent(attrs, parent_element, factory,
         'attribute': xsd_attribute.xsd_attribute,
         'attributeGroup': xsd_attribute_group.xsd_attributeGroup,
         'enumeration': xsd_enumeration.xsd_enumeration,
-        'length': factory.xsd_length,
-        'maxExclusive': factory.xsd_maxExclusive,
-        'maxInclusive': factory.xsd_maxInclusive,
-        'maxLength': factory.xsd_maxLength,
-        'minExclusive': factory.xsd_minExclusive,
-        'minInclusive': factory.xsd_minInclusive,
-        'minLength': factory.xsd_minLength,
-        'pattern': factory.xsd_pattern,
+        'fractionDigits': new_element.xsd_fractionDigits,
+        'length': new_element.xsd_length,
+        'maxExclusive': new_element.xsd_maxExclusive,
+        'maxInclusive': new_element.xsd_maxInclusive,
+        'maxLength': new_element.xsd_maxLength,
+        'minExclusive': new_element.xsd_minExclusive,
+        'minInclusive': new_element.xsd_minInclusive,
+        'minLength': new_element.xsd_minLength,
+        'pattern': new_element.xsd_pattern,
         'simpleType': xsd_simple_type.xsd_simpleType,
+        'totalDigits': new_element.xsd_totalDigits,
+        'whiteSpace': new_element.xsd_whiteSpace,
     })
 
 
@@ -47,13 +50,14 @@ class XsdSimpleRestriction(xsd_restriction.XsdRestriction):
     def finalize(self, factory):
         for c in self.children:
             assert (isinstance(c, xsd_simple_type.XsdSimpleType) or
+                    isinstance(c, xsd_enumeration.XsdEnumeration) or
                     isinstance(c, xsd_attribute_group.XsdAttributeGroup) or
                     isinstance(c, xsd_attribute.XsdAttribute) or
                     isinstance(c, xsd_any.XsdAny)), \
                 'Wrong content of simple Restriction'
 
             if isinstance(c, xsd_simple_type.XsdSimpleType):
-                # self.schema_element.base is declared in base class.
+                # self.schema_element is declared in base class.
                 self.schema_element.base = c.schema_element
             elif isinstance(c, xsd_attribute_group.XsdAttributeGroup):
                 c.finalize(factory)

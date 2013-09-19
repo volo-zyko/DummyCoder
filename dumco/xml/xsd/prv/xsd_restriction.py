@@ -17,6 +17,7 @@ def xsd_restriction(attrs, parent_element, factory, schema_path, all_schemata):
     return (new_element, {
         'annotation': factory.noop_handler,
         'enumeration': xsd_enumeration.xsd_enumeration,
+        'fractionDigits': new_element.xsd_fractionDigits,
         'length': new_element.xsd_length,
         'maxExclusive': new_element.xsd_maxExclusive,
         'maxInclusive': new_element.xsd_maxInclusive,
@@ -26,6 +27,7 @@ def xsd_restriction(attrs, parent_element, factory, schema_path, all_schemata):
         'minLength': new_element.xsd_minLength,
         'pattern': new_element.xsd_pattern,
         'simpleType': xsd_simple_type.xsd_simpleType,
+        'totalDigits': new_element.xsd_totalDigits,
         'whiteSpace': new_element.xsd_whiteSpace,
     })
 
@@ -64,6 +66,11 @@ class XsdRestriction(xsd_base.XsdBase):
         else:
             base = self.schema_element.base
 
+            for t in self.children:
+                if isinstance(t, xsd_enumeration.XsdEnumeration):
+                    self.schema_element.enumeration.append(
+                        (t.value, t.schema_element.doc))
+
         self.schema_element.base = self._merge_base_restriction(base)
 
         return self.schema_element
@@ -72,10 +79,12 @@ class XsdRestriction(xsd_base.XsdBase):
         def merge(attr):
             if not getattr(self.schema_element, attr):
                 value = getattr(base.restriction, attr)
-                setattr(self.schema_element, attr, value)
+                if not value:
+                    setattr(self.schema_element, attr, value)
 
         if dumco.schema.checks.is_restriction_type(base):
             merge('enumeration')
+            merge('fraction_digits')
             merge('length')
             merge('max_exclusive')
             merge('max_inclusive')
@@ -84,6 +93,7 @@ class XsdRestriction(xsd_base.XsdBase):
             merge('min_inclusive')
             merge('min_length')
             merge('pattern')
+            merge('total_digits')
             merge('white_space')
 
             base = self._merge_base_restriction(base.restriction.base)
@@ -100,6 +110,10 @@ class XsdRestriction(xsd_base.XsdBase):
         return (parent_element, {
             'annotation': factory.noop_handler,
         })
+
+    xsd_fractionDigits = lambda _x, attrs, parent_element, factory, schema_path, \
+        all_schemata: XsdRestriction._value_handler('fraction_digits', attrs,
+            parent_element, factory, schema_path, all_schemata)
 
     xsd_length = lambda _x, attrs, parent_element, factory, schema_path, \
         all_schemata: XsdRestriction._value_handler('length', attrs,
@@ -131,6 +145,10 @@ class XsdRestriction(xsd_base.XsdBase):
 
     xsd_pattern = lambda _x, attrs, parent_element, factory, schema_path, \
         all_schemata: XsdRestriction._value_handler('pattern', attrs,
+            parent_element, factory, schema_path, all_schemata)
+
+    xsd_totalDigits = lambda _x, attrs, parent_element, factory, schema_path, \
+        all_schemata: XsdRestriction._value_handler('total_digits', attrs,
             parent_element, factory, schema_path, all_schemata)
 
     @staticmethod

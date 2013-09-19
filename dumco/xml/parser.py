@@ -28,7 +28,10 @@ class _XmlContentHandler(xml.sax.handler.ContentHandler):
             name, attrs, self.document_path, self.documents)
 
     def endElementNS(self, name, qname):
-        self.element_factory.finalize_current_element()
+        self.element_factory.finalize_current_element(name)
+
+    def endDocument(self):
+        self.element_factory.end_document()
 
     def characters(self, content):
         self.element_factory.current_element_append_text(content)
@@ -51,13 +54,13 @@ class XmlLoader(object):
                 if document is not None:
                     continue
 
-                XmlLoader._load_document(filepath, documents,
+                XmlLoader._load_document(filepath, filepath, documents,
                                          self.element_factory)
 
         return self.element_factory.finalize_documents(documents)
 
     @staticmethod
-    def _load_document(filepath, documents, element_factory):
+    def _load_document(filepath, path_or_stream, documents, element_factory):
         try:
             parser = xml.sax.make_parser()
             parser.setFeature(xml.sax.handler.feature_namespaces, 1)
@@ -65,13 +68,12 @@ class XmlLoader(object):
             handler = _XmlContentHandler(filepath, documents, element_factory)
             parser.setContentHandler(handler)
 
-            with open(filepath, 'r') as fl:
-                parser.parse(fl)
+            parser.parse(path_or_stream)
         except ParseRestart as e:
-            XmlLoader._load_document(e.new_path, documents, element_factory)
+            XmlLoader._load_document(filepath, e.stream,
+                                     documents, element_factory)
 
 
 class ParseRestart(BaseException):
-    def __init__(self, original_path, new_path):
-        self.original_path = original_path
-        self.new_path = new_path
+    def __init__(self, stream):
+        self.stream = stream

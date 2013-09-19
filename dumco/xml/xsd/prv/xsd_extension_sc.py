@@ -36,16 +36,12 @@ class XsdSimpleExtension(xsd_base.XsdBase):
                                          self.schema, finalize=True)
 
         for c in self.children:
-            assert (isinstance(c, xsd_simple_type.XsdSimpleType) or
-                    isinstance(c, xsd_attribute_group.XsdAttributeGroup) or
+            assert (isinstance(c, xsd_attribute_group.XsdAttributeGroup) or
                     isinstance(c, xsd_attribute.XsdAttribute) or
                     isinstance(c, xsd_any.XsdAny)), \
                 'Wrong content of simple Extension'
 
-            if isinstance(c, xsd_simple_type.XsdSimpleType):
-                # See XML Schema spec. Local SimpleType is just ignored.
-                continue
-            elif isinstance(c, xsd_attribute_group.XsdAttributeGroup):
+            if isinstance(c, xsd_attribute_group.XsdAttributeGroup):
                 c.finalize(factory)
                 self.attributes.extend(c.attributes)
             elif (isinstance(c, xsd_attribute.XsdAttribute) or

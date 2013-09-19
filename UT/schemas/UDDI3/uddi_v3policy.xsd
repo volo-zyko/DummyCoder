@@ -10,7 +10,7 @@
 	Copyright (c) OASIS Open 2002-2004. All Rights Reserved.
 	-->
 	<xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="http://www.w3.org/2001/xml.xsd"/>
-	<xsd:import namespace="http://www.w3.org/2000/09/xmldsig#" schemaLocation="http://www.w3.org/TR/xmldsig-core/xmldsig-core-schema.xsd"/>
+	<xsd:import namespace="http://www.w3.org/2000/09/xmldsig#" schemaLocation="xmldsig-core-schema.xsd"/>
 	<xsd:element name="policies" final="restriction">
 		<xsd:complexType>
 			<xsd:annotation>
