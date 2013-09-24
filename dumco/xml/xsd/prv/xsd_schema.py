@@ -83,16 +83,17 @@ class XsdSchema(xsd_base.XsdBase):
     @method_once
     def finalize(self, all_schemata, factory):
         forged_names = dumco.schema.namer.ValidatingNameSet()
+        schema_element = self.schema_element
 
         for name in sorted(self.simple_types.iterkeys()):
             schema_st = self.simple_types[name].finalize(factory)
             schema_st.nameit([self], factory.namer, forged_names)
-            self.schema_element.simple_types[schema_st.name] = schema_st
+            schema_element.simple_types[schema_st.name] = schema_st
 
         for name in sorted(self.complex_types.iterkeys()):
             schema_ct = self.complex_types[name].finalize(factory)
             schema_ct.nameit([self], factory.namer, forged_names)
-            self.schema_element.complex_types[schema_ct.name] = schema_ct
+            schema_element.complex_types[schema_ct.name] = schema_ct
 
         for (parents, t) in sorted(self.unnamed_types,
                                    key=lambda x: len(x[0])):
@@ -100,20 +101,18 @@ class XsdSchema(xsd_base.XsdBase):
             schema_type.nameit(parents, factory.namer, forged_names)
 
             if dumco.schema.checks.is_complex_type(schema_type):
-                self.schema_element.complex_types[schema_type.name] = \
-                    schema_type
+                schema_element.complex_types[schema_type.name] = schema_type
             elif dumco.schema.checks.is_simple_type(schema_type):
-                self.schema_element.simple_types[schema_type.name] = \
-                    schema_type
+                schema_element.simple_types[schema_type.name] = schema_type
 
         for elem in self.elements.itervalues():
             schema_elem = elem.finalize(factory)
-            self.schema_element.elements[schema_elem.term.name] = schema_elem
+            schema_element.elements[schema_elem.term.name] = schema_elem
 
         for attr in self.attributes.itervalues():
             schema_attr = attr.finalize(factory)
             name = schema_attr.attribute.name
-            self.schema_element.attributes[name] = schema_attr
+            schema_element.attributes[name] = schema_attr
 
     @staticmethod
     def _get_schema_location(attrsOrNode, factory, schema_path):

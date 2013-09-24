@@ -2,6 +2,7 @@
 
 from dumco.utils.decorators import method_once
 
+import dumco.schema.enums
 import dumco.schema.uses
 
 import xsd_all
@@ -39,7 +40,11 @@ class XsdGroup(xsd_base.XsdBase):
     def finalize(self, factory):
         if self.attr('ref') is not None:
             particle = factory.resolve_group(self.attr('ref'), self.schema)
+
             self.term = particle.term
+
+            for (_, p) in dumco.schema.enums.enum_term_particles(self.term):
+                factory.fix_imports(self.schema.schema_element, p.term)
         else:
             for c in self.children:
                 assert ((isinstance(c, xsd_all.XsdAll) or

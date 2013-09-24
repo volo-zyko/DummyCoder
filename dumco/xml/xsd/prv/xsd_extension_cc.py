@@ -3,6 +3,7 @@
 from dumco.utils.decorators import method_once
 
 import dumco.schema.elements
+import dumco.schema.enums
 import dumco.schema.uses
 
 import xsd_all
@@ -53,8 +54,10 @@ class XsdComplexExtension(xsd_base.XsdBase):
             elif isinstance(c, xsd_attribute_group.XsdAttributeGroup):
                 c.finalize(factory)
                 self.attributes.extend(c.attributes)
-            elif (isinstance(c, xsd_attribute.XsdAttribute) or
-                  isinstance(c, xsd_any.XsdAny)):
+            elif isinstance(c, xsd_attribute.XsdAttribute):
+                if not c.prohibited:
+                    self.attributes.append(c.finalize(factory))
+            elif isinstance(c, xsd_any.XsdAny):
                 self.attributes.append(c.finalize(factory))
             else: # pragma: no cover
                 assert False, 'Wrong content of complex Extension'
@@ -64,6 +67,13 @@ class XsdComplexExtension(xsd_base.XsdBase):
 
         self.particle = self._merge_content(base)
         self.attributes.extend(base.attributes)
+
+        term = self.particle.term if self.particle is not None else None
+        for (_, p) in dumco.schema.enums.enum_term_particles(term):
+            factory.fix_imports(self.schema.schema_element, p.term)
+
+        for attr in self.attributes:
+            factory.fix_imports(self.schema.schema_element, attr.attribute)
 
         return self
 

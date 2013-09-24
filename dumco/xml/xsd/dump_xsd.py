@@ -28,6 +28,11 @@ class _XmlWriter(object):
         self.complex_content = []
         self.prev_opened = False
 
+        # We track here attribute and element groups.
+        # In this case XmlWriter is used as global object.
+        self.attr_groups = None
+        self.elem_groups = None
+
         if not os.path.exists(os.path.dirname(filename)):
             os.makedirs(os.path.dirname(filename))
         self.fhandle = open(filename, 'w')
@@ -125,6 +130,9 @@ def _dump_restriction(restriction, schema, xml_writer):
             for e in restriction.enumeration:
                 with _TagGuard('enumeration', xml_writer):
                     xml_writer.add_attribute('value', e[0])
+        if restriction.fraction_digits is not None:
+            with _TagGuard('fractionDigits', xml_writer):
+                xml_writer.add_attribute('value', restriction.fraction_digits)
         if restriction.length is not None:
             with _TagGuard('length', xml_writer):
                 xml_writer.add_attribute('value', restriction.length)
@@ -149,13 +157,25 @@ def _dump_restriction(restriction, schema, xml_writer):
         if restriction.pattern is not None:
             with _TagGuard('pattern', xml_writer):
                 xml_writer.add_attribute('value', restriction.pattern)
+        if restriction.total_digits is not None:
+            with _TagGuard('totalDigits', xml_writer):
+                xml_writer.add_attribute('value', restriction.total_digits)
+        if restriction.white_space is not None:
+            if restriction.white_space == elements.Restriction.WS_PRESERVE:
+                value = 'preserve'
+            elif restriction.white_space == elements.Restriction.WS_REPLACE:
+                value = 'replace'
+            elif restriction.white_space == elements.Restriction.WS_COLLAPSE:
+                value = 'collapse'
+            with _TagGuard('whiteSpace', xml_writer):
+                xml_writer.add_attribute('value', value)
 
 
 def _dump_listitem(listitem, schema, xml_writer):
     assert checks.is_primitive_type(listitem)
 
     with _TagGuard('list', xml_writer):
-        xml_writer.add_attribute('listItem',
+        xml_writer.add_attribute('itemType',
             _qname(listitem.name, listitem.schema, schema))
 
 
@@ -163,41 +183,50 @@ def _dump_union(union, schema, xml_writer):
     assert all([checks.is_primitive_type(m) for m in union])
 
     with _TagGuard('union', xml_writer):
-        xml_writer.add_attribute('memberItems',
+        xml_writer.add_attribute('memberTypes',
             ' '.join([_qname(m.name, m.schema, schema) for m in union]))
 
 
-def _dump_simple_content(cont, attrs, schema, xml_writer):
+def _dump_simple_content(cont, schema, xml_writer):
     with _TagGuard('simpleContent', xml_writer):
-        with _TagGuard('restriction', xml_writer):
+        with _TagGuard('extension', xml_writer):
             xml_writer.add_attribute('base',
                 _qname(cont.type.name, cont.type.schema, schema))
 
-            for a in attrs:
-                if checks.is_any(a.attribute):
-                    with _TagGuard('anyAttribute', xml_writer):
-                        _dump_any(a.attribute, schema, xml_writer)
-                else:
-                    _dump_attribute(a, schema, xml_writer)
 
-
-def _dump_particle(particle, schema, xml_writer, names):
-    name = particle.term.__class__.__name__.lower()
-    with _TagGuard(name, xml_writer):
-        if checks.is_compositor(particle.term):
-            xml_writer.add_attribute('name', particle.name, ns=_VFILE_NS)
-        elif checks.is_element(particle.term):
-            _dump_element_attributes(particle.term, schema, xml_writer)
-
+def _dump_particle(particle, schema, xml_writer,
+                   for_diffing, names, in_group=False):
+    def dump_occurs():
         if particle.min_occurs != 1:
             xml_writer.add_attribute('minOccurs', particle.min_occurs)
         if particle.max_occurs != 1:
             xml_writer.add_attribute('maxOccurs',
                                      _max_occurs(particle.max_occurs))
 
+    if particle.term.schema != schema:
+        grps = xml_writer.elem_groups.get(particle.term.schema.target_ns, {})
+        if particle.term in [t for t in grps.iterkeys()]:
+            with _TagGuard('group', xml_writer):
+                xml_writer.add_attribute('ref',
+                    _qname(grps[particle.term][0], particle.term.schema, schema))
+
+                dump_occurs()
+
+            return
+
+    name = particle.term.__class__.__name__.lower()
+    with _TagGuard(name, xml_writer):
+        if not for_diffing and checks.is_compositor(particle.term):
+            xml_writer.add_attribute('name', particle.name, ns=_VFILE_NS)
+        elif checks.is_element(particle.term):
+            _dump_element_attributes(particle.term, schema, xml_writer)
+
+        if not in_group:
+            dump_occurs()
+
         if checks.is_compositor(particle.term):
             for p in particle.term.particles:
-                _dump_particle(p, schema, xml_writer, names)
+                _dump_particle(p, schema, xml_writer, for_diffing, names)
         elif checks.is_element(particle.term):
             pass
         elif checks.is_any(particle.term):
@@ -210,8 +239,34 @@ def _dump_attribute(attr, schema, xml_writer):
     assert (checks.is_attribute(attr.attribute) or
             checks.is_xml_attribute(attr.attribute))
 
+    attr_def = False
+    if not checks.is_xml_attribute(attr.attribute):
+        attribute = attr.attribute
+        top_attrs = [a.attribute
+            for a in attribute.schema.attributes.itervalues()]
+
+        if attribute.schema == schema:
+            attr_def = attribute not in top_attrs
+        else:
+            if attribute not in top_attrs:
+                # We reference attribute from other schema but it's not amongst
+                # top level attributes in that schema. We don't have other
+                # options except for referencing attribute group.
+                grps = xml_writer.attr_groups[attribute.schema.target_ns]
+                grp_name = grps[attribute][0]
+                with _TagGuard('attributeGroup', xml_writer):
+                    xml_writer.add_attribute('ref',
+                        _qname(grp_name, attribute.schema, schema))
+
+                return
+
     with _TagGuard('attribute', xml_writer):
-        _dump_attribute_attributes(attr.attribute, schema, xml_writer)
+        if checks.is_xml_attribute(attr.attribute):
+            xml_writer.add_attribute('ref', _qname(
+                attr.attribute.name, attr.attribute.schema, schema, ns=_XML_NS))
+        else:
+            _dump_attribute_attributes(attr.attribute, schema,
+                                       xml_writer, attr_def=attr_def)
 
         if attr.default is not None:
             xml_writer.add_attribute('default', attr.default)
@@ -220,12 +275,8 @@ def _dump_attribute(attr, schema, xml_writer):
             xml_writer.add_attribute('use', 'required')
 
 
-def _dump_attribute_attributes(attr, schema, xml_writer, top_level=False):
-    attrs = []
-    if not checks.is_xml_attribute(attr):
-        attrs = [a.attribute for a in attr.schema.attributes.itervalues()]
-    if top_level or (not checks.is_xml_attribute(attr) and
-                     attr.schema == schema and attr not in attrs):
+def _dump_attribute_attributes(attr, schema, xml_writer, attr_def=False):
+    if attr_def:
         xml_writer.add_attribute('name',
             _qname(attr.name, attr.schema, schema))
         if not checks.is_simple_urtype(attr.type):
@@ -235,11 +286,8 @@ def _dump_attribute_attributes(attr, schema, xml_writer, top_level=False):
         xml_writer.add_attribute('form',
             'qualified' if attr.qualified else 'unqualified')
     else:
-        ns = _XSD_NS
-        if checks.is_xml_attribute(attr):
-            ns = _XML_NS
         xml_writer.add_attribute('ref',
-            _qname(attr.name, attr.schema, schema, ns=ns))
+            _qname(attr.name, attr.schema, schema, ns=_XSD_NS))
 
 
 def _dump_element_attributes(elem, schema, xml_writer, top_level=False):
@@ -275,7 +323,10 @@ def _dump_any(elem, schema, xml_writer):
     xml_writer.add_attribute('namespace', val)
 
 
-def dump_xsd(schemata, output_dir):
+def dump_xsd(schemata, output_dir, for_diffing):
+    attr_groups = _collect_attr_groups(schemata)
+    elem_groups = _collect_elem_groups(schemata)
+
     print('Dumping XML Schema files to {}...'.format(
         os.path.realpath(output_dir)))
 
@@ -287,13 +338,19 @@ def dump_xsd(schemata, output_dir):
         file_path = '{}.xsd'.format(file_path.rpartition('.')[0])
 
         xml_writer = _XmlWriter(file_path)
+        xml_writer.attr_groups = attr_groups
+        xml_writer.elem_groups = elem_groups
         with _TagGuard('schema', xml_writer):
             if schema.target_ns is not None:
                 xml_writer.add_attribute('targetNamespace', schema.target_ns)
 
             xml_writer.define_namespace(_VFILE_NS, 'http://dumco.com/naming')
-            for (ns, uri) in schema.namespaces.iteritems():
-                xml_writer.define_namespace(ns, uri)
+            for (ns, uri) in sorted(schema.namespaces.iteritems()):
+                if ns is None:
+                    if schema.target_ns is not None:
+                        xml_writer.define_namespace(None, schema.target_ns)
+                else:
+                    xml_writer.define_namespace(ns, uri)
 
             if len(schema.imports) != 0:
                 xml_writer.add_comment('Imports')
@@ -324,22 +381,20 @@ def dump_xsd(schemata, output_dir):
                 with _TagGuard('complexType', xml_writer):
                     xml_writer.add_attribute('name', name)
                     if ct.mixed:
-                        xml_writer.add_attribute('mixed', ct.mixed)
+                        xml_writer.add_attribute('mixed', str(ct.mixed).lower())
 
                     if checks.has_simple_content(ct):
-                        _dump_simple_content(ct.text, ct.attributes,
-                                             schema, xml_writer)
-                    elif (ct.mixed or
-                          checks.has_complex_content(ct)):
-                        _dump_particle(ct.particle, schema, xml_writer, set())
+                        _dump_simple_content(ct.text, schema, xml_writer)
+                    elif ct.mixed or checks.has_complex_content(ct):
+                        _dump_particle(ct.particle, schema,
+                                       xml_writer, for_diffing, set())
 
-                    if not checks.has_simple_content(ct):
-                        for a in ct.attributes:
-                            if checks.is_any(a.attribute):
-                                with _TagGuard('anyAttribute', xml_writer):
-                                    _dump_any(a.attribute, schema, xml_writer)
-                            else:
-                                _dump_attribute(a, schema, xml_writer)
+                    for a in ct.attributes:
+                        if checks.is_any(a.attribute):
+                            with _TagGuard('anyAttribute', xml_writer):
+                                _dump_any(a.attribute, schema, xml_writer)
+                        else:
+                            _dump_attribute(a, schema, xml_writer)
 
             if len(schema.elements) != 0:
                 xml_writer.add_comment('Elements')
@@ -349,12 +404,101 @@ def dump_xsd(schemata, output_dir):
                     _dump_element_attributes(elem.term, schema, xml_writer,
                                              top_level=True)
 
+            egroups = elem_groups.get(schema.target_ns, {})
+            if len(egroups) != 0:
+                xml_writer.add_comment('Element Groups')
+            for (term, (name, particle)) in sorted(egroups.iteritems(),
+                                                   key=lambda x: x[1][0]):
+                with _TagGuard('group', xml_writer):
+                    xml_writer.add_attribute('name', name)
+
+                    _dump_particle(particle, schema, xml_writer,
+                                   for_diffing, set(), in_group=True)
+
             if len(schema.attributes) != 0:
                 xml_writer.add_comment('Attributes')
             for (name, attr) in sorted(schema.attributes.iteritems(),
                                        key=lambda item: item[0]):
                 with _TagGuard('attribute', xml_writer):
                     _dump_attribute_attributes(attr.attribute, schema,
-                                               xml_writer, top_level=True)
+                                               xml_writer, attr_def=True)
+
+            agroups = attr_groups.get(schema.target_ns, {})
+            if len(agroups) != 0:
+                xml_writer.add_comment('Attribute Groups')
+            for (attribute, (name, attr)) in sorted(agroups.iteritems(),
+                                                    key=lambda x: x[1][0]):
+                with _TagGuard('attributeGroup', xml_writer):
+                    xml_writer.add_attribute('name', name)
+
+                    _dump_attribute(attr, schema, xml_writer)
 
         xml_writer.done()
+
+
+def _collect_attr_groups(schemata):
+    attr_groups = {}
+
+    def find_groups(attr, schema, grp_count):
+        # This function should do checks similar to those in _dump_attribute().
+        if (checks.is_xml_attribute(attr.attribute) or
+            checks.is_any(attr.attribute) or attr.attribute.schema == schema):
+            return grp_count
+
+        attribute = attr.attribute
+        top_attrs = [a.attribute
+            for a in attribute.schema.attributes.itervalues()]
+        if attribute in top_attrs:
+            return grp_count
+
+        grp_name = '{}_attr_group{}'.format(attribute.name, grp_count)
+        grps = attr_groups.setdefault(attribute.schema.target_ns, {})
+        grps.setdefault(attribute, (grp_name, attr))
+        return grp_count + 1
+
+    grp_count = 1
+    for (schema_file, schema) in schemata.iteritems():
+        for (name, ct) in schema.complex_types.iteritems():
+            for a in ct.attributes:
+                grp_count = find_groups(a, schema, grp_count)
+
+    return attr_groups
+
+
+def _collect_elem_groups(schemata):
+    elem_groups = {}
+
+    def find_groups(particle, schema, grp_count):
+        compositors = []
+
+        # First check elements.
+        for p in particle.term.particles:
+            if checks.is_element(p.term):
+                if p.term.schema == schema:
+                    continue
+
+                top_elems = [p1.term
+                    for p1 in p.term.schema.elements.itervalues()]
+                if p.term in top_elems:
+                    continue
+
+                grp_name = '{}_elem_group{}'.format(particle.name, grp_count)
+                grps = elem_groups.setdefault(p.term.schema.target_ns, {})
+                grps.setdefault(particle.term, (grp_name, particle))
+                return grp_count + 1
+            elif checks.is_compositor(p.term):
+                compositors.append(p)
+
+        # Then recurse into compositors.
+        for c in compositors:
+            grp_count = find_groups(c, schema, grp_count)
+
+        return grp_count
+
+    grp_count = 1
+    for (schema_file, schema) in schemata.iteritems():
+        for (name, ct) in schema.complex_types.iteritems():
+            if ct.mixed or checks.has_complex_content(ct):
+                grp_count = find_groups(ct.particle, schema, grp_count)
+
+    return elem_groups

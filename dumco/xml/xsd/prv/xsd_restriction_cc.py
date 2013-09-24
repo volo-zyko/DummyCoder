@@ -17,7 +17,7 @@ import xsd_sequence
 
 def xsd_restriction_in_complexContent(attrs, parent_element, factory,
                                       schema_path, all_schemata):
-    new_element = XsdComplexRestriction(attrs)
+    new_element = XsdComplexRestriction(attrs, all_schemata[schema_path])
     parent_element.children.append(new_element)
 
     return (new_element, {
@@ -33,14 +33,17 @@ def xsd_restriction_in_complexContent(attrs, parent_element, factory,
 
 
 class XsdComplexRestriction(xsd_base.XsdBase):
-    def __init__(self, attrs):
+    def __init__(self, attrs, parent_schema):
         super(XsdComplexRestriction, self).__init__(attrs)
 
+        self.schema = parent_schema
         self.particle = None
         self.attributes = []
 
     @method_once
     def finalize(self, factory):
+        redefined_attrs = []
+        prohibited_attrs = []
         for c in self.children:
             if (isinstance(c, xsd_all.XsdAll) or
                 isinstance(c, xsd_choice.XsdChoice) or
@@ -51,10 +54,23 @@ class XsdComplexRestriction(xsd_base.XsdBase):
             elif isinstance(c, xsd_attribute_group.XsdAttributeGroup):
                 c.finalize(factory)
                 self.attributes.extend(c.attributes)
-            elif (isinstance(c, xsd_attribute.XsdAttribute) or
-                  isinstance(c, xsd_any.XsdAny)):
+            elif isinstance(c, xsd_attribute.XsdAttribute):
+                if c.prohibited:
+                    prohibited_attrs.append(c.finalize(factory))
+                else:
+                    redefined_attrs.append(c.finalize(factory))
+            elif isinstance(c, xsd_any.XsdAny):
                 self.attributes.append(c.finalize(factory))
             else: # pragma: no cover
                 assert False, 'Wrong content of complex Restriction'
+
+        base = factory.resolve_complex_type(self.attr('base'),
+                                            self.schema, finalize=True)
+
+        xsd_base.restrict_base_attributes(
+            base, prohibited_attrs, redefined_attrs,
+            self.attributes, self.schema.schema_element, factory)
+
+        self.attributes.extend(redefined_attrs)
 
         return self

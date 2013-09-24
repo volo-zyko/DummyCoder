@@ -36,6 +36,7 @@ class XsdAttribute(xsd_base.XsdBase):
             factory.attribute_default(attrs), factory.attribute_required(attrs),
             dumco.schema.elements.Attribute(
                 self.attr('name'), qualified, parent_schema.schema_element))
+        self.prohibited = self.attr('use') == 'prohibited'
 
     @method_once
     def finalize(self, factory):

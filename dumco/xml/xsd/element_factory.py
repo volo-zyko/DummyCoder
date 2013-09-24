@@ -16,6 +16,8 @@ class XsdElementFactory(object):
         self.included_schema_paths = {}
         self.current_xsd = None
 
+        self.all_named_ns = {dumco.schema.checks.XML_NAMESPACE: 'xml'}
+
         # Set part of the factorie's interface.
         self.namer = element_namer
         self.extension = '.xsd'
@@ -28,7 +30,6 @@ class XsdElementFactory(object):
         self.element_stack = []
         self.element = None
         self.namespaces = {'xml': dumco.schema.checks.XML_NAMESPACE}
-        self.all_named_ns = {dumco.schema.checks.XML_NAMESPACE: 'xml'}
 
     def open_namespace(self, prefix, uri):
         self.namespaces[prefix] = uri
@@ -125,10 +126,11 @@ class XsdElementFactory(object):
                         return accum + [e.schema_element]
                 return accum
 
-            if is_type:
-                parents = reduce(fold_elements, self.element_stack, [])
-                assert parents, 'parents list should be longer than 0'
-                schema.unnamed_types.append((parents, element))
+            assert is_type, 'Only types can be unnamed'
+
+            parents = reduce(fold_elements, self.element_stack, [])
+            assert parents, 'parents list should be longer than 0'
+            schema.unnamed_types.append((parents, element))
 
     def particle_min_occurs(self, attrs):
         try:
@@ -258,6 +260,20 @@ class XsdElementFactory(object):
         return ((uri is None and None in namespaces and
                  checks.is_xsd_namespace(namespaces[None])) or
                 checks.is_xsd_namespace(uri))
+
+    @staticmethod
+    def fix_imports(schema, component):
+        if (dumco.schema.checks.is_xml_attribute(component) or
+            dumco.schema.checks.is_any(component)):
+            return
+
+        # We reference a component from different schema, thus we must ensure
+        # that we have corresponding import.
+        if (schema != component.schema and
+            component.schema.target_ns not in schema.imports):
+            comp_s = component.schema
+            schema.imports[comp_s.target_ns] = comp_s
+            schema.namespaces[comp_s.prefix] = comp_s.target_ns
 
     @staticmethod
     def noop_handler(attrs, parent_element, factory,

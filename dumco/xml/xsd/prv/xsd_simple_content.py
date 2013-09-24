@@ -23,7 +23,7 @@ class XsdSimpleContent(xsd_base.XsdBase):
     def __init__(self, attrs):
         super(XsdSimpleContent, self).__init__(attrs)
 
-        self.base = None
+        self.content_type = None
         self.attributes = []
 
     @method_once
@@ -31,11 +31,14 @@ class XsdSimpleContent(xsd_base.XsdBase):
         for c in self.children:
             assert ((isinstance(c, xsd_extension_sc.XsdSimpleExtension) or
                      isinstance(c, xsd_restriction_sc.XsdSimpleRestriction)) and
-                    self.base is None), 'Wrong content of SimpleContent'
+                    self.content_type is None), 'Wrong content of SimpleContent'
 
             c.finalize(factory)
 
-            self.base = c.base
+            if isinstance(c, xsd_extension_sc.XsdSimpleExtension):
+                self.content_type = c.base
+            elif isinstance(c, xsd_restriction_sc.XsdSimpleRestriction):
+                self.content_type = c.own_type
             self.attributes = c.attributes
 
         return self

@@ -32,10 +32,13 @@ class XsdAttributeGroup(xsd_base.XsdBase):
     @method_once
     def finalize(self, factory):
         if self.attr('ref') is not None:
-            attr = factory.resolve_attribute_group(
-                self.attr('ref'), self.schema)
+            attr_group = factory.resolve_attribute_group(self.attr('ref'),
+                                                         self.schema)
 
-            self.attributes = attr.attributes
+            self.attributes = attr_group.attributes
+
+            for attr in self.attributes:
+                factory.fix_imports(self.schema.schema_element, attr.attribute)
         else:
             for c in self.children:
                 assert (isinstance(c, XsdAttributeGroup) or
@@ -46,9 +49,10 @@ class XsdAttributeGroup(xsd_base.XsdBase):
                 if isinstance(c, XsdAttributeGroup):
                     c.finalize(factory)
                     self.attributes.extend(c.attributes)
-                elif (isinstance(c, xsd_attribute.XsdAttribute) or
-                      isinstance(c, xsd_any.XsdAny)):
-                    attr = c.finalize(factory)
-                    self.attributes.append(attr)
+                elif isinstance(c, xsd_attribute.XsdAttribute):
+                    if not c.prohibited:
+                        self.attributes.append(c.finalize(factory))
+                elif isinstance(c, xsd_any.XsdAny):
+                    self.attributes.append(c.finalize(factory))
 
         return self

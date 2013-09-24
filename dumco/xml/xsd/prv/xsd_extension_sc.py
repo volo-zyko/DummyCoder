@@ -2,6 +2,8 @@
 
 from dumco.utils.decorators import method_once
 
+import dumco.schema.checks
+
 import xsd_any
 import xsd_attribute
 import xsd_attribute_group
@@ -32,9 +34,6 @@ class XsdSimpleExtension(xsd_base.XsdBase):
 
     @method_once
     def finalize(self, factory):
-        self.base = factory.resolve_type(self.attr('base'),
-                                         self.schema, finalize=True)
-
         for c in self.children:
             assert (isinstance(c, xsd_attribute_group.XsdAttributeGroup) or
                     isinstance(c, xsd_attribute.XsdAttribute) or
@@ -44,8 +43,25 @@ class XsdSimpleExtension(xsd_base.XsdBase):
             if isinstance(c, xsd_attribute_group.XsdAttributeGroup):
                 c.finalize(factory)
                 self.attributes.extend(c.attributes)
-            elif (isinstance(c, xsd_attribute.XsdAttribute) or
-                  isinstance(c, xsd_any.XsdAny)):
+            elif isinstance(c, xsd_attribute.XsdAttribute):
+                if not c.prohibited:
+                    self.attributes.append(c.finalize(factory))
+            elif isinstance(c, xsd_any.XsdAny):
                 self.attributes.append(c.finalize(factory))
+
+        base = factory.resolve_type(self.attr('base'),
+                                    self.schema, finalize=True)
+
+        if dumco.schema.checks.is_complex_type(base):
+            self.attributes.extend(base.attributes)
+
+            for attr in base.attributes:
+                factory.fix_imports(self.schema.schema_element, attr.attribute)
+
+            assert dumco.schema.checks.has_simple_content(base) or base.mixed, \
+                'Simple Extension must extend only Simple Content'
+            self.base = base.text.type
+        else:
+            self.base = base
 
         return self

@@ -55,7 +55,8 @@ class XsdComplexType(xsd_base.XsdBase):
                 assert self.schema_element.particle is None, \
                     'Content model overriden'
                 c.finalize(factory)
-                self.schema_element.text = dumco.schema.base.SchemaText(c.base)
+                self.schema_element.text = \
+                    dumco.schema.base.SchemaText(c.content_type)
                 self.schema_element.attributes.extend(c.attributes)
             elif isinstance(c, xsd_complex_content.XsdComplexContent):
                 assert self.schema_element.particle is None, \
@@ -75,8 +76,10 @@ class XsdComplexType(xsd_base.XsdBase):
             elif isinstance(c, xsd_attribute_group.XsdAttributeGroup):
                 c.finalize(factory)
                 self.schema_element.attributes.extend(c.attributes)
-            elif (isinstance(c, xsd_attribute.XsdAttribute) or
-                  isinstance(c, xsd_any.XsdAny)):
+            elif isinstance(c, xsd_attribute.XsdAttribute):
+                if not c.prohibited:
+                    self.schema_element.attributes.append(c.finalize(factory))
+            elif isinstance(c, xsd_any.XsdAny):
                 self.schema_element.attributes.append(c.finalize(factory))
             else: # pragma: no cover
                 assert False, 'Wrong content of ComplexType'

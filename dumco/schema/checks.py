@@ -143,4 +143,5 @@ def is_text(text):
 
 
 def is_xml_attribute(attr):
-    return isinstance(attr, base.XmlAttribute)
+    return (isinstance(attr, base.XmlAttribute) or
+            (is_attribute(attr) and attr.schema.target_ns == XML_NAMESPACE))

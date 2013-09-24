@@ -43,7 +43,14 @@ class XsdRestriction(xsd_base.XsdBase):
     @method_once
     def finalize(self, factory):
         base = None
-        if self.attr('base') is None:
+        if self.schema_element.base is not None:
+            base = self.schema_element.base
+
+            for t in self.children:
+                if isinstance(t, xsd_enumeration.XsdEnumeration):
+                    self.schema_element.enumeration.append(
+                        (t.value, t.schema_element.doc))
+        elif self.attr('base') is None:
             for t in self.children:
                 assert ((isinstance(t, xsd_simple_type.XsdSimpleType) or
                          isinstance(t, xsd_enumeration.XsdEnumeration)) and
@@ -55,7 +62,7 @@ class XsdRestriction(xsd_base.XsdBase):
                 elif isinstance(t, xsd_enumeration.XsdEnumeration):
                     self.schema_element.enumeration.append(
                         (t.value, t.schema_element.doc))
-        elif self.schema_element.base is None:
+        else:
             base = factory.resolve_simple_type(self.attr('base'),
                                                self.schema, finalize=True)
             for x in self.children:
@@ -63,13 +70,8 @@ class XsdRestriction(xsd_base.XsdBase):
                     'Expected only Enumerations'
                 self.schema_element.enumeration.append(
                     (x.value, x.schema_element.doc))
-        else:
-            base = self.schema_element.base
 
-            for t in self.children:
-                if isinstance(t, xsd_enumeration.XsdEnumeration):
-                    self.schema_element.enumeration.append(
-                        (t.value, t.schema_element.doc))
+        assert base is not None, 'Restriction does not have base type'
 
         self.schema_element.base = self._merge_base_restriction(base)
 

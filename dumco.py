@@ -49,6 +49,9 @@ def process_arguments():
         'dumpxsd', help='dump XSD serialization of schema files')
     parser_dumpxsd.add_argument('-o', '--output-dir', required=True,
                                 help='output directory')
+    parser_dumpxsd.add_argument('--for-diffing', action='store_true',
+                                help='prepare dumped schemata for diffing '
+                                '{default: %(default)s}')
 
     parser_rfilter = subparsers.add_parser(
         'rfilter', help='generate read-only filter for schema files')
@@ -109,7 +112,7 @@ if __name__ == '__main__':
     all_schemata = loader.load_xml(args.input_dir, args.max_dir_depth)
 
     if args.mode == 'dumpxsd':
-        dump_xsd(all_schemata, args.output_dir)
+        dump_xsd(all_schemata, args.output_dir, args.for_diffing)
     elif args.mode == 'rfilter' or args.mode == 'dom':
         ns_converter = NamespaceConverter(args.root_namespaces.split(),
                                           args.uri_to_namespaces,
