@@ -49,8 +49,8 @@ class XsdElement(xsd_base.XsdBase):
             self.schema_element.term = \
                 factory.resolve_element(self.attr('ref'), self.schema)
         elif self.attr('type') is not None:
-            self.schema_element.term.type = factory.resolve_type(
-                self.attr('type'), self.schema)
+            self.schema_element.term.type = \
+                factory.resolve_type(self.attr('type'), self.schema)
         elif self.attr('substitutionGroup') is not None:
             self.schema_element.term.type = factory.resolve_element(
                 self.attr('substitutionGroup'), self.schema, finalize=True).type

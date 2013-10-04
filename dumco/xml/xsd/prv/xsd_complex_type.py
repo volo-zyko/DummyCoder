@@ -3,6 +3,7 @@
 from dumco.utils.decorators import method_once
 
 import dumco.schema.base
+import dumco.schema.checks
 import dumco.schema.elements
 import dumco.schema.uses
 
@@ -48,6 +49,8 @@ class XsdComplexType(xsd_base.XsdBase):
 
     @method_once
     def finalize(self, factory):
+        attribute_uses = self.schema_element.attribute_uses
+
         mixed = self.attr('mixed') == 'true' or self.attr('mixed') == '1'
 
         for c in self.children:
@@ -57,13 +60,13 @@ class XsdComplexType(xsd_base.XsdBase):
                 c.finalize(factory)
                 self.schema_element.text = \
                     dumco.schema.base.SchemaText(c.content_type)
-                self.schema_element.attributes.extend(c.attributes)
+                attribute_uses.extend(c.attr_uses)
             elif isinstance(c, xsd_complex_content.XsdComplexContent):
                 assert self.schema_element.particle is None, \
                     'Content model overriden'
                 c.finalize(factory)
                 self.schema_element.particle = c.particle
-                self.schema_element.attributes.extend(c.attributes)
+                attribute_uses.extend(c.attr_uses)
                 if c.mixed is not None:
                     mixed = c.mixed
             elif (isinstance(c, xsd_all.XsdAll) or
@@ -74,13 +77,12 @@ class XsdComplexType(xsd_base.XsdBase):
                     'Content model overriden'
                 self.schema_element.particle = c.finalize(factory)
             elif isinstance(c, xsd_attribute_group.XsdAttributeGroup):
-                c.finalize(factory)
-                self.schema_element.attributes.extend(c.attributes)
+                attribute_uses.extend(c.finalize(factory).attr_uses)
             elif isinstance(c, xsd_attribute.XsdAttribute):
                 if not c.prohibited:
-                    self.schema_element.attributes.append(c.finalize(factory))
+                    attribute_uses.append(c.finalize(factory))
             elif isinstance(c, xsd_any.XsdAny):
-                self.schema_element.attributes.append(c.finalize(factory))
+                attribute_uses.append(c.finalize(factory))
             else: # pragma: no cover
                 assert False, 'Wrong content of ComplexType'
 
@@ -92,19 +94,23 @@ class XsdComplexType(xsd_base.XsdBase):
             self.schema_element.text = dumco.schema.base.SchemaText(
                 dumco.schema.base.xsd_builtin_types()['string'])
 
-        assert not _has_duplicate_attributes(self.schema_element.attributes), \
+        assert not _has_duplicate_attributes(attribute_uses), \
             'Duplicate attributes in CT in {}'.format(
                 self.schema_element.schema.path)
 
-        def attr_key(attr):
-            if dumco.schema.checks.is_any(attr.attribute):
-                return ('', '')
-            elif attr.attribute.schema is None:
-                return ('~~~', attr.attribute.name)
-            elif attr.attribute.schema != self.schema_element.schema:
-                return (attr.attribute.schema.prefix, attr.attribute.name)
-            return ('', attr.attribute.name)
-        self.schema_element.attributes.sort(key=attr_key, reverse=True)
+        def attr_key(use):
+            checks = dumco.schema.checks
+            if dumco.schema.checks.is_any(use.attribute):
+                return (0, '')
+            elif use.attribute.schema is None:
+                return (-2, use.attribute.name)
+            elif checks.is_xml_namespace(use.attribute.schema.target_ns):
+                return (-3, use.attribute.name)
+            elif use.attribute.schema != self.schema_element.schema:
+                num = sum([ord(c) for c in use.attribute.schema.prefix])
+                return (-4 - num, use.attribute.name)
+            return (-1, use.attribute.name)
+        attribute_uses.sort(key=attr_key)
 
         return self.schema_element
 

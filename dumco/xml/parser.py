@@ -16,12 +16,31 @@ class _XmlContentHandler(xml.sax.handler.ContentHandler):
         self.document_path = document_path
         self.documents = documents
         self.element_factory = element_factory
+        # Using this stack we undefine namespaces in the reversed
+        # order of their definition.
+        self.namespace_stack = []
 
     def startPrefixMapping(self, prefix, uri):
-        self.element_factory.open_namespace(prefix, uri)
+        self.namespace_stack.append((prefix, uri))
+
+        self.element_factory.define_namespace(prefix, uri)
 
     def endPrefixMapping(self, prefix):
-        self.element_factory.close_namespace(prefix)
+        uri = None
+
+        removed = False
+        for i in xrange(len(self.namespace_stack) - 1, -1, -1):
+            if prefix != self.namespace_stack[i][0]:
+                continue
+
+            if not removed:
+                del self.namespace_stack[i]
+                removed = True
+            else:
+                uri = self.namespace_stack[i][1]
+                break
+
+        self.element_factory.define_namespace(prefix, uri)
 
     def startElementNS(self, name, qname, attrs):
         self.element_factory.new_element(

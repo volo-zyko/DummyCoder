@@ -4,8 +4,8 @@ import checks
 
 
 def enum_attribute_uses(ct):
-    for a in ct.attributes:
-        yield ([ct], a)
+    for u in ct.attribute_uses:
+        yield ([ct], u)
 
 
 def enum_ct_particles(ct):
@@ -17,8 +17,8 @@ def enum_ct_particles(ct):
 
 
 def enum_plain_content(ct):
-    for a in enum_attribute_uses(ct):
-        yield a
+    for u in enum_attribute_uses(ct):
+        yield u
 
     for p in enum_ct_particles(ct):
         yield p

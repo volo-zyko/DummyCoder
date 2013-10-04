@@ -30,8 +30,8 @@ class _XmlWriter(object):
 
         # We track here attribute and element groups.
         # In this case XmlWriter is used as global object.
-        self.attr_groups = None
-        self.elem_groups = None
+        self.attribute_groups = None
+        self.element_groups = None
 
         if not os.path.exists(os.path.dirname(filename)):
             os.makedirs(os.path.dirname(filename))
@@ -196,7 +196,7 @@ def _dump_simple_content(cont, schema, xml_writer):
 
 def _dump_particle(particle, schema, xml_writer,
                    for_diffing, names, in_group=False):
-    def dump_occurs():
+    def dump_occurs_attributes():
         if particle.min_occurs != 1:
             xml_writer.add_attribute('minOccurs', particle.min_occurs)
         if particle.max_occurs != 1:
@@ -204,109 +204,124 @@ def _dump_particle(particle, schema, xml_writer,
                                      _max_occurs(particle.max_occurs))
 
     if particle.term.schema != schema:
-        grps = xml_writer.elem_groups.get(particle.term.schema.target_ns, {})
-        if particle.term in [t for t in grps.iterkeys()]:
+        groups = xml_writer.element_groups.get(
+            particle.term.schema.target_ns, {})
+
+        if particle.term in [t for t in groups.iterkeys()]:
+            group_name = groups[particle.term][0]
             with _TagGuard('group', xml_writer):
                 xml_writer.add_attribute('ref',
-                    _qname(grps[particle.term][0], particle.term.schema, schema))
+                    _qname(group_name, particle.term.schema, schema))
 
-                dump_occurs()
+                dump_occurs_attributes()
 
             return
 
     name = particle.term.__class__.__name__.lower()
     with _TagGuard(name, xml_writer):
-        if not for_diffing and checks.is_compositor(particle.term):
-            xml_writer.add_attribute('name', particle.name, ns=_VFILE_NS)
-        elif checks.is_element(particle.term):
-            _dump_element_attributes(particle.term, schema, xml_writer)
-
         if not in_group:
-            dump_occurs()
+            dump_occurs_attributes()
 
         if checks.is_compositor(particle.term):
+            if not for_diffing:
+                xml_writer.add_attribute('name', particle.name, ns=_VFILE_NS)
+
             for p in particle.term.particles:
                 _dump_particle(p, schema, xml_writer, for_diffing, names)
         elif checks.is_element(particle.term):
-            pass
+            is_element_def = False
+            if particle.term.schema == schema:
+                top_elements = [e
+                    for e in particle.term.schema.elements.itervalues()]
+
+                is_element_def = particle.term not in top_elements
+
+            _dump_element_attributes(particle.term, is_element_def,
+                                     schema, xml_writer)
         elif checks.is_any(particle.term):
             _dump_any(particle.term, schema, xml_writer)
         else: # pragma: no cover
             assert False
 
 
-def _dump_attribute(attr, schema, xml_writer):
-    assert (checks.is_attribute(attr.attribute) or
-            checks.is_xml_attribute(attr.attribute))
+def _dump_attribute_use(attr_use, schema, xml_writer):
+    assert (checks.is_attribute(attr_use.attribute) or
+            checks.is_xml_attribute(attr_use.attribute))
 
-    attr_def = False
-    if not checks.is_xml_attribute(attr.attribute):
-        attribute = attr.attribute
-        top_attrs = [a.attribute
-            for a in attribute.schema.attributes.itervalues()]
+    attribute = attr_use.attribute
+
+    is_attribute_def = False
+    if not checks.is_xml_attribute(attribute):
+        top_attributes = [u.attribute
+            for u in attribute.schema.attribute_uses.itervalues()]
 
         if attribute.schema == schema:
-            attr_def = attribute not in top_attrs
+            is_attribute_def = attribute not in top_attributes
         else:
-            if attribute not in top_attrs:
+            if attribute not in top_attributes:
                 # We reference attribute from other schema but it's not amongst
                 # top level attributes in that schema. We don't have other
                 # options except for referencing attribute group.
-                grps = xml_writer.attr_groups[attribute.schema.target_ns]
-                grp_name = grps[attribute][0]
+                groups = xml_writer.attribute_groups[attribute.schema.target_ns]
+                group_name = groups[attribute][0]
                 with _TagGuard('attributeGroup', xml_writer):
                     xml_writer.add_attribute('ref',
-                        _qname(grp_name, attribute.schema, schema))
+                        _qname(group_name, attribute.schema, schema))
 
                 return
 
     with _TagGuard('attribute', xml_writer):
-        if checks.is_xml_attribute(attr.attribute):
+        if checks.is_xml_attribute(attribute):
             xml_writer.add_attribute('ref', _qname(
-                attr.attribute.name, attr.attribute.schema, schema, ns=_XML_NS))
+                attribute.name, attribute.schema, schema, ns=_XML_NS))
         else:
-            _dump_attribute_attributes(attr.attribute, schema,
-                                       xml_writer, attr_def=attr_def)
+            _dump_attribute_attributes(attribute, is_attribute_def,
+                                       schema, xml_writer)
 
-        if attr.default is not None:
-            xml_writer.add_attribute('default', attr.default)
+        if attr_use.default is not None:
+            xml_writer.add_attribute('default', attr_use.default)
 
-        if attr.required:
+        if attr_use.required:
             xml_writer.add_attribute('use', 'required')
 
 
-def _dump_attribute_attributes(attr, schema, xml_writer, attr_def=False):
-    if attr_def:
+def _dump_attribute_attributes(attribute, is_attribute_definition,
+                               schema, xml_writer):
+    assert checks.is_attribute(attribute)
+
+    if is_attribute_definition:
         xml_writer.add_attribute('name',
-            _qname(attr.name, attr.schema, schema))
-        if not checks.is_simple_urtype(attr.type):
+            _qname(attribute.name, attribute.schema, schema))
+
+        if not checks.is_simple_urtype(attribute.type):
             xml_writer.add_attribute('type',
-                _qname(attr.type.name, attr.type.schema, schema))
+                _qname(attribute.type.name, attribute.type.schema, schema))
 
         xml_writer.add_attribute('form',
-            'qualified' if attr.qualified else 'unqualified')
+            'qualified' if attribute.qualified else 'unqualified')
     else:
         xml_writer.add_attribute('ref',
-            _qname(attr.name, attr.schema, schema, ns=_XSD_NS))
+            _qname(attribute.name, attribute.schema, schema, ns=_XSD_NS))
 
 
-def _dump_element_attributes(elem, schema, xml_writer, top_level=False):
-    assert checks.is_element(elem)
+def _dump_element_attributes(element, is_element_definition,
+                             schema, xml_writer):
+    assert checks.is_element(element)
 
-    elems = [p.term for p in elem.schema.elements.itervalues()]
-    if top_level or (elem.schema is not None and
-                     elem.schema == schema and elem not in elems):
+    if is_element_definition:
         xml_writer.add_attribute('name',
-            _qname(elem.name, elem.schema, schema))
-        if not checks.is_complex_urtype(elem.type):
+            _qname(element.name, element.schema, schema))
+
+        if (not checks.is_complex_urtype(element.type) and
+            not checks.is_simple_urtype(element.type)):
             xml_writer.add_attribute('type',
-                _qname(elem.type.name, elem.type.schema, schema))
+                _qname(element.type.name, element.type.schema, schema))
 
         xml_writer.add_attribute('form',
-            'qualified' if elem.qualified else 'unqualified')
+            'qualified' if element.qualified else 'unqualified')
     else:
         xml_writer.add_attribute('ref',
-            _qname(elem.name, elem.schema, schema))
+            _qname(element.name, element.schema, schema))
 
 
 def _dump_any(elem, schema, xml_writer):
@@ -324,8 +339,8 @@ def _dump_any(elem, schema, xml_writer):
 
 
 def dump_xsd(schemata, output_dir, for_diffing):
-    attr_groups = _collect_attr_groups(schemata)
-    elem_groups = _collect_elem_groups(schemata)
+    attribute_groups = _collect_attribute_groups(schemata)
+    element_groups = _collect_element_groups(schemata)
 
     print('Dumping XML Schema files to {}...'.format(
         os.path.realpath(output_dir)))
@@ -338,26 +353,28 @@ def dump_xsd(schemata, output_dir, for_diffing):
         file_path = '{}.xsd'.format(file_path.rpartition('.')[0])
 
         xml_writer = _XmlWriter(file_path)
-        xml_writer.attr_groups = attr_groups
-        xml_writer.elem_groups = elem_groups
+        xml_writer.attribute_groups = attribute_groups
+        xml_writer.element_groups = element_groups
         with _TagGuard('schema', xml_writer):
             if schema.target_ns is not None:
                 xml_writer.add_attribute('targetNamespace', schema.target_ns)
+                if not checks.is_xml_namespace(schema.target_ns):
+                    xml_writer.define_namespace(None, schema.target_ns)
 
+            for (uri, sub_schema) in sorted(schema.imports.iteritems(),
+                                            key=lambda item: item[0]):
+                assert sub_schema.prefix is not None, \
+                    'No prefix for imported schema'
+                xml_writer.define_namespace(sub_schema.prefix, uri)
             xml_writer.define_namespace(_VFILE_NS, 'http://dumco.com/naming')
-            for (ns, uri) in sorted(schema.namespaces.iteritems()):
-                if ns is None:
-                    if schema.target_ns is not None:
-                        xml_writer.define_namespace(None, schema.target_ns)
-                else:
-                    xml_writer.define_namespace(ns, uri)
 
             if len(schema.imports) != 0:
                 xml_writer.add_comment('Imports')
-            for (ns, sub_schema) in schema.imports.iteritems():
+            for (uri, sub_schema) in sorted(schema.imports.iteritems(),
+                                            key=lambda item: item[0]):
                 with _TagGuard('import', xml_writer):
-                    xml_writer.add_attribute('namespace', ns)
-                    xml_writer.add_attribute('schemaLocation',
+                    xml_writer.add_attribute('namespace', uri)
+                    xml_writer.add_attribute('schemaLocation' ,
                                              os.path.basename(sub_schema.path))
 
             if len(schema.simple_types) != 0:
@@ -389,25 +406,24 @@ def dump_xsd(schemata, output_dir, for_diffing):
                         _dump_particle(ct.particle, schema,
                                        xml_writer, for_diffing, set())
 
-                    for a in ct.attributes:
-                        if checks.is_any(a.attribute):
+                    for u in ct.attribute_uses:
+                        if checks.is_any(u.attribute):
                             with _TagGuard('anyAttribute', xml_writer):
-                                _dump_any(a.attribute, schema, xml_writer)
+                                _dump_any(u.attribute, schema, xml_writer)
                         else:
-                            _dump_attribute(a, schema, xml_writer)
+                            _dump_attribute_use(u, schema, xml_writer)
 
             if len(schema.elements) != 0:
                 xml_writer.add_comment('Elements')
             for (name, elem) in sorted(schema.elements.iteritems(),
                                        key=lambda item: item[0]):
                 with _TagGuard('element', xml_writer):
-                    _dump_element_attributes(elem.term, schema, xml_writer,
-                                             top_level=True)
+                    _dump_element_attributes(elem, True, schema, xml_writer)
 
-            egroups = elem_groups.get(schema.target_ns, {})
-            if len(egroups) != 0:
+            elem_groups = element_groups.get(schema.target_ns, {})
+            if len(elem_groups) != 0:
                 xml_writer.add_comment('Element Groups')
-            for (term, (name, particle)) in sorted(egroups.iteritems(),
+            for (term, (name, particle)) in sorted(elem_groups.iteritems(),
                                                    key=lambda x: x[1][0]):
                 with _TagGuard('group', xml_writer):
                     xml_writer.add_attribute('name', name)
@@ -415,90 +431,101 @@ def dump_xsd(schemata, output_dir, for_diffing):
                     _dump_particle(particle, schema, xml_writer,
                                    for_diffing, set(), in_group=True)
 
-            if len(schema.attributes) != 0:
+            if len(schema.attribute_uses) != 0:
                 xml_writer.add_comment('Attributes')
-            for (name, attr) in sorted(schema.attributes.iteritems(),
-                                       key=lambda item: item[0]):
+            for (name, attr_use) in sorted(schema.attribute_uses.iteritems(),
+                                           key=lambda item: item[0]):
                 with _TagGuard('attribute', xml_writer):
-                    _dump_attribute_attributes(attr.attribute, schema,
-                                               xml_writer, attr_def=True)
+                    _dump_attribute_attributes(attr_use.attribute, True,
+                                               schema, xml_writer)
 
-            agroups = attr_groups.get(schema.target_ns, {})
-            if len(agroups) != 0:
+            attr_groups = attribute_groups.get(schema.target_ns, {})
+            if len(attr_groups) != 0:
                 xml_writer.add_comment('Attribute Groups')
-            for (attribute, (name, attr)) in sorted(agroups.iteritems(),
+            for (attribute, (name, attr)) in sorted(attr_groups.iteritems(),
                                                     key=lambda x: x[1][0]):
                 with _TagGuard('attributeGroup', xml_writer):
                     xml_writer.add_attribute('name', name)
 
-                    _dump_attribute(attr, schema, xml_writer)
+                    _dump_attribute_use(attr, schema, xml_writer)
 
         xml_writer.done()
 
 
-def _collect_attr_groups(schemata):
-    attr_groups = {}
+def _collect_attribute_groups(schemata):
+    attribute_groups = {}
 
-    def find_groups(attr, schema, grp_count):
-        # This function should do checks similar to those in _dump_attribute().
-        if (checks.is_xml_attribute(attr.attribute) or
-            checks.is_any(attr.attribute) or attr.attribute.schema == schema):
-            return grp_count
+    def find_groups(attr_use, schema, group_count):
+        # This function should do checks similar to those in
+        # function _dump_attribute_use().
+        attribute = attr_use.attribute
 
-        attribute = attr.attribute
-        top_attrs = [a.attribute
-            for a in attribute.schema.attributes.itervalues()]
-        if attribute in top_attrs:
-            return grp_count
+        if (checks.is_xml_attribute(attribute) or
+            checks.is_any(attribute) or attribute.schema == schema):
+            return group_count
 
-        grp_name = '{}_attr_group{}'.format(attribute.name, grp_count)
-        grps = attr_groups.setdefault(attribute.schema.target_ns, {})
-        grps.setdefault(attribute, (grp_name, attr))
-        return grp_count + 1
+        top_attributes = [u.attribute
+            for u in attribute.schema.attribute_uses.itervalues()]
+        if attribute in top_attributes:
+            return group_count
 
-    grp_count = 1
-    for (schema_file, schema) in schemata.iteritems():
-        for (name, ct) in schema.complex_types.iteritems():
-            for a in ct.attributes:
-                grp_count = find_groups(a, schema, grp_count)
+        group_name = 'AttributeGroup{}'.format(group_count)
+        groups = attribute_groups.setdefault(attribute.schema.target_ns, {})
+        groups.setdefault(attribute, (group_name, attr_use))
+        return group_count + 1
 
-    return attr_groups
+    group_count = 1
+    for (schema_file, schema) in sorted(schemata.iteritems(),
+                                        key=lambda item: item[1].target_ns):
+        for (name, ct) in sorted(schema.complex_types.iteritems(),
+                                 key=lambda item: item[0]):
+            for u in ct.attribute_uses:
+                group_count = find_groups(u, schema, group_count)
+
+    return attribute_groups
 
 
-def _collect_elem_groups(schemata):
-    elem_groups = {}
+def _collect_element_groups(schemata):
+    element_groups = {}
 
-    def find_groups(particle, schema, grp_count):
+    def find_groups(particle, schema, group_count):
         compositors = []
 
         # First check elements.
         for p in particle.term.particles:
-            if checks.is_element(p.term):
-                if p.term.schema == schema:
-                    continue
-
-                top_elems = [p1.term
-                    for p1 in p.term.schema.elements.itervalues()]
-                if p.term in top_elems:
-                    continue
-
-                grp_name = '{}_elem_group{}'.format(particle.name, grp_count)
-                grps = elem_groups.setdefault(p.term.schema.target_ns, {})
-                grps.setdefault(particle.term, (grp_name, particle))
-                return grp_count + 1
-            elif checks.is_compositor(p.term):
+            if checks.is_compositor(p.term):
                 compositors.append(p)
+                continue
+            elif checks.is_any(p.term):
+                continue
+
+            assert checks.is_element(p.term)
+
+            if p.term.schema == schema:
+                continue
+
+            top_elements = [e
+                for e in p.term.schema.elements.itervalues()]
+            if p.term in top_elements:
+                continue
+
+            group_name = 'ElementGroup{}'.format(group_count)
+            groups = element_groups.setdefault(p.term.schema.target_ns, {})
+            groups.setdefault(particle.term, (group_name, particle))
+            return group_count + 1
 
         # Then recurse into compositors.
         for c in compositors:
-            grp_count = find_groups(c, schema, grp_count)
+            group_count = find_groups(c, schema, group_count)
 
-        return grp_count
+        return group_count
 
-    grp_count = 1
-    for (schema_file, schema) in schemata.iteritems():
-        for (name, ct) in schema.complex_types.iteritems():
+    group_count = 1
+    for (schema_file, schema) in sorted(schemata.iteritems(),
+                                        key=lambda item: item[1].target_ns):
+        for (name, ct) in sorted(schema.complex_types.iteritems(),
+                                 key=lambda item: item[0]):
             if ct.mixed or checks.has_complex_content(ct):
-                grp_count = find_groups(ct.particle, schema, grp_count)
+                group_count = find_groups(ct.particle, schema, group_count)
 
-    return elem_groups
+    return element_groups

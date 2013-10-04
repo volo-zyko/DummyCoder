@@ -24,7 +24,7 @@ class XsdSimpleContent(xsd_base.XsdBase):
         super(XsdSimpleContent, self).__init__(attrs)
 
         self.content_type = None
-        self.attributes = []
+        self.attr_uses = []
 
     @method_once
     def finalize(self, factory):
@@ -38,7 +38,7 @@ class XsdSimpleContent(xsd_base.XsdBase):
             if isinstance(c, xsd_extension_sc.XsdSimpleExtension):
                 self.content_type = c.base
             elif isinstance(c, xsd_restriction_sc.XsdSimpleRestriction):
-                self.content_type = c.own_type
-            self.attributes = c.attributes
+                self.content_type = c.simple_type
+            self.attr_uses = c.attr_uses
 
         return self

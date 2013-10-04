@@ -80,7 +80,7 @@ function cont_s2c()
 
         test -d "$again" && rm -rf "$again"
 
-        echo "### $run -i $out dumpxsd -o $again"
+        echo "### $run -i $out dumpxsd --for-diffing -o $again"
         $run -i "$out" dumpxsd --for-diffing -o "$again"
 
         (
@@ -91,8 +91,8 @@ function cont_s2c()
             diff -rub "$out" "$again" >"$res"
 
             if [ -s "$res" ]; then
-                echo "### Schemas at $out and $again are different, see $res"
-                # exit 1
+                echo "### ERROR: Schemas at $out and $again are different, see $res"
+                exit 1
             fi
 
             # Subshell succeeds.
@@ -116,6 +116,9 @@ for opt in "${opts[@]}"
 do
     find "$PWD/UT/schemas" -type d -mindepth 1 -maxdepth 1 | while read dir
     do
+        echo '###'
+        echo "### Doing schema dump tests for '$opt'"
+        echo '###'
         cont_s2c "$dir" dumpxsd $opt
     done
 done

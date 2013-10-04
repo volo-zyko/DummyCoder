@@ -43,14 +43,7 @@ class XsdRestriction(xsd_base.XsdBase):
     @method_once
     def finalize(self, factory):
         base = None
-        if self.schema_element.base is not None:
-            base = self.schema_element.base
-
-            for t in self.children:
-                if isinstance(t, xsd_enumeration.XsdEnumeration):
-                    self.schema_element.enumeration.append(
-                        (t.value, t.schema_element.doc))
-        elif self.attr('base') is None:
+        if self.attr('base') is None:
             for t in self.children:
                 assert ((isinstance(t, xsd_simple_type.XsdSimpleType) or
                          isinstance(t, xsd_enumeration.XsdEnumeration)) and
@@ -73,11 +66,11 @@ class XsdRestriction(xsd_base.XsdBase):
 
         assert base is not None, 'Restriction does not have base type'
 
-        self.schema_element.base = self._merge_base_restriction(base)
+        self.schema_element.base = self.merge_base_restriction(base)
 
         return self.schema_element
 
-    def _merge_base_restriction(self, base):
+    def merge_base_restriction(self, base):
         def merge(attr):
             if not getattr(self.schema_element, attr):
                 value = getattr(base.restriction, attr)
@@ -98,7 +91,7 @@ class XsdRestriction(xsd_base.XsdBase):
             merge('total_digits')
             merge('white_space')
 
-            base = self._merge_base_restriction(base.restriction.base)
+            base = self.merge_base_restriction(base.restriction.base)
 
         return base
 

@@ -44,8 +44,8 @@ class XsdAttribute(xsd_base.XsdBase):
             self.schema_element.attribute = \
                 factory.resolve_attribute(self.attr('ref'), self.schema)
         elif self.attr('type') is not None:
-            self.schema_element.attribute.type = factory.resolve_simple_type(
-                self.attr('type'), self.schema)
+            self.schema_element.attribute.type = \
+                factory.resolve_simple_type(self.attr('type'), self.schema)
         else:
             self.schema_element.attribute.type = \
                 dumco.schema.elements.SimpleType.urtype()

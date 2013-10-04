@@ -28,7 +28,7 @@ class XsdUnion(xsd_base.XsdBase):
     @method_once
     def finalize(self, factory):
         if self.attr('memberTypes') is not None:
-            for t in self.attr('memberTypes').split():
+            for t in self.attr('memberTypes'):
                 membertype = factory.resolve_simple_type(t, self.schema)
                 self._merge_unions(membertype)
 

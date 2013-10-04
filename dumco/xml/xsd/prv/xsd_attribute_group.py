@@ -27,7 +27,7 @@ class XsdAttributeGroup(xsd_base.XsdBase):
         super(XsdAttributeGroup, self).__init__(attrs)
 
         self.schema = parent_schema
-        self.attributes = []
+        self.attr_uses = []
 
     @method_once
     def finalize(self, factory):
@@ -35,10 +35,7 @@ class XsdAttributeGroup(xsd_base.XsdBase):
             attr_group = factory.resolve_attribute_group(self.attr('ref'),
                                                          self.schema)
 
-            self.attributes = attr_group.attributes
-
-            for attr in self.attributes:
-                factory.fix_imports(self.schema.schema_element, attr.attribute)
+            self.attr_uses = attr_group.attr_uses
         else:
             for c in self.children:
                 assert (isinstance(c, XsdAttributeGroup) or
@@ -47,12 +44,11 @@ class XsdAttributeGroup(xsd_base.XsdBase):
                     'Attribute group contains non-attribute*'
 
                 if isinstance(c, XsdAttributeGroup):
-                    c.finalize(factory)
-                    self.attributes.extend(c.attributes)
+                    self.attr_uses.extend(c.finalize(factory).attr_uses)
                 elif isinstance(c, xsd_attribute.XsdAttribute):
                     if not c.prohibited:
-                        self.attributes.append(c.finalize(factory))
+                        self.attr_uses.append(c.finalize(factory))
                 elif isinstance(c, xsd_any.XsdAny):
-                    self.attributes.append(c.finalize(factory))
+                    self.attr_uses.append(c.finalize(factory))
 
         return self

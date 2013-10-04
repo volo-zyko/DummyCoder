@@ -40,7 +40,7 @@ class XsdComplexExtension(xsd_base.XsdBase):
 
         self.schema = parent_schema
         self.particle = None
-        self.attributes = []
+        self.attr_uses = []
 
     @method_once
     def finalize(self, factory):
@@ -52,13 +52,12 @@ class XsdComplexExtension(xsd_base.XsdBase):
                 assert self.particle is None, 'Content model overriden'
                 self.particle = c.finalize(factory)
             elif isinstance(c, xsd_attribute_group.XsdAttributeGroup):
-                c.finalize(factory)
-                self.attributes.extend(c.attributes)
+                self.attr_uses.extend(c.finalize(factory).attr_uses)
             elif isinstance(c, xsd_attribute.XsdAttribute):
                 if not c.prohibited:
-                    self.attributes.append(c.finalize(factory))
+                    self.attr_uses.append(c.finalize(factory))
             elif isinstance(c, xsd_any.XsdAny):
-                self.attributes.append(c.finalize(factory))
+                self.attr_uses.append(c.finalize(factory))
             else: # pragma: no cover
                 assert False, 'Wrong content of complex Extension'
 
@@ -66,14 +65,7 @@ class XsdComplexExtension(xsd_base.XsdBase):
                                             self.schema, finalize=True)
 
         self.particle = self._merge_content(base)
-        self.attributes.extend(base.attributes)
-
-        term = self.particle.term if self.particle is not None else None
-        for (_, p) in dumco.schema.enums.enum_term_particles(term):
-            factory.fix_imports(self.schema.schema_element, p.term)
-
-        for attr in self.attributes:
-            factory.fix_imports(self.schema.schema_element, attr.attribute)
+        self.attr_uses.extend(base.attribute_uses)
 
         return self
 

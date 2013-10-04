@@ -30,7 +30,7 @@ class XsdSimpleExtension(xsd_base.XsdBase):
 
         self.schema = parent_schema
         self.base = None
-        self.attributes = []
+        self.attr_uses = []
 
     @method_once
     def finalize(self, factory):
@@ -41,24 +41,20 @@ class XsdSimpleExtension(xsd_base.XsdBase):
                 'Wrong content of simple Extension'
 
             if isinstance(c, xsd_attribute_group.XsdAttributeGroup):
-                c.finalize(factory)
-                self.attributes.extend(c.attributes)
+                self.attr_uses.extend(c.finalize(factory).attr_uses)
             elif isinstance(c, xsd_attribute.XsdAttribute):
                 if not c.prohibited:
-                    self.attributes.append(c.finalize(factory))
+                    self.attr_uses.append(c.finalize(factory))
             elif isinstance(c, xsd_any.XsdAny):
-                self.attributes.append(c.finalize(factory))
+                self.attr_uses.append(c.finalize(factory))
 
         base = factory.resolve_type(self.attr('base'),
                                     self.schema, finalize=True)
 
         if dumco.schema.checks.is_complex_type(base):
-            self.attributes.extend(base.attributes)
+            self.attr_uses.extend(base.attribute_uses)
 
-            for attr in base.attributes:
-                factory.fix_imports(self.schema.schema_element, attr.attribute)
-
-            assert dumco.schema.checks.has_simple_content(base) or base.mixed, \
+            assert dumco.schema.checks.is_primitive_type(base.text.type), \
                 'Simple Extension must extend only Simple Content'
             self.base = base.text.type
         else:

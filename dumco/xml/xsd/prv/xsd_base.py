@@ -7,7 +7,7 @@ import dumco.schema.checks
 
 class XsdBase(object):
     def __init__(self, attrs):
-        self.attrs = {x[1]: v for (x,v) in attrs.items()}
+        self.attrs = attrs
         self.children = []
 
     def attr(self, name):
@@ -21,18 +21,19 @@ class XsdBase(object):
         self.__dict__[name] = value
 
 
-def restrict_base_attributes(base, prohibited_attrs, redefined_attrs,
-                             attributes, schema, factory):
+def restrict_base_attributes(base, attr_uses, factory,
+                             prohibited_attr_uses, redefined_attr_uses):
+    # Utility function common for XsdSimpleRestriction and XsdComplexRestriction
+    # which adds attribute uses only if they are not restricted by derived
+    # type.
     is_attr_in_list = lambda attr, attrlist: any(
         map(lambda x: attr.name == x.attribute.name and
-                      attr.schema.target_ns == x.attribute.schema.target_ns,
+                      attr.schema == x.attribute.schema,
             attrlist))
-    for a in base.attributes:
-        if (not dumco.schema.checks.is_any(a.attribute) and
-            (is_attr_in_list(a.attribute, prohibited_attrs) or
-             is_attr_in_list(a.attribute, redefined_attrs))):
+    for u in base.attribute_uses:
+        if (not dumco.schema.checks.is_any(u.attribute) and
+            (is_attr_in_list(u.attribute, prohibited_attr_uses) or
+             is_attr_in_list(u.attribute, redefined_attr_uses))):
             continue
 
-        attributes.append(a)
-
-        factory.fix_imports(schema, a.attribute)
+        attr_uses.append(u)

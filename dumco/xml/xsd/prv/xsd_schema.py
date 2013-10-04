@@ -1,6 +1,5 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
-import copy
 import os.path
 import StringIO
 import xml.dom.minidom
@@ -27,9 +26,6 @@ import xsd_simple_type
 def xsd_schema(attrs, parent_element, factory, schema_path, all_schemata):
     schema = XsdSchema(attrs, schema_path)
     all_schemata[schema_path] = schema
-
-    for (prefix, uri) in factory.namespaces.iteritems():
-        schema.schema_element.set_namespace(prefix, uri)
 
     if factory.current_xsd is None:
         factory.current_xsd = schema_path
@@ -67,15 +63,10 @@ class XsdSchema(xsd_base.XsdBase):
         self.elements = {}
         self.groups = {}
         self.imports = {}
-        self.namespaces = {}
         self.simple_types = {}
         self.unnamed_types = []
 
     def set_imports(self, all_schemata):
-        self.schema_element.set_imports(self.imports.iterkeys(),
-            {path: all_schemata[path].schema_element
-             for path in self.imports.iterkeys()})
-
         self.imports = {
             all_schemata[path].schema_element.target_ns: all_schemata[path]
             for path in self.imports.iterkeys()}
@@ -107,23 +98,25 @@ class XsdSchema(xsd_base.XsdBase):
 
         for elem in self.elements.itervalues():
             schema_elem = elem.finalize(factory)
-            schema_element.elements[schema_elem.term.name] = schema_elem
+            name = schema_elem.term.name
+            schema_element.elements[name] = schema_elem.term
 
         for attr in self.attributes.itervalues():
-            schema_attr = attr.finalize(factory)
-            name = schema_attr.attribute.name
-            schema_element.attributes[name] = schema_attr
+            schema_attr_use = attr.finalize(factory)
+            name = schema_attr_use.attribute.name
+            schema_element.attribute_uses[name] = schema_attr_use
 
     @staticmethod
-    def _get_schema_location(attrsOrNode, factory, schema_path):
+    def _get_schema_location(attrs_or_node, factory, schema_path):
         location = None
 
-        if isinstance(attrsOrNode, xml.dom.minidom.Element):
-            if attrsOrNode.hasAttribute('schemaLocation'):
-                location = attrsOrNode.getAttribute('schemaLocation')
+        if isinstance(attrs_or_node, xml.dom.minidom.Element):
+            if attrs_or_node.hasAttribute('schemaLocation'):
+                location = attrs_or_node.getAttribute('schemaLocation')
         else:
             try:
-                location = factory.get_attribute(attrsOrNode, 'schemaLocation')
+                location = factory.get_attribute(attrs_or_node,
+                                                 'schemaLocation')
             except LookupError:
                 pass
 
@@ -148,7 +141,7 @@ class XsdSchema(xsd_base.XsdBase):
 
         if new_schema_path is not None:
             assert (os.path.isfile(new_schema_path) or
-                    namespace == dumco.schema.checks.XML_NAMESPACE), \
+                    dumco.schema.checks.is_xml_namespace(namespace)), \
                 'File {} does not exist'.format(new_schema_path)
 
             if os.path.isfile(new_schema_path):
@@ -177,14 +170,20 @@ class XsdSchema(xsd_base.XsdBase):
                 new_schema_path not in factory.included_schema_paths):
                 inc_paths.add(new_schema_path)
 
-                string_stream = _merge_xsds(factory.current_xsd, schema_path,
-                                            new_schema_path, factory)
+                current_xsd_copy = factory.current_xsd
+                if isinstance(current_xsd_copy, StringIO.StringIO):
+                    # Copy StringIO so that in a new stream we start
+                    # reading from the beginning.
+                    current_xsd_copy = \
+                        StringIO.StringIO(factory.current_xsd.getvalue())
 
                 # Restart parsing with a new xsd.
-                factory.reset()
-                factory.current_xsd = copy.copy(string_stream)
+                factory.current_xsd = _merge_xsds(current_xsd_copy, schema_path,
+                                                  new_schema_path, factory)
                 all_schemata[schema_path] = None
-                raise dumco.xml.parser.ParseRestart(string_stream)
+                factory.reset()
+
+                raise dumco.xml.parser.ParseRestart(factory.current_xsd)
 
         return (parent_element, {
             'annotation': factory.noop_handler,

@@ -3,6 +3,7 @@
 import dumco.schema.base
 import dumco.schema.checks
 import dumco.schema.elements
+import dumco.schema.enums
 
 import prv.xsd_schema
 
@@ -14,9 +15,11 @@ class XsdElementFactory(object):
 
         # These internals should not be reset.
         self.included_schema_paths = {}
+        # Either path to XSD file or XSD as StringIO.
         self.current_xsd = None
 
-        self.all_named_ns = {dumco.schema.checks.XML_NAMESPACE: 'xml'}
+        # All prefices encountered during schemata loading.
+        self.all_namespace_prefices = {dumco.schema.checks.XML_NAMESPACE: 'xml'}
 
         # Set part of the factorie's interface.
         self.namer = element_namer
@@ -30,19 +33,23 @@ class XsdElementFactory(object):
         self.element_stack = []
         self.element = None
         self.namespaces = {'xml': dumco.schema.checks.XML_NAMESPACE}
+        self.substitution_groups = {}
 
-    def open_namespace(self, prefix, uri):
-        self.namespaces[prefix] = uri
+    def define_namespace(self, prefix, uri):
+        if uri is None:
+            # Remove namespace.
+            assert prefix in self.namespaces, \
+                'Closing non-existent namespace'
+            del self.namespaces[prefix]
+        else:
+            # Add namespace.
+            self.namespaces[prefix] = uri
 
-        if (prefix is not None and
-            not dumco.schema.checks.is_xsd_namespace(uri) and
-            uri not in self.all_named_ns):
-            self.all_named_ns[uri] = prefix
-
-    def close_namespace(self, prefix):
-        assert prefix in self.namespaces, \
-            'Closing non-existent namespace'
-        del self.namespaces[prefix]
+        if prefix is not None and not dumco.schema.checks.is_xsd_namespace(uri):
+            # This makes sure that prefix will be the same no matter what was
+            # the order of loading of schemata.
+            if prefix > self.all_namespace_prefices.get(uri, ''):
+                self.all_namespace_prefices[uri] = prefix
 
     def new_element(self, name, attrs, schema_path, all_schemata):
         # Here we don't support anything non-XSD.
@@ -57,8 +64,26 @@ class XsdElementFactory(object):
                 name[1], self.element.__class__.__name__)
 
         if self.dispatcher is not None:
+            xsd_attrs = {}
+            for ((uri, n), value) in attrs.items():
+                # XML Schema attributes are always unqualified.
+                if uri is not None:
+                    continue
+
+                # This way we make sure that all XSD attributes with QName
+                # value and which we want to process will have correctly
+                # resolved namespace uri.
+                if (n == 'ref' or n == 'type' or n == 'base' or
+                    n == 'substitutionGroup' or n == 'itemType'):
+                    xsd_attrs[n] = self._parse_qname(value)
+                elif n == 'memberTypes':
+                    xsd_attrs[n] = [self._parse_qname(q)
+                        for q in value.split()]
+                else:
+                    xsd_attrs[n] = value
+
             (element, self.dispatcher) = self.dispatcher[name[1]](
-                attrs, self.element, self, schema_path, all_schemata)
+                xsd_attrs, self.element, self, schema_path, all_schemata)
 
             self.element = element
 
@@ -83,25 +108,76 @@ class XsdElementFactory(object):
             self.element.schema_element.append_doc(text)
 
     def finalize_documents(self, all_schemata):
-        for inc_paths in self.included_schema_paths.itervalues():
-            for p in inc_paths:
-                if p in all_schemata:
-                    del all_schemata[p]
-
+        # Set original imports which are necessary during
+        # per-schema finalization.
         for schema in all_schemata.itervalues():
             schema.set_imports(all_schemata)
 
-            if schema.schema_element.target_ns in self.all_named_ns:
-                schema.schema_element.set_namespace(
-                    self.all_named_ns[schema.schema_element.target_ns],
-                    schema.schema_element.target_ns)
+            schema.schema_element.set_prefix(self.all_namespace_prefices)
 
+        def included_in_other_schema(schema):
+            for included_paths in self.included_schema_paths.itervalues():
+                if schema.schema_element.path in included_paths:
+                    return True
+            return False
+
+        # Finalize each schema.
         for schema in sorted(all_schemata.itervalues(),
                              key=lambda s: s.schema_element.target_ns):
+            if included_in_other_schema(schema):
+                continue
+
             schema.finalize(all_schemata, self)
 
+        # Set prefix and imports in each DOM schema.
+        for schema in all_schemata.itervalues():
+            def enum_schema_content_n_substitute(schema_element):
+                for ct in schema_element.complex_types.itervalues():
+                    for (_, p) in dumco.schema.enums.enum_ct_particles(ct):
+                        yield p.term
+
+                    for (_, u) in dumco.schema.enums.enum_attribute_uses(ct):
+                        yield u.attribute
+
+                    if dumco.schema.checks.has_simple_content(ct):
+                        yield ct.text.type
+
+                for st in schema_element.simple_types.itervalues():
+                    yield st
+
+                for elem in schema_element.elements.itervalues():
+                    yield elem
+
+                for attr_use in schema_element.attribute_uses.itervalues():
+                    yield attr_use.attribute
+
+            def add_import_if_differ(own_schema, other_schema):
+                if other_schema is not None and other_schema != own_schema:
+                    own_schema.add_import(other_schema)
+                    return True
+                return False
+
+            schema_element = schema.schema_element
+            for c in enum_schema_content_n_substitute(schema_element):
+                if add_import_if_differ(schema_element, c.schema):
+                    continue
+
+                if (dumco.schema.checks.is_element(c) or
+                    dumco.schema.checks.is_attribute(c)):
+                    add_import_if_differ(schema_element, c.type.schema)
+                elif dumco.schema.checks.is_simple_type(c):
+                    if c.restriction is not None:
+                        add_import_if_differ(schema_element,
+                                             c.restriction.base.schema)
+                    elif c.listitem is not None:
+                        add_import_if_differ(schema_element, c.listitem.schema)
+                    elif c.union:
+                        for s in c.union:
+                            add_import_if_differ(schema_element, s.schema)
+
         return {path: schema.schema_element
-                for (path, schema) in all_schemata.iteritems()}
+                for (path, schema) in all_schemata.iteritems()
+                if not included_in_other_schema(schema)}
 
     def add_to_parent_schema(self, element, attrs, schema,
                              fieldname, is_type=False):
@@ -159,9 +235,7 @@ class XsdElementFactory(object):
         except LookupError:
             return None
 
-    def resolve_attribute(self, qname, schema, finalize=False):
-        (uri, localname) = self._parse_qname(
-            qname, schema.schema_element.namespaces)
+    def resolve_attribute(self, (uri, localname), schema, finalize=False):
         if uri is None or uri == schema.schema_element.target_ns:
             attr = schema.attributes[localname]
             return (attr.finalize(self).attribute if finalize
@@ -174,20 +248,15 @@ class XsdElementFactory(object):
             except KeyError:
                 return dumco.schema.base.xml_attributes()[localname]
 
-    def resolve_attribute_group(self, qname, schema):
-        (uri, localname) = self._parse_qname(
-            qname, schema.schema_element.namespaces)
+    def resolve_attribute_group(self, (uri, localname), schema):
         if uri is None or uri == schema.schema_element.target_ns:
             return schema.attribute_groups[localname].finalize(self)
         else:
-            attr_grp = schema.imports[uri].attribute_groups[localname]
-            return attr_grp.finalize(self)
+            attr_group = schema.imports[uri].attribute_groups[localname]
+            return attr_group.finalize(self)
 
-    def resolve_complex_type(self, qname, schema, finalize=False):
-        (uri, localname) = self._parse_qname(
-            qname, schema.schema_element.namespaces)
-
-        if (self._is_default_xsd_namespace(uri, schema) and
+    def resolve_complex_type(self, (uri, localname), schema, finalize=False):
+        if (dumco.schema.checks.is_xsd_namespace(uri) and
             localname == 'anyType'):
             return dumco.schema.elements.ComplexType.urtype()
 
@@ -198,9 +267,7 @@ class XsdElementFactory(object):
             ct = schema.imports[uri].complex_types[localname]
             return (ct.finalize(self) if finalize else ct.schema_element)
 
-    def resolve_element(self, qname, schema, finalize=False):
-        (uri, localname) = self._parse_qname(
-            qname, schema.schema_element.namespaces)
+    def resolve_element(self, (uri, localname), schema, finalize=False):
         if uri is None or uri == schema.schema_element.target_ns:
             elem = schema.elements[localname]
             return (elem.finalize(self).term if finalize
@@ -210,19 +277,14 @@ class XsdElementFactory(object):
             return (elem.finalize(self).term if finalize
                     else elem.schema_element.term)
 
-    def resolve_group(self, qname, schema):
-        (uri, localname) = self._parse_qname(
-            qname, schema.schema_element.namespaces)
+    def resolve_group(self, (uri, localname), schema):
         if uri is None or uri == schema.schema_element.target_ns:
             return schema.groups[localname].finalize(self)
         else:
             return schema.imports[uri].groups[localname].finalize(self)
 
-    def resolve_simple_type(self, qname, schema, finalize=False):
-        (uri, localname) = self._parse_qname(
-            qname, schema.schema_element.namespaces)
-
-        if self._is_default_xsd_namespace(uri, schema):
+    def resolve_simple_type(self, (uri, localname), schema, finalize=False):
+        if dumco.schema.checks.is_xsd_namespace(uri):
             if localname == 'anySimpleType':
                 return dumco.schema.elements.SimpleType.urtype()
             else:
@@ -241,39 +303,21 @@ class XsdElementFactory(object):
         except KeyError:
             return self.resolve_complex_type(qname, schema, finalize=finalize)
 
-    def get_attribute(self, attrs, localname, uri=None):
-        if (uri, localname) not in attrs:
+    def get_attribute(self, attrs, localname):
+        if localname not in attrs:
             raise LookupError
-        return attrs.get((uri, localname))
+        return attrs.get(localname)
 
-    def _parse_qname(self, qname, namespaces, default=''):
+    def _parse_qname(self, qname):
         splitted = qname.split(':')
         if len(splitted) == 1:
-            return (None, qname)
+            if (None in self.namespaces and
+                dumco.schema.checks.is_xsd_namespace(self.namespaces[None])):
+                return (dumco.schema.checks.XSD_NAMESPACE, qname)
+            else:
+                return (None, qname)
         else:
-            return (namespaces[splitted[0]], splitted[1])
-
-    def _is_default_xsd_namespace(self, uri, schema):
-        checks = dumco.schema.checks
-        namespaces = schema.schema_element.namespaces
-
-        return ((uri is None and None in namespaces and
-                 checks.is_xsd_namespace(namespaces[None])) or
-                checks.is_xsd_namespace(uri))
-
-    @staticmethod
-    def fix_imports(schema, component):
-        if (dumco.schema.checks.is_xml_attribute(component) or
-            dumco.schema.checks.is_any(component)):
-            return
-
-        # We reference a component from different schema, thus we must ensure
-        # that we have corresponding import.
-        if (schema != component.schema and
-            component.schema.target_ns not in schema.imports):
-            comp_s = component.schema
-            schema.imports[comp_s.target_ns] = comp_s
-            schema.namespaces[comp_s.prefix] = comp_s.target_ns
+            return (self.namespaces[splitted[0]], splitted[1])
 
     @staticmethod
     def noop_handler(attrs, parent_element, factory,

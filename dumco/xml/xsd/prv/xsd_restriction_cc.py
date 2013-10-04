@@ -38,12 +38,12 @@ class XsdComplexRestriction(xsd_base.XsdBase):
 
         self.schema = parent_schema
         self.particle = None
-        self.attributes = []
+        self.attr_uses = []
 
     @method_once
     def finalize(self, factory):
-        redefined_attrs = []
-        prohibited_attrs = []
+        redefined_attr_uses = []
+        prohibited_attr_uses = []
         for c in self.children:
             if (isinstance(c, xsd_all.XsdAll) or
                 isinstance(c, xsd_choice.XsdChoice) or
@@ -52,25 +52,24 @@ class XsdComplexRestriction(xsd_base.XsdBase):
                 assert self.particle is None, 'Content model overriden'
                 self.particle = c.finalize(factory)
             elif isinstance(c, xsd_attribute_group.XsdAttributeGroup):
-                c.finalize(factory)
-                self.attributes.extend(c.attributes)
+                self.attr_uses.extend(c.finalize(factory).attr_uses)
             elif isinstance(c, xsd_attribute.XsdAttribute):
                 if c.prohibited:
-                    prohibited_attrs.append(c.finalize(factory))
+                    prohibited_attr_uses.append(c.finalize(factory))
                 else:
-                    redefined_attrs.append(c.finalize(factory))
+                    redefined_attr_uses.append(c.finalize(factory))
             elif isinstance(c, xsd_any.XsdAny):
-                self.attributes.append(c.finalize(factory))
+                self.attr_uses.append(c.finalize(factory))
             else: # pragma: no cover
                 assert False, 'Wrong content of complex Restriction'
 
         base = factory.resolve_complex_type(self.attr('base'),
                                             self.schema, finalize=True)
 
-        xsd_base.restrict_base_attributes(
-            base, prohibited_attrs, redefined_attrs,
-            self.attributes, self.schema.schema_element, factory)
+        xsd_base.restrict_base_attributes(base, self.attr_uses, factory,
+                                          prohibited_attr_uses,
+                                          redefined_attr_uses)
 
-        self.attributes.extend(redefined_attrs)
+        self.attr_uses.extend(redefined_attr_uses)
 
         return self

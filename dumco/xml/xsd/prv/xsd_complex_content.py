@@ -27,18 +27,19 @@ class XsdComplexContent(xsd_base.XsdBase):
                            else (self.attr('mixed') == 'true' or
                                  self.attr('mixed') == '1'))
         self.particle = None
-        self.attributes = []
+        self.attr_uses = []
 
     @method_once
     def finalize(self, factory):
         for c in self.children:
-            assert ((isinstance(c, xsd_extension_cc.XsdComplexExtension) or
-                     isinstance(c, xsd_restriction_cc.XsdComplexRestriction)) and
-                    self.particle is None), 'Wrong content of ComplexContent'
+            assert (
+                (isinstance(c, xsd_extension_cc.XsdComplexExtension) or
+                 isinstance(c, xsd_restriction_cc.XsdComplexRestriction)) and
+                self.particle is None), 'Wrong content of ComplexContent'
 
             c.finalize(factory)
 
             self.particle = c.particle
-            self.attributes = c.attributes
+            self.attr_uses = c.attr_uses
 
         return self

@@ -48,7 +48,7 @@ class ComplexType(base.SchemaBase):
 
         self.name = (name if name == 'anyType' or name is None
                      else dumco.utils.string_utils.upper_first_letter(name))
-        self.attributes = []
+        self.attribute_uses = []
         self.particle = None
         self.text = None
 
@@ -69,7 +69,7 @@ class ComplexType(base.SchemaBase):
         seqpart.term.particles.append(anypart)
         urtype.particle = seqpart
         urtype.text = base.SchemaText(base.xsd_builtin_types()['string'])
-        urtype.attributes.append(anyattr)
+        urtype.attribute_uses.append(anyattr)
 
         return urtype
 
@@ -125,22 +125,22 @@ class Schema(base.SchemaBase):
         self.prefix = None
 
         # Containers for elements in the schema.
-        self.attributes = {}
+        self.attribute_uses = {}
         self.complex_types = {}
         self.elements = {}
         self.imports = {}
-        self.namespaces = {}
         self.simple_types = {}
 
-    def set_namespace(self, prefix, uri):
-        self.namespaces[prefix] = uri
-        if prefix is not None and uri == self.target_ns:
-            self.prefix = prefix
+    def set_prefix(self, all_namespace_prefices):
+        if self.target_ns in all_namespace_prefices:
+            self.prefix = all_namespace_prefices[self.target_ns]
 
-    def set_imports(self, import_paths, all_schemata):
-        self.imports = {
-            all_schemata[path].target_ns: all_schemata[path]
-            for path in import_paths}
+    def add_import(self, schema):
+        assert (schema.target_ns not in self.imports or
+                self.imports[schema.target_ns] == schema), \
+            'Redefining namespace to a different schema'
+
+        self.imports[schema.target_ns] = schema
 
 
 class Sequence(base.SchemaBase):

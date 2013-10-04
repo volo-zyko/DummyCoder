@@ -42,9 +42,6 @@ class XsdGroup(xsd_base.XsdBase):
             particle = factory.resolve_group(self.attr('ref'), self.schema)
 
             self.term = particle.term
-
-            for (_, p) in dumco.schema.enums.enum_term_particles(self.term):
-                factory.fix_imports(self.schema.schema_element, p.term)
         else:
             for c in self.children:
                 assert ((isinstance(c, xsd_all.XsdAll) or

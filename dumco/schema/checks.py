@@ -23,6 +23,10 @@ def is_xsd_namespace(uri):
     return uri == XSD_NAMESPACE
 
 
+def is_xml_namespace(uri):
+    return uri == XML_NAMESPACE
+
+
 # Type checks.
 def has_complex_content(schema_type):
     return (is_complex_type(schema_type) and
@@ -62,12 +66,12 @@ def is_list_type(schema_type):
     return (is_simple_type(schema_type) and schema_type.listitem is not None)
 
 
-def is_native_type(schema_type):
+def is_xsd_native_type(schema_type):
     return isinstance(schema_type, base.XsdNativeType)
 
 
 def is_primitive_type(schema_type):
-    return (is_native_type(schema_type) or is_simple_type(schema_type))
+    return (is_xsd_native_type(schema_type) or is_simple_type(schema_type))
 
 
 def is_restriction_type(schema_type):
