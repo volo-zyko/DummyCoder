@@ -4,6 +4,7 @@ import dumco.schema.base
 import dumco.schema.checks
 import dumco.schema.elements
 import dumco.schema.enums
+import dumco.schema.uses
 
 import prv.xsd_schema
 
@@ -108,20 +109,20 @@ class XsdElementFactory(object):
             self.element.schema_element.append_doc(text)
 
     def finalize_documents(self, all_schemata):
-        # Set original imports which are necessary during
-        # per-schema finalization.
-        for schema in all_schemata.itervalues():
-            schema.set_imports(all_schemata)
-
-            schema.schema_element.set_prefix(self.all_namespace_prefices)
-
         def included_in_other_schema(schema):
             for included_paths in self.included_schema_paths.itervalues():
                 if schema.schema_element.path in included_paths:
                     return True
             return False
 
-        # Finalize each schema.
+        # Set schema prefices and original imports which are necessary during
+        # per-schema finalization.
+        for schema in all_schemata.itervalues():
+            schema.set_imports(all_schemata)
+
+            schema.schema_element.set_prefix(self.all_namespace_prefices)
+
+        # Finalize each schema except for those included schemata.
         for schema in sorted(all_schemata.itervalues(),
                              key=lambda s: s.schema_element.target_ns):
             if included_in_other_schema(schema):
@@ -129,55 +130,104 @@ class XsdElementFactory(object):
 
             schema.finalize(all_schemata, self)
 
-        # Set prefix and imports in each DOM schema.
+        # Set imports in each DOM schema and fix substitution groups.
+        # There is no way to do it during schema finalization, so we traverse
+        # everything once again.
+        substituted = set()
         for schema in all_schemata.itervalues():
-            def enum_schema_content_n_substitute(schema_element):
-                for ct in schema_element.complex_types.itervalues():
-                    for (_, p) in dumco.schema.enums.enum_ct_particles(ct):
-                        yield p.term
-
-                    for (_, u) in dumco.schema.enums.enum_attribute_uses(ct):
-                        yield u.attribute
-
-                    if dumco.schema.checks.has_simple_content(ct):
-                        yield ct.text.type
-
-                for st in schema_element.simple_types.itervalues():
-                    yield st
-
-                for elem in schema_element.elements.itervalues():
-                    yield elem
-
-                for attr_use in schema_element.attribute_uses.itervalues():
-                    yield attr_use.attribute
-
-            def add_import_if_differ(own_schema, other_schema):
-                if other_schema is not None and other_schema != own_schema:
-                    own_schema.add_import(other_schema)
-                    return True
-                return False
-
-            schema_element = schema.schema_element
-            for c in enum_schema_content_n_substitute(schema_element):
-                if add_import_if_differ(schema_element, c.schema):
-                    continue
-
-                if (dumco.schema.checks.is_element(c) or
-                    dumco.schema.checks.is_attribute(c)):
-                    add_import_if_differ(schema_element, c.type.schema)
-                elif dumco.schema.checks.is_simple_type(c):
-                    if c.restriction is not None:
-                        add_import_if_differ(schema_element,
-                                             c.restriction.base.schema)
-                    elif c.listitem is not None:
-                        add_import_if_differ(schema_element, c.listitem.schema)
-                    elif c.union:
-                        for s in c.union:
-                            add_import_if_differ(schema_element, s.schema)
+            self._post_finalize(schema, substituted)
 
         return {path: schema.schema_element
                 for (path, schema) in all_schemata.iteritems()
                 if not included_in_other_schema(schema)}
+
+    def _post_finalize(self, xsd_schema, substituted):
+        enums = dumco.schema.enums
+        checks = dumco.schema.checks
+
+        def enum_schema_content_with_fixes(schema):
+            def enum_with_substitute(particle):
+                for (_, p) in enums.enum_term_particles(particle.term):
+                    if (p.term in self.substitution_groups and
+                        p.term not in substituted):
+                        substituted.add(p.term)
+                        p.term = self.substitution_groups[p.term]
+                        for t in enum_with_substitute(p):
+                            yield t
+                    else:
+                        yield p.term
+
+            # for ct in list(schema.complex_types.itervalues()):
+            #     if ct.abstract:
+            #         # Remove abstract complex type.
+            #         name = ct.schema_element.name
+            #         del schema.schema_element.complex_types[name]
+
+            # for elem in list(schema.elements.itervalues()):
+            #     if elem.abstract:
+            #         # Remove abstract element.
+            #         name = elem.schema_element.term.name
+            #         del schema.schema_element.elements[name]
+
+            for ct in schema.schema_element.complex_types.itervalues():
+                if (ct.mixed or checks.has_complex_content(ct)):
+                    for t in enum_with_substitute(ct.particle):
+                        yield t
+
+                for (_, u) in enums.enum_attribute_uses(ct):
+                    yield u.attribute
+
+                if checks.has_simple_content(ct):
+                    yield ct.text.type
+
+            for st in schema.schema_element.simple_types.itervalues():
+                yield st
+
+            for elem in schema.schema_element.elements.itervalues():
+                yield elem
+
+            for attr_use in schema.schema_element.attribute_uses.itervalues():
+                yield attr_use.attribute
+
+        def add_import_if_differ(own_schema, other_schema):
+            if other_schema is not None and other_schema != own_schema:
+                own_schema.add_import(other_schema)
+                return True
+            return False
+
+        # Traverse all schema components and add imports if necessary.
+        for c in enum_schema_content_with_fixes(xsd_schema):
+            if add_import_if_differ(xsd_schema.schema_element, c.schema):
+                continue
+
+            if (checks.is_element(c) or checks.is_attribute(c)):
+                add_import_if_differ(xsd_schema.schema_element,
+                                     c.type.schema)
+            elif checks.is_simple_type(c):
+                if c.restriction is not None:
+                    add_import_if_differ(xsd_schema.schema_element,
+                                         c.restriction.base.schema)
+                elif c.listitem is not None:
+                    add_import_if_differ(xsd_schema.schema_element,
+                                         c.listitem.schema)
+                elif c.union:
+                    for s in c.union:
+                        add_import_if_differ(xsd_schema.schema_element,
+                                             s.schema)
+
+    def add_substitution_group(self, xsd_head, element):
+        head = xsd_head.schema_element.term
+
+        if head not in self.substitution_groups:
+            self.substitution_groups[head] = \
+                dumco.schema.elements.Choice(head.schema)
+        substitution_group = self.substitution_groups[head]
+
+        if not xsd_head.abstract and len(substitution_group.particles) == 0:
+            substitution_group.particles.append(
+                dumco.schema.uses.Particle(1, 1, head))
+        substitution_group.particles.append(
+            dumco.schema.uses.Particle(1, 1, element.term))
 
     def add_to_parent_schema(self, element, attrs, schema,
                              fieldname, is_type=False):
@@ -270,11 +320,11 @@ class XsdElementFactory(object):
     def resolve_element(self, (uri, localname), schema, finalize=False):
         if uri is None or uri == schema.schema_element.target_ns:
             elem = schema.elements[localname]
-            return (elem.finalize(self).term if finalize
+            return (elem, elem.finalize(self).term if finalize
                     else elem.schema_element.term)
         else:
             elem = schema.imports[uri].elements[localname]
-            return (elem.finalize(self).term if finalize
+            return (elem, elem.finalize(self).term if finalize
                     else elem.schema_element.term)
 
     def resolve_group(self, (uri, localname), schema):

@@ -47,6 +47,9 @@ class XsdComplexType(xsd_base.XsdBase):
         self.schema_element = dumco.schema.elements.ComplexType(
             self.attr('name'), parent_schema.schema_element)
 
+        self.abstract = (self.attr('abstract') == 'true' or
+                         self.attr('abstract') == '1')
+
     @method_once
     def finalize(self, factory):
         attribute_uses = self.schema_element.attribute_uses

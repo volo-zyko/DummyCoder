@@ -72,6 +72,7 @@ function cont_s2c()
             ;;
     esac
 
+    echo '###'
     echo "### ${cmd[@]}"
     $COVERAGE_APPEND_COMMAND "${cmd[@]}"
 
@@ -114,11 +115,11 @@ opts+=('-n fb2')
 
 for opt in "${opts[@]}"
 do
+    echo '###'
+    echo "### Doing schema dump tests for '$opt'"
+    echo '###'
     find "$PWD/UT/schemas" -type d -mindepth 1 -maxdepth 1 | while read dir
     do
-        echo '###'
-        echo "### Doing schema dump tests for '$opt'"
-        echo '###'
         cont_s2c "$dir" dumpxsd $opt
     done
 done

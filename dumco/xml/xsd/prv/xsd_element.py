@@ -43,17 +43,22 @@ class XsdElement(xsd_base.XsdBase):
             dumco.schema.elements.Element(
                 self.attr('name'), qualified, parent_schema.schema_element))
 
+        self.abstract = (self.attr('abstract') == 'true' or
+                         self.attr('abstract') == '1')
+
     @method_once
     def finalize(self, factory):
+        if self.attr('substitutionGroup') is not None:
+            (xsd_subst_head, _) = factory.resolve_element(
+                self.attr('substitutionGroup'), self.schema, finalize=True)
+            factory.add_substitution_group(xsd_subst_head, self.schema_element)
+
         if self.attr('ref') is not None:
-            self.schema_element.term = \
+            (_, self.schema_element.term) = \
                 factory.resolve_element(self.attr('ref'), self.schema)
         elif self.attr('type') is not None:
             self.schema_element.term.type = \
                 factory.resolve_type(self.attr('type'), self.schema)
-        elif self.attr('substitutionGroup') is not None:
-            self.schema_element.term.type = factory.resolve_element(
-                self.attr('substitutionGroup'), self.schema, finalize=True).type
         else:
             self.schema_element.term.type = \
                 dumco.schema.elements.ComplexType.urtype()
