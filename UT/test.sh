@@ -118,7 +118,7 @@ do
     echo '###'
     echo "### Doing schema dump tests for '$opt'"
     echo '###'
-    find "$PWD/UT/schemas" -type d -mindepth 1 -maxdepth 1 | while read dir
+    find "$PWD/UT/schemata" -mindepth 1 -maxdepth 1 -type d | while read dir
     do
         cont_s2c "$dir" dumpxsd $opt
     done
