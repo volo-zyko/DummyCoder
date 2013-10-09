@@ -9,11 +9,72 @@
 #include <xercesc/sax/ErrorHandler.hpp>
 #include <xercesc/sax/InputSource.hpp>
 #include <xercesc/validators/common/Grammar.hpp>
+#include <xercesc/util/BinFileInputStream.hpp>
 #include <xercesc/util/PlatformUtils.hpp>
+#include <xercesc/util/XMLString.hpp>
 #include <xercesc/util/XercesVersion.hpp>
+
+namespace fs = boost::filesystem;
+namespace xs = xercesc;
+
+namespace boost
+{
+namespace filesystem
+{
+
+// Return path when appended to a_from will resolve to same as a_to.
+std::string make_relative(path a_from, path a_to)
+{
+    a_from = absolute(a_from);
+    a_from.normalize();
+    a_to = absolute(a_to);
+    a_to.normalize();
+    const auto is_from_dir = is_directory(a_from);
+
+    std::string ret;
+    auto itr_from(a_from.begin());
+    auto itr_to(a_to.begin());
+
+    // Find common base.
+    for (auto from_end(a_from.end()), to_end(a_to.end());
+         itr_from != a_from.end() && itr_to != a_to.end() && *itr_from == *itr_to;
+         ++itr_from, ++itr_to);
+
+    // Navigate backwards in directory to reach previously found base.
+    for (auto from_end(a_from.end()); itr_from != from_end; ++itr_from)
+    {
+        auto tmp_itr = itr_from;
+        ++tmp_itr;
+
+        if (is_from_dir || tmp_itr != from_end)
+        {
+            ret += "../";
+        }
+    }
+
+    // Now navigate down the directory branch.
+    for (auto to_end(a_to.end()); itr_to != to_end; ++itr_to)
+    {
+        ret += itr_to->string();
+
+        auto tmp_itr = itr_to;
+        ++tmp_itr;
+        if (tmp_itr != to_end)
+        {
+            ret += "/";
+        }
+    }
+    return ret;
+}
+
+} // filesystem namespace.
+} // boost namespace.
 
 namespace
 {
+
+auto xerces_string_deleter = [](XMLCh* p) { xs::XMLString::release(&p); };
+auto plain_string_deleter = [](char* p) { xs::XMLString::release(&p); };
 
 void print_help(const char* exe_name)
 {
@@ -25,63 +86,141 @@ class XercesIniFiniGuard
 public:
     XercesIniFiniGuard()
     {
-        xercesc::XMLPlatformUtils::Initialize();
+        xs::XMLPlatformUtils::Initialize();
     }
 
     ~XercesIniFiniGuard()
     {
-        xercesc::XMLPlatformUtils::Terminate();
+        xs::XMLPlatformUtils::Terminate();
     }
 };
 
-class SVInputSource: public xercesc::InputSource
+class SVInputSource: public xs::InputSource
 {
 public:
-    SVInputSource(const boost::filesystem::path& schema_path)
+    SVInputSource(const std::string& schema_path):
+        xs::InputSource(xs::XMLPlatformUtils::fgMemoryManager),
+        m_schema_path(schema_path)
     {
+        std::unique_ptr<XMLCh, decltype(xerces_string_deleter)> xerces_path(
+            xs::XMLString::transcode(m_schema_path.c_str()),
+            xerces_string_deleter);
 
+        setSystemId(xerces_path.get());
     }
 
-    xercesc::BinInputStream* makeStream() const override
+    xs::BinInputStream* makeStream() const override
     {
-        return nullptr;
+        xs::BinFileInputStream* is(
+            new (getMemoryManager())
+            xs::BinFileInputStream(getSystemId(), getMemoryManager()));
+
+        if (!is->getIsOpen())
+        {
+            delete is;
+            throw std::runtime_error("Unable to open " + m_schema_path);
+        }
+
+        return is;
     }
+
+private:
+    std::string m_schema_path;
 };
 
-class SVErrorHandler: public xercesc::DOMErrorHandler
+class SVErrorHandler: public xs::DOMErrorHandler
 {
 public:
-    bool handleError(const xercesc::DOMError &dom_error) override
+    SVErrorHandler():
+        m_cur_path(fs::current_path()),
+        m_had_errors(false)
     {
+    }
+
+    bool handleError(const xs::DOMError &dom_error) override
+    {
+        xs::DOMLocator* loc = dom_error.getLocation();
+
+        std::unique_ptr<char, decltype(plain_string_deleter)> uri(
+            xs::XMLString::transcode(loc->getURI()),
+            plain_string_deleter);
+
+        if (std::string() != uri.get())
+        {
+            fs::path new_path(uri.get());
+
+            std::cerr << fs::make_relative(m_cur_path, new_path);
+        }
+        else
+        {
+            std::cerr << "<>";
+        }
+
+        std::cerr << ':' << loc->getLineNumber() << ':'
+                  << loc->getColumnNumber() << ": ";
+
+        switch (dom_error.getSeverity())
+        {
+            case xs::DOMError::DOM_SEVERITY_WARNING:
+            {
+                std::cerr << "warning: ";
+                break;
+            }
+            default:
+            {
+                m_had_errors = true;
+                std::cerr << "error: ";
+                break;
+            }
+        }
+
+        std::unique_ptr<char, decltype(plain_string_deleter)> message(
+            xs::XMLString::transcode(dom_error.getMessage()),
+            plain_string_deleter);
+
+        std::cerr << message.get() << std::endl;
+
         return true;
     }
+
+    bool had_errors() const
+    {
+        return m_had_errors;
+    }
+
+private:
+    fs::path m_cur_path;
+    bool m_had_errors;
 };
 
 } // anonymous
 
 int main(int argc, char *argv[])
 {
-    namespace fs = boost::filesystem;
-    namespace xs = xercesc;
-
     if (argc != 2)
     {
         print_help(argv[0]);
         return 1;
     }
 
-    std::cout << argv[1] << std::endl;
-    fs::path abs_path(fs::system_complete(argv[1]));
-    std::cout << abs_path.string() << std::endl;
+    std::string root_file = argv[1];
+
+    fs::path abs_path(fs::system_complete(root_file));
     abs_path.normalize();
-    std::cout << abs_path.string() << std::endl;
-
-    SVInputSource input_source(abs_path);
-
-    XMLCh const gLS[] = { xs::chLatin_L, xs::chLatin_S, xs::chNull };
+    if (!fs::exists(abs_path))
+    {
+        std::cerr << '\'' << abs_path.string() << '\'';
+        std::cerr << " not found" << std::endl;
+        print_help(argv[0]);
+        return 1;
+    }
 
     // Xerces magic.
     XercesIniFiniGuard ini_fini_gu;
+
+    SVInputSource input_source(abs_path.string());
+
+    XMLCh const gLS[] = { xs::chLatin_L, xs::chLatin_S, xs::chNull };
 
     xs::DOMImplementationLS* impl(
         static_cast<xs::DOMImplementationLS*>(
@@ -131,6 +270,15 @@ int main(int argc, char *argv[])
     xs::Wrapper4InputSource wrap(&input_source, false);
     parser->loadGrammar(wrap, xs::Grammar::SchemaGrammarType);
 #endif
+
+    if (eh.had_errors())
+    {
+        std::cerr << root_file << " is BAD" << std::endl;
+    }
+    else
+    {
+        std::cout << root_file << " is OK" << std::endl;
+    }
 
     return 0;
 }

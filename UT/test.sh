@@ -88,7 +88,6 @@ function cont_s2c()
             res="$BASE_OUTPUT_DIR/$(basename "${out}").diff"
 
             set +o errexit
-            echo "### diff result is in $res"
             diff -rub "$out" "$again" >"$res"
 
             if [ -s "$res" ]; then
