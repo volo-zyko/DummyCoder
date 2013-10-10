@@ -18,7 +18,8 @@
     schemaLocation="shared-commonSimpleTypes.xsd"/>
   <xsd:import namespace="http://schemas.openxmlformats.org/schemaLibrary/2006/main"
     schemaLocation="shared-customXmlSchemaProperties.xsd"/>
-  <xsd:import namespace="http://www.w3.org/XML/1998/namespace"/>
+  <xsd:import namespace="http://www.w3.org/XML/1998/namespace"
+    schemaLocation="http://www.w3.org/2001/xml.xsd"/>
   <xsd:complexType name="CT_Empty"/>
   <xsd:complexType name="CT_OnOff">
     <xsd:attribute name="val" type="s:ST_OnOff"/>

@@ -10,7 +10,8 @@
     schemaLocation="wml.xsd"/>
   <xsd:import namespace="http://schemas.openxmlformats.org/officeDocument/2006/sharedTypes"
     schemaLocation="shared-commonSimpleTypes.xsd"/>
-  <xsd:import namespace="http://www.w3.org/XML/1998/namespace"/>
+  <xsd:import namespace="http://www.w3.org/XML/1998/namespace"
+    schemaLocation="http://www.w3.org/2001/xml.xsd"/>
   <xsd:simpleType name="ST_Integer255">
     <xsd:restriction base="xsd:integer">
       <xsd:minInclusive value="1"/>

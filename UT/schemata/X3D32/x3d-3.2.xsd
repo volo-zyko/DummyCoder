@@ -2,8 +2,8 @@
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified" version="3.2.2">
 	<!--======================================================================-->
 	<!-- Public and private schema extension mechanisms -->
-	<xs:include schemaLocation="x3d-3.2-Web3dExtensionsPublic.xsd"/>
-	<xs:include schemaLocation="x3d-3.2-Web3dExtensionsPrivate.xsd"/>
+	<xs:include schemaLocation="extensions/x3d-3.2-Web3dExtensionsPublic.xsd"/>
+	<xs:include schemaLocation="extensions/x3d-3.2-Web3dExtensionsPrivate.xsd"/>
 	<!--======================================================================-->
 	<xs:annotation>
 		<xs:appinfo>XML Schema for the Extensible 3D (X3D) Graphics Specification tagset</xs:appinfo>
@@ -88,7 +88,7 @@ X3D Schema version numbering:
 	<xs:simpleType name="intensityType">
 		<xs:annotation>
 			<xs:appinfo>intensityType values are floats ranging from 0.0 to 1.0.</xs:appinfo>
-			<xs:documentation source="_Evaluating the X3D Schema with semantic web tools_, Web3D 2012 Conference, Petit, Marc (EDF), Henry Boccon-Gibod (EDF), Mouton, Christophe (EDF)"/>
+			<!--<xs:documentation source="_Evaluating the X3D Schema with semantic web tools_, Web3D 2012 Conference, Petit, Marc (EDF), Henry Boccon-Gibod (EDF), Mouton, Christophe (EDF)"/>-->
 		</xs:annotation>
 		<xs:restriction base="SFFloat">
 			<xs:minInclusive value="0"/>

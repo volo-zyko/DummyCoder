@@ -38,7 +38,7 @@
   <xs:import namespace="http://www.w3.org/1999/xlink" schemaLocation="xlink.xsd"/>
   <xs:import namespace="http://www.w3.org/2002/xforms" schemaLocation="xforms.xsd"/>
   <xs:import namespace="http://www.w3.org/2003/g/data-view#" schemaLocation="grddl.xsd"/>
-  <xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="xml.xsd"/>
+  <xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="http://www.w3.org/2001/xml.xsd"/>
   <xs:import namespace="urn:oasis:names:tc:opendocument:xmlns:animation:1.0" schemaLocation="anim.xsd"/>
   <xs:import namespace="urn:oasis:names:tc:opendocument:xmlns:chart:1.0" schemaLocation="chart.xsd"/>
   <xs:import namespace="urn:oasis:names:tc:opendocument:xmlns:config:1.0" schemaLocation="config.xsd"/>
@@ -2456,24 +2456,35 @@
     </xs:sequence>
   </xs:group>
   <xs:group name="table-columns-no-group">
+  <!-- Original content model but it violates Unique Particle Attribution Constraint.
+      Below is a less restrictive model substitute.
     <xs:choice>
       <xs:sequence>
-        <xs:group ref="text:table-columns"/>
+        <xs:choice>
+          <xs:element ref="table:table-columns"/>
+          <xs:element maxOccurs="unbounded" ref="table:table-column"/>
+        </xs:choice>
         <xs:sequence minOccurs="0">
           <xs:element ref="table:table-header-columns"/>
-          <xs:group minOccurs="0" ref="text:table-columns"/>
+          <xs:choice minOccurs="0">
+            <xs:element ref="table:table-columns"/>
+            <xs:element maxOccurs="unbounded" ref="table:table-column"/>
+          </xs:choice>
         </xs:sequence>
       </xs:sequence>
       <xs:sequence>
         <xs:element ref="table:table-header-columns"/>
-        <xs:group minOccurs="0" ref="text:table-columns"/>
+        <xs:choice minOccurs="0">
+          <xs:element ref="table:table-columns"/>
+          <xs:element maxOccurs="unbounded" ref="table:table-column"/>
+        </xs:choice>
       </xs:sequence>
     </xs:choice>
-  </xs:group>
-  <xs:group name="table-columns">
+  -->
     <xs:choice>
-      <xs:element ref="table:table-columns"/>
-      <xs:element maxOccurs="unbounded" ref="table:table-column"/>
+      <xs:element minOccurs="0" maxOccurs="unbounded" ref="table:table-columns"/>
+      <xs:element minOccurs="0" maxOccurs="unbounded" ref="table:table-column"/>
+      <xs:element minOccurs="0" maxOccurs="unbounded" ref="table:table-header-columns"/>
     </xs:choice>
   </xs:group>
   <xs:group name="table-rows-and-groups">
@@ -2485,27 +2496,45 @@
     </xs:sequence>
   </xs:group>
   <xs:group name="table-rows-no-group">
+  <!-- Original content model but it violates Unique Particle Attribution Constraint.
+      Below is a less restrictive model substitute.
     <xs:choice>
       <xs:sequence>
-        <xs:group ref="text:table-rows"/>
+        <xs:choice>
+          <xs:element ref="table:table-rows"/>
+          <xs:sequence maxOccurs="unbounded">
+            <xs:element minOccurs="0" ref="text:soft-page-break"/>
+            <xs:element ref="table:table-row"/>
+          </xs:sequence>
+        </xs:choice>
         <xs:sequence minOccurs="0">
           <xs:element ref="table:table-header-rows"/>
-          <xs:group minOccurs="0" ref="text:table-rows"/>
+          <xs:choice minOccurs="0">
+            <xs:element ref="table:table-rows"/>
+            <xs:sequence maxOccurs="unbounded">
+              <xs:element minOccurs="0" ref="text:soft-page-break"/>
+              <xs:element ref="table:table-row"/>
+            </xs:sequence>
+          </xs:choice>
         </xs:sequence>
       </xs:sequence>
       <xs:sequence>
         <xs:element ref="table:table-header-rows"/>
-        <xs:group minOccurs="0" ref="text:table-rows"/>
+        <xs:choice minOccurs="0">
+          <xs:element ref="table:table-rows"/>
+          <xs:sequence maxOccurs="unbounded">
+            <xs:element minOccurs="0" ref="text:soft-page-break"/>
+            <xs:element ref="table:table-row"/>
+          </xs:sequence>
+        </xs:choice>
       </xs:sequence>
     </xs:choice>
-  </xs:group>
-  <xs:group name="table-rows">
+  -->
     <xs:choice>
-      <xs:element ref="table:table-rows"/>
-      <xs:sequence maxOccurs="unbounded">
-        <xs:element minOccurs="0" ref="text:soft-page-break"/>
-        <xs:element ref="table:table-row"/>
-      </xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" ref="table:table-rows"/>
+      <xs:element minOccurs="0" maxOccurs="unbounded" ref="text:soft-page-break"/>
+      <xs:element minOccurs="0" maxOccurs="unbounded" ref="table:table-row"/>
+      <xs:element minOccurs="0" maxOccurs="unbounded" ref="table:table-header-rows"/>
     </xs:choice>
   </xs:group>
   <xs:attributeGroup name="table-table-attlist">
@@ -2588,24 +2617,24 @@
   </xs:attributeGroup>
   <xs:simpleType name="cellAddress">
     <xs:restriction base="xs:string">
-      <xs:pattern value="($?([^\. ']+|'([^']|'')+'))?\.$?[A-Z]+$?[0-9]+"/>
+      <xs:pattern value="(#x36?([^\. ']+|'([^']|'')+'))?\.#x36?[A-Z]+#x36?[0-9]+"/>
     </xs:restriction>
   </xs:simpleType>
   <xs:simpleType name="cellRangeAddress">
     <xs:union>
       <xs:simpleType>
         <xs:restriction base="xs:string">
-          <xs:pattern value="($?([^\. ']+|'([^']|'')+'))?\.$?[A-Z]+$?[0-9]+(:($?([^\. ']+|'([^']|'')+'))?\.$?[A-Z]+$?[0-9]+)?"/>
+          <xs:pattern value="(#x36?([^\. ']+|'([^']|'')+'))?\.#x36?[A-Z]+#x36?[0-9]+(:(#x36?([^\. ']+|'([^']|'')+'))?\.#x36?[A-Z]+#x36?[0-9]+)?"/>
         </xs:restriction>
       </xs:simpleType>
       <xs:simpleType>
         <xs:restriction base="xs:string">
-          <xs:pattern value="($?([^\. ']+|'([^']|'')+'))?\.$?[0-9]+:($?([^\. ']+|'([^']|'')+'))?\.$?[0-9]+"/>
+          <xs:pattern value="(#x36?([^\. ']+|'([^']|'')+'))?\.#x36?[0-9]+:(#x36?([^\. ']+|'([^']|'')+'))?\.#x36?[0-9]+"/>
         </xs:restriction>
       </xs:simpleType>
       <xs:simpleType>
         <xs:restriction base="xs:string">
-          <xs:pattern value="($?([^\. ']+|'([^']|'')+'))?\.$?[A-Z]+:($?([^\. ']+|'([^']|'')+'))?\.$?[A-Z]+"/>
+          <xs:pattern value="(#x36?([^\. ']+|'([^']|'')+'))?\.#x36?[A-Z]+:(#x36?([^\. ']+|'([^']|'')+'))?\.#x36?[A-Z]+"/>
         </xs:restriction>
       </xs:simpleType>
     </xs:union>
@@ -4261,12 +4290,6 @@
   <xs:complexType name="form-property-type-and-value-list">
     <xs:choice minOccurs="0">
       <xs:group minOccurs="0" maxOccurs="unbounded" ref="form:list-value"/>
-      <xs:group minOccurs="0" maxOccurs="unbounded" ref="form:list-value"/>
-      <xs:group minOccurs="0" maxOccurs="unbounded" ref="form:list-value1"/>
-      <xs:group minOccurs="0" maxOccurs="unbounded" ref="form:list-value2"/>
-      <xs:group minOccurs="0" maxOccurs="unbounded" ref="form:list-value3"/>
-      <xs:group minOccurs="0" maxOccurs="unbounded" ref="form:list-value4"/>
-      <xs:group minOccurs="0" maxOccurs="unbounded" ref="form:list-value5"/>
     </xs:choice>
     <xs:attributeGroup ref="office:value-type2"/>
   </xs:complexType>
@@ -4717,32 +4740,16 @@
   <xs:complexType name="style-style-content">
     <xs:choice>
       <xs:element minOccurs="0" ref="style:text-properties"/>
-      <xs:sequence>
-        <xs:element minOccurs="0" ref="style:paragraph-properties"/>
-        <xs:element minOccurs="0" ref="style:text-properties"/>
-      </xs:sequence>
+      <xs:element minOccurs="0" ref="style:paragraph-properties"/>
       <xs:element minOccurs="0" ref="style:section-properties"/>
       <xs:element minOccurs="0" ref="style:ruby-properties"/>
       <xs:element minOccurs="0" ref="style:table-properties"/>
       <xs:element minOccurs="0" ref="style:table-column-properties"/>
       <xs:element minOccurs="0" ref="style:table-row-properties"/>
-      <xs:sequence>
-        <xs:element minOccurs="0" ref="style:table-cell-properties"/>
-        <xs:element minOccurs="0" ref="style:paragraph-properties"/>
-        <xs:element minOccurs="0" ref="style:text-properties"/>
-      </xs:sequence>
-      <xs:sequence>
-        <xs:element minOccurs="0" ref="style:graphic-properties"/>
-        <xs:element minOccurs="0" ref="style:paragraph-properties"/>
-        <xs:element minOccurs="0" ref="style:text-properties"/>
-      </xs:sequence>
+      <xs:element minOccurs="0" ref="style:table-cell-properties"/>
+      <xs:element minOccurs="0" ref="style:graphic-properties"/>
       <xs:element minOccurs="0" ref="style:drawing-page-properties"/>
-      <xs:sequence>
-        <xs:element minOccurs="0" ref="style:chart-properties"/>
-        <xs:element minOccurs="0" ref="style:graphic-properties"/>
-        <xs:element minOccurs="0" ref="style:paragraph-properties"/>
-        <xs:element minOccurs="0" ref="style:text-properties"/>
-      </xs:sequence>
+      <xs:element minOccurs="0" ref="style:chart-properties"/>
     </xs:choice>
     <xs:attribute ref="style:family" use="required"/>
   </xs:complexType>

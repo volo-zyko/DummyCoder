@@ -3,6 +3,7 @@
 <xs:schema targetNamespace="http://www.gribuser.ru/xml/fictionbook/2.0" xmlns="http://www.gribuser.ru/xml/fictionbook/2.0" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:genre="http://www.gribuser.ru/xml/fictionbook/2.0/genres" elementFormDefault="qualified" attributeFormDefault="unqualified">
 	<xs:import namespace="http://www.w3.org/1999/xlink" schemaLocation="FictionBookLinks.xsd"/>
 	<xs:import namespace="http://www.gribuser.ru/xml/fictionbook/2.0/genres" schemaLocation="FictionBookGenres.xsd"/>
+	<xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="http://www.w3.org/2001/xml.xsd"/>
 	<xs:element name="FictionBook">
 		<xs:annotation>
 			<xs:documentation>Root element</xs:documentation>

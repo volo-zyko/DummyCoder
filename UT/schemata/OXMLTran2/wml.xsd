@@ -5,7 +5,7 @@
 	<xsd:import namespace="http://schemas.openxmlformats.org/officeDocument/2006/relationships" schemaLocation="shared-relationshipReference.xsd"/>
 	<xsd:import namespace="http://schemas.openxmlformats.org/officeDocument/2006/sharedTypes" schemaLocation="shared-commonSimpleTypes.xsd"/>
 	<xsd:import namespace="http://schemas.openxmlformats.org/schemaLibrary/2006/main" schemaLocation="shared-customXmlSchemaProperties.xsd"/>
-	<xsd:import namespace="http://www.w3.org/XML/1998/namespace"/>
+	<xsd:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="http://www.w3.org/2001/xml.xsd"/>
 	<!--  
         Note: the preceding import statement may need to be modified depending on the W3C XML Schema validator you are using.
         If your validator requires the schemaLocation be present, you may use the following import statement:

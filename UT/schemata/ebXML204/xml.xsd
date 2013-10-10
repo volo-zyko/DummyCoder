@@ -25,7 +25,7 @@
          is a language code for the natural language of the content of
          any element; its value is inherited.  This name is reserved
          by virtue of its definition in the XML specification.
-  
+
     space (as an attribute name): denotes an attribute whose
          value is a keyword indicating what whitespace processing
          discipline is intended for the content of the element; its
@@ -63,7 +63,7 @@
         &lt;type . . .&gt;
          . . .
          &lt;attributeGroup ref="xml:specialAttrs"/&gt;
- 
+
          will define a type which will schema-validate an instance
          element with any of those attributes</xs:documentation>
  </xs:annotation>
