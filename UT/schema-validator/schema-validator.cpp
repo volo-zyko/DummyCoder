@@ -23,12 +23,12 @@ namespace filesystem
 {
 
 // Return path when appended to a_from will resolve to same as a_to.
+// Note: boost doesn't provide this functionality for now, see
+// https://svn.boost.org/trac/boost/ticket/5897
 std::string make_relative(path a_from, path a_to)
 {
-    a_from = absolute(a_from);
-    a_from.normalize();
-    a_to = absolute(a_to);
-    a_to.normalize();
+    a_from = canonical(a_from);
+    a_to = canonical(a_to);
     const auto is_from_dir = is_directory(a_from);
 
     std::string ret;
@@ -205,15 +205,7 @@ int main(int argc, char *argv[])
 
     std::string root_file = argv[1];
 
-    fs::path abs_path(fs::system_complete(root_file));
-    abs_path.normalize();
-    if (!fs::exists(abs_path))
-    {
-        std::cerr << '\'' << abs_path.string() << '\'';
-        std::cerr << " not found" << std::endl;
-        print_help(argv[0]);
-        return 1;
-    }
+    fs::path abs_path(fs::canonical(fs::system_complete(root_file)));
 
     // Xerces magic.
     XercesIniFiniGuard ini_fini_gu;
@@ -274,11 +266,9 @@ int main(int argc, char *argv[])
     if (eh.had_errors())
     {
         std::cerr << root_file << " is BAD" << std::endl;
-    }
-    else
-    {
-        std::cout << root_file << " is OK" << std::endl;
+        return 0;
     }
 
+    std::cout << root_file << " is OK" << std::endl;
     return 0;
 }

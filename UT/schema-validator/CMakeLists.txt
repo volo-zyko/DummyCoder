@@ -3,16 +3,10 @@ cmake_minimum_required(VERSION 2.8)
 project(schema-validator CXX)
 
 # Find Boost
-if (NOT Boost_FILESYSTEM_LIBRARY AND NOT Boost_SYSTEM_LIBRARY)
-    find_package(Boost REQUIRED COMPONENTS system filesystem)
-
-    if (Boost_SYSTEM_LIBRARY)
-        set(Boost_SYSTEM_LIBRARY ${Boost_SYSTEM_LIBRARY} CACHE STRING "Path to boost system library")
-    endif()
-    if (Boost_FILESYSTEM_LIBRARY)
-        set(Boost_FILESYSTEM_LIBRARY ${Boost_FILESYSTEM_LIBRARY} CACHE STRING "Path to boost filesystem library")
-    endif()
-endif()
+set(Boost_USE_STATIC_LIBS ON)
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
+find_package(Boost REQUIRED COMPONENTS system filesystem)
 
 # Find XercesC includes.
 find_path(
@@ -42,6 +36,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL Clang)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 endif()
 
+add_definitions("-DBOOST_FILESYSTEM_NO_DEPRECATED")
 include_directories(${XERCESC_INCLUDE_DIR} ${Boost_INCLUDE_DIRS})
 add_executable(${PROJECT_NAME} ${PROJECT_NAME}.cpp)
 target_link_libraries(${PROJECT_NAME} ${Boost_SYSTEM_LIBRARY} ${Boost_FILESYSTEM_LIBRARY} ${XERCESC_LIBRARY})
