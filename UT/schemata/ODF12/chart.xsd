@@ -6,7 +6,7 @@
   <xs:import namespace="urn:oasis:names:tc:opendocument:xmlns:style:1.0" schemaLocation="style.xsd"/>
   <xs:import namespace="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0" schemaLocation="svg.xsd"/>
   <xs:import namespace="urn:oasis:names:tc:opendocument:xmlns:table:1.0" schemaLocation="table.xsd"/>
-  <xs:import namespace="urn:oasis:names:tc:opendocument:xmlns:text:1.0" schemaLocation="OpenDocument-v1.2-os-schema.xsd"/>
+  <xs:import namespace="urn:oasis:names:tc:opendocument:xmlns:text:1.0" schemaLocation="text.xsd"/>
   <xs:element name="chart" substitutionGroup="text:office-chart-content-main"/>
   <xs:attributeGroup name="class">
     <xs:attribute name="class" use="required" form="qualified" type="text:namespacedToken"/>

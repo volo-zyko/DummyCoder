@@ -4,7 +4,7 @@
   <xs:import namespace="http://www.w3.org/2002/xforms" schemaLocation="xforms.xsd"/>
   <xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="http://www.w3.org/2001/xml.xsd"/>
   <xs:import namespace="urn:oasis:names:tc:opendocument:xmlns:office:1.0" schemaLocation="office.xsd"/>
-  <xs:import namespace="urn:oasis:names:tc:opendocument:xmlns:text:1.0" schemaLocation="OpenDocument-v1.2-os-schema.xsd"/>
+  <xs:import namespace="urn:oasis:names:tc:opendocument:xmlns:text:1.0" schemaLocation="text.xsd"/>
   <xs:attribute name="automatic-focus" type="text:boolean"/>
   <xs:attribute name="apply-design-mode" type="text:boolean"/>
   <xs:element name="form">
