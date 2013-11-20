@@ -232,11 +232,12 @@ class XsdElementFactory(object):
         substitution_group = self.substitution_groups[head]
 
         if not xsd_head.abstract and len(substitution_group.particles) == 0:
-            substitution_group.particles.append(
-                dumco.schema.uses.Particle(xsd_head.qualified, 1, 1, head))
-        substitution_group.particles.append(
-            dumco.schema.uses.Particle(xsd_element.qualified, 1, 1,
-                                       xsd_element.schema_element.term))
+            substitution_group.particles.append(dumco.schema.uses.Particle(
+                xsd_head.qualified, head.constraint, 1, 1, head))
+
+        substitution_group.particles.append(dumco.schema.uses.Particle(
+            xsd_element.qualified, xsd_element.schema_element.term.constraint,
+            1, 1, xsd_element.schema_element.term))
 
     def add_to_parent_schema(self, element, attrs, schema,
                              fieldname, is_type=False):

@@ -33,7 +33,7 @@ class Attribute(base.SchemaBase):
 
         self.name = name
         self.type = None
-        self.constraint = base.AttributeValueConstraint(
+        self.constraint = base.ValueConstraint(
             True if fixed else False, fixed if fixed else default)
 
 
@@ -64,8 +64,8 @@ class ComplexType(base.SchemaBase):
     def urtype():
         urtype = ComplexType('anyType', None)
 
-        seqpart = uses.Particle(None, 1, 1, Sequence(None))
-        anypart = uses.Particle(None, 1, base.UNBOUNDED, Any(Any.ANY, None))
+        seqpart = uses.Particle(None, None, 1, 1, Sequence(None))
+        anypart = uses.Particle(None, None, 1, base.UNBOUNDED, Any(Any.ANY, None))
         anyattr = uses.AttributeUse(None, None, None, Any(Any.ANY, None))
 
         seqpart.term.particles.append(anypart)
@@ -86,11 +86,13 @@ class ComplexType(base.SchemaBase):
 
 
 class Element(base.SchemaBase):
-    def __init__(self, name, parent_schema):
+    def __init__(self, name, default, fixed, parent_schema):
         super(Element, self).__init__(parent_schema)
 
         self.name = name
         self.type = None
+        self.constraint = base.ValueConstraint(
+            True if fixed else False, fixed if fixed else default)
 
 
 EnumerationValue = collections.namedtuple('EnumerationValue', ['value', 'doc'])

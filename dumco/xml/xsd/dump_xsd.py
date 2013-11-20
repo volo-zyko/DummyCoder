@@ -239,6 +239,16 @@ def _dump_particle(particle, schema, xml_writer, names, in_group=False):
             if is_element_def:
                 xml_writer.add_attribute('form',
                     'qualified' if particle.qualified else 'unqualified')
+
+            if particle.term.constraint.value is None:
+                if particle.constraint.fixed:
+                    assert particle.constraint.value, \
+                        'Element has fixed value but the value itself is unknown'
+                    xml_writer.add_attribute('fixed',
+                                             particle.constraint.value)
+                elif particle.constraint.value is not None:
+                    xml_writer.add_attribute('default',
+                                             particle.constraint.value)
         elif checks.is_any(particle.term):
             _dump_any(particle.term, schema, xml_writer)
         else: # pragma: no cover
@@ -291,15 +301,15 @@ def _dump_attribute_use(attr_use, schema, xml_writer):
             xml_writer.add_attribute('form',
                 'qualified' if attr_use.qualified else 'unqualified')
 
-        if attr_use.attribute.constraint.default is None:
+        if attr_use.attribute.constraint.value is None:
             if attr_use.constraint.fixed:
-                assert attr_use.constraint.default, \
+                assert attr_use.constraint.value, \
                     'Attribute has fixed value but the value itself is unknown'
                 xml_writer.add_attribute('fixed',
-                                         attr_use.constraint.default)
-            elif attr_use.constraint.default is not None:
+                                         attr_use.constraint.value)
+            elif attr_use.constraint.value is not None:
                 xml_writer.add_attribute('default',
-                                         attr_use.constraint.default)
+                                         attr_use.constraint.value)
 
         if attr_use.required:
             xml_writer.add_attribute('use', 'required')
@@ -321,13 +331,13 @@ def _dump_attribute_attributes(attribute, is_attribute_definition,
             _qname(attribute.name, attribute.schema, schema, ns=_XSD_NS))
 
     if attribute.constraint.fixed:
-        assert attribute.constraint.default, \
+        assert attribute.constraint.value, \
             'Attribute has fixed value but the value itself is unknown'
         xml_writer.add_attribute('fixed',
-                                 attribute.constraint.default)
-    elif attribute.constraint.default is not None:
+                                 attribute.constraint.value)
+    elif attribute.constraint.value is not None:
         xml_writer.add_attribute('default',
-                                 attribute.constraint.default)
+                                 attribute.constraint.value)
 
 
 def _dump_element_attributes(element, is_element_definition,
@@ -345,6 +355,15 @@ def _dump_element_attributes(element, is_element_definition,
     else:
         xml_writer.add_attribute('ref',
             _qname(element.name, element.schema, schema))
+
+    if element.constraint.fixed:
+        assert element.constraint.value, \
+            'Element has fixed value but the value itself is unknown'
+        xml_writer.add_attribute('fixed',
+                                 element.constraint.value)
+    elif element.constraint.value is not None:
+        xml_writer.add_attribute('default',
+                                 element.constraint.value)
 
 
 def _dump_any(elem, schema, xml_writer):
@@ -480,7 +499,7 @@ def dump_xsd(schemata, output_dir):
         xml_writer.done()
 
 
-_ObjectUse = collections.namedtuple('_ObjectUse', ['name', 'object'])
+_ObjectUse = collections.namedtuple('ObjectUse', ['name', 'object'])
 
 
 def _collect_attribute_groups(schemata):

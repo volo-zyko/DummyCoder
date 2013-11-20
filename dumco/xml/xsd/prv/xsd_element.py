@@ -38,12 +38,16 @@ class XsdElement(xsd_base.XsdBase):
         self.abstract = (self.attr('abstract') == 'true' or
                          self.attr('abstract') == '1')
 
+        element = dumco.schema.elements.Element(
+            self.attr('name'), self.attr('default'), self.attr('fixed'),
+            parent_schema.schema_element)
+
         self.schema = parent_schema
-        self.schema_element = dumco.schema.uses.Particle(self.qualified,
+        self.schema_element = dumco.schema.uses.Particle(
+            self.qualified, element.constraint,
             factory.particle_min_occurs(attrs),
             factory.particle_max_occurs(attrs),
-            dumco.schema.elements.Element(
-                self.attr('name'), parent_schema.schema_element))
+            element)
 
     @method_once
     def finalize(self, factory):

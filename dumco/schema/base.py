@@ -72,7 +72,7 @@ def xsd_builtin_types():
 @function_once
 def xml_attributes():
     attrs = {x: XmlAttribute(x) for x in ['base', 'id', 'lang', 'space']}
-    attrs['space'].constraint = AttributeValueConstraint(None, 'preserve')
+    attrs['space'].constraint = ValueConstraint(None, 'preserve')
     return attrs
 
 
@@ -113,8 +113,8 @@ class SchemaText(SchemaBase):
         self.type = simple_type
 
 
-AttributeValueConstraint = collections.namedtuple('AttributeValueConstraint',
-                                                  ['fixed', 'default'])
+ValueConstraint = collections.namedtuple('ValueConstraint',
+                                         ['fixed', 'value'])
 
 
 class XmlAttribute(SchemaBase):
@@ -122,4 +122,4 @@ class XmlAttribute(SchemaBase):
         super(XmlAttribute, self).__init__(None)
 
         self.name = name
-        self.constraint = AttributeValueConstraint(False, None)
+        self.constraint = ValueConstraint(False, None)
