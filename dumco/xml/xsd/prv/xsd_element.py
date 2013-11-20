@@ -31,27 +31,26 @@ class XsdElement(xsd_base.XsdBase):
     def __init__(self, attrs, parent_schema, factory):
         super(XsdElement, self).__init__(attrs)
 
-        qualified = (self.attr('form') == 'qualified' or
+        self.qualified = (self.attr('form') == 'qualified' or
             (self.attr('form') != 'unqualified') and
              parent_schema is not None and
              parent_schema.elements_qualified)
+        self.abstract = (self.attr('abstract') == 'true' or
+                         self.attr('abstract') == '1')
 
         self.schema = parent_schema
-        self.schema_element = dumco.schema.uses.Particle(
+        self.schema_element = dumco.schema.uses.Particle(self.qualified,
             factory.particle_min_occurs(attrs),
             factory.particle_max_occurs(attrs),
             dumco.schema.elements.Element(
-                self.attr('name'), qualified, parent_schema.schema_element))
-
-        self.abstract = (self.attr('abstract') == 'true' or
-                         self.attr('abstract') == '1')
+                self.attr('name'), parent_schema.schema_element))
 
     @method_once
     def finalize(self, factory):
         if self.attr('substitutionGroup') is not None:
             (xsd_subst_head, _) = factory.resolve_element(
                 self.attr('substitutionGroup'), self.schema, finalize=True)
-            factory.add_substitution_group(xsd_subst_head, self.schema_element)
+            factory.add_substitution_group(xsd_subst_head, self)
 
         if self.attr('ref') is not None:
             (_, self.schema_element.term) = \

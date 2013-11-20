@@ -26,16 +26,19 @@ class XsdAttribute(xsd_base.XsdBase):
     def __init__(self, attrs, parent_schema, factory):
         super(XsdAttribute, self).__init__(attrs)
 
-        qualified = (self.attr('form') == 'qualified' or
+        self.qualified = (self.attr('form') == 'qualified' or
             (self.attr('form') != 'unqualified') and
              parent_schema is not None and
              parent_schema.attributes_qualified)
 
+        attribute = dumco.schema.elements.Attribute(
+            self.attr('name'), self.attr('default'), self.attr('fixed'),
+            parent_schema.schema_element)
+
         self.schema = parent_schema
         self.schema_element = dumco.schema.uses.AttributeUse(
-            factory.attribute_default(attrs), factory.attribute_required(attrs),
-            dumco.schema.elements.Attribute(
-                self.attr('name'), qualified, parent_schema.schema_element))
+            self.qualified, self.attr('required'),
+            attribute.constraint, attribute)
         self.prohibited = self.attr('use') == 'prohibited'
 
     @method_once

@@ -53,16 +53,18 @@ class XsdRestriction(xsd_base.XsdBase):
                 if isinstance(t, xsd_simple_type.XsdSimpleType):
                     base = t.finalize(factory)
                 elif isinstance(t, xsd_enumeration.XsdEnumeration):
-                    self.schema_element.enumeration.append(
-                        (t.value, t.schema_element.doc))
+                    enum = dumco.schema.elements.EnumerationValue(
+                        t.value, t.schema_element.doc)
+                    self.schema_element.enumeration.append(enum)
         else:
             base = factory.resolve_simple_type(self.attr('base'),
                                                self.schema, finalize=True)
             for x in self.children:
                 assert isinstance(x, xsd_enumeration.XsdEnumeration), \
                     'Expected only Enumerations'
-                self.schema_element.enumeration.append(
-                    (x.value, x.schema_element.doc))
+                enum = dumco.schema.elements.EnumerationValue(
+                    x.value, x.schema_element.doc)
+                self.schema_element.enumeration.append(enum)
 
         assert base is not None, 'Restriction does not have base type'
 

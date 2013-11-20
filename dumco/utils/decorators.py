@@ -1,13 +1,18 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
+import collections
+
 
 def function_once(func):
-    def decorated(*args, **kwargs):
-        if not decorated.run[0]:
-            decorated.run = (True, func(*args, **kwargs))
-        return decorated.run[1]
+    _OptionalValue = collections.namedtuple(
+        '_OptionalValue', ['defined', 'value'])
 
-    decorated.run = (False, None)
+    def decorated(*args, **kwargs):
+        if not decorated.run.defined:
+            decorated.run = _OptionalValue(True, func(*args, **kwargs))
+        return decorated.run.value
+
+    decorated.run = _OptionalValue(False, None)
     return decorated
 
 

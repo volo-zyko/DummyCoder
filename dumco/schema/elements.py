@@ -1,7 +1,8 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
+import collections
+
 from dumco.utils.decorators import method_once, function_once
-import dumco.utils.string_utils
 
 import base
 import namer
@@ -27,12 +28,13 @@ class Any(base.SchemaBase):
 
 
 class Attribute(base.SchemaBase):
-    def __init__(self, name, qualified, parent_schema):
+    def __init__(self, name, default, fixed, parent_schema):
         super(Attribute, self).__init__(parent_schema)
 
         self.name = name
         self.type = None
-        self.qualified = qualified
+        self.constraint = base.AttributeValueConstraint(
+            True if fixed else False, fixed if fixed else default)
 
 
 class Choice(base.SchemaBase):
@@ -40,14 +42,14 @@ class Choice(base.SchemaBase):
         super(Choice, self).__init__(parent_schema)
 
         self.particles = []
+        self.attribute_uses = []
 
 
 class ComplexType(base.SchemaBase):
     def __init__(self, name, parent_schema):
         super(ComplexType, self).__init__(parent_schema)
 
-        self.name = (name if name == 'anyType' or name is None
-                     else dumco.utils.string_utils.upper_first_letter(name))
+        self.name = name
         self.attribute_uses = []
         self.particle = None
         self.text = None
@@ -62,9 +64,9 @@ class ComplexType(base.SchemaBase):
     def urtype():
         urtype = ComplexType('anyType', None)
 
-        seqpart = uses.Particle(1, 1, Sequence(None))
-        anypart = uses.Particle(1, base.UNBOUNDED, Any(Any.ANY, None))
-        anyattr = uses.AttributeUse(None, None, Any(Any.ANY, None))
+        seqpart = uses.Particle(None, 1, 1, Sequence(None))
+        anypart = uses.Particle(None, 1, base.UNBOUNDED, Any(Any.ANY, None))
+        anyattr = uses.AttributeUse(None, None, None, Any(Any.ANY, None))
 
         seqpart.term.particles.append(anypart)
         urtype.particle = seqpart
@@ -84,12 +86,14 @@ class ComplexType(base.SchemaBase):
 
 
 class Element(base.SchemaBase):
-    def __init__(self, name, qualified, parent_schema):
+    def __init__(self, name, parent_schema):
         super(Element, self).__init__(parent_schema)
 
         self.name = name
         self.type = None
-        self.qualified = qualified
+
+
+EnumerationValue = collections.namedtuple('EnumerationValue', ['value', 'doc'])
 
 
 class Restriction(base.SchemaBase):
@@ -125,17 +129,22 @@ class Schema(base.SchemaBase):
         self.prefix = None
 
         # Containers for elements in the schema.
-        self.attribute_uses = {}
-        self.complex_types = {}
-        self.elements = {}
+        self.attributes = []
+        self.complex_types = []
+        self.elements = []
         self.imports = {}
-        self.simple_types = {}
+        self.simple_types = []
 
     def set_prefix(self, all_namespace_prefices):
         if self.target_ns in all_namespace_prefices:
             self.prefix = all_namespace_prefices[self.target_ns]
 
     def add_import(self, schema):
+        if schema is None:
+            # Schema can be None if it's predefined XML schema.
+            self.imports[base.XML_NAMESPACE] = None
+            return
+
         assert (schema.target_ns not in self.imports or
                 self.imports[schema.target_ns] == schema), \
             'Redefining namespace to a different schema'
@@ -154,8 +163,7 @@ class SimpleType(base.SchemaBase):
     def __init__(self, name, parent_schema):
         super(SimpleType, self).__init__(parent_schema)
 
-        self.name = (name if name == 'anySimpleType' or name is None
-                     else dumco.utils.string_utils.upper_first_letter(name))
+        self.name = name
         self.restriction = None
         self.listitem = None
         self.union = []

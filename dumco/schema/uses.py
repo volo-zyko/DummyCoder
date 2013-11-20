@@ -7,7 +7,8 @@ import namer
 
 
 class Particle(object):
-    def __init__(self, min_occurs, max_occurs, term):
+    def __init__(self, qualified, min_occurs, max_occurs, term):
+        self.qualified = qualified
         assert min_occurs <= max_occurs
         self.min_occurs = min_occurs
         self.max_occurs = max_occurs
@@ -31,10 +32,11 @@ class Particle(object):
 
 
 class AttributeUse(object):
-    def __init__(self, default, required, attribute):
-        self.default = default
+    def __init__(self, qualified, required, constraint, attribute):
+        self.qualified = qualified
         self.required = required
         self.attribute = attribute
+        self.constraint = constraint
 
     def append_doc(self, doc):
         self.attribute.append_doc(doc)

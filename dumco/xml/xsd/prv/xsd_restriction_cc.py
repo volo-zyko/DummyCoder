@@ -2,9 +2,6 @@
 
 from dumco.utils.decorators import method_once
 
-import dumco.schema.base
-import dumco.schema.checks
-
 import xsd_all
 import xsd_any
 import xsd_attribute
@@ -66,9 +63,10 @@ class XsdComplexRestriction(xsd_base.XsdBase):
         base = factory.resolve_complex_type(self.attr('base'),
                                             self.schema, finalize=True)
 
-        xsd_base.restrict_base_attributes(base, self.attr_uses, factory,
-                                          prohibited_attr_uses,
-                                          redefined_attr_uses)
+        self.attr_uses.extend(
+            xsd_base.restrict_base_attributes(base, factory,
+                                              prohibited_attr_uses,
+                                              redefined_attr_uses))
 
         self.attr_uses.extend(redefined_attr_uses)
 

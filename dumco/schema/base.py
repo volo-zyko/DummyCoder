@@ -1,9 +1,15 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
+import collections
 import sys
 
 from dumco.utils.decorators import function_once
 
+
+# Constants.
+XML_NAMESPACE = 'http://www.w3.org/XML/1998/namespace'
+XML_XSD_URI = 'http://www.w3.org/2001/xml.xsd'
+XSD_NAMESPACE = 'http://www.w3.org/2001/XMLSchema'
 
 UNBOUNDED = sys.maxsize
 
@@ -65,7 +71,9 @@ def xsd_builtin_types():
 
 @function_once
 def xml_attributes():
-    return {x: XmlAttribute(x) for x in ['base', 'id', 'lang', 'space']}
+    attrs = {x: XmlAttribute(x) for x in ['base', 'id', 'lang', 'space']}
+    attrs['space'].constraint = AttributeValueConstraint(None, 'preserve')
+    return attrs
 
 
 class SchemaBase(object):
@@ -105,8 +113,13 @@ class SchemaText(SchemaBase):
         self.type = simple_type
 
 
+AttributeValueConstraint = collections.namedtuple('AttributeValueConstraint',
+                                                  ['fixed', 'default'])
+
+
 class XmlAttribute(SchemaBase):
     def __init__(self, name):
         super(XmlAttribute, self).__init__(None)
 
         self.name = name
+        self.constraint = AttributeValueConstraint(False, None)

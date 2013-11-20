@@ -41,6 +41,8 @@ class XsdAny(xsd_base.XsdBase):
             else:
                 def fold_namespaces(accum, u):
                     if u == '##targetNamespace':
+                        if parent_schema.schema_element.target_ns is None:
+                            return accum
                         return accum + [parent_schema.schema_element.target_ns]
                     elif u == '##local':
                         return accum
@@ -49,11 +51,12 @@ class XsdAny(xsd_base.XsdBase):
                 namespace = reduce(fold_namespaces, value.split(), [])
 
         if is_attribute:
-            self.schema_element = dumco.schema.uses.AttributeUse(None, None,
+            self.schema_element = dumco.schema.uses.AttributeUse(
+                None, None, None,
                 dumco.schema.elements.Any(namespace,
                                           parent_schema.schema_element))
         else:
-            self.schema_element = dumco.schema.uses.Particle(
+            self.schema_element = dumco.schema.uses.Particle(None,
                 factory.particle_min_occurs(attrs),
                 factory.particle_max_occurs(attrs),
                 dumco.schema.elements.Any(namespace,

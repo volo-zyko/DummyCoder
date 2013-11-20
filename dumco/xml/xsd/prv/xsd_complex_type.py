@@ -91,7 +91,8 @@ class XsdComplexType(xsd_base.XsdBase):
 
         if mixed:
             if self.schema_element.particle is None:
-                self.schema_element.particle = dumco.schema.uses.Particle(1, 1,
+                self.schema_element.particle = dumco.schema.uses.Particle(
+                    None, 1, 1,
                     dumco.schema.elements.Sequence(self.schema_element.schema))
 
             self.schema_element.text = dumco.schema.base.SchemaText(

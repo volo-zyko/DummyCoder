@@ -27,7 +27,7 @@ def cxx_norm_name(name):
         elif (c == '-'):
             res.append('__')
         else:
-            res.append('_{:02x}_'.format(n))
+            res.append('_{:02x}_'.format(c))
     return ''.join('_' + res if not res or res[0] in string.digits else res)
 
 

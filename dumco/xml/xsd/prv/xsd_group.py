@@ -8,7 +8,6 @@ import dumco.schema.uses
 import xsd_all
 import xsd_base
 import xsd_choice
-import xsd_group
 import xsd_sequence
 
 
@@ -52,4 +51,4 @@ class XsdGroup(xsd_base.XsdBase):
                 self.term = c.finalize(factory).term
 
         return dumco.schema.uses.Particle(
-            self.min_occurs, self.max_occurs, self.term)
+            None, self.min_occurs, self.max_occurs, self.term)

@@ -8,7 +8,6 @@ import xsd_any
 import xsd_attribute
 import xsd_attribute_group
 import xsd_base
-import xsd_simple_type
 
 
 def xsd_extension_in_simpleContent(attrs, parent_element, factory,

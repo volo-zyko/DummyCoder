@@ -2,10 +2,10 @@
 
 import atexit
 import cPickle
+import collections
 import os
 import os.path
 import stat
-import string
 import time
 import zlib
 
@@ -36,6 +36,7 @@ class SourceFile(object):
     source_hashes_pickle_path = None
     previous_files_info = {}
     current_files_info = {}
+    FileCheckInfo = collections.namedtuple('FileCheckInfo', ['crc', 'time'])
 
     def __init__(self, filename, append=False,
                  read_only=True, spaces_per_tab=4):
@@ -85,16 +86,17 @@ class SourceFile(object):
             content_crc = zlib.crc32(content) & 0xffffffff
         else:
             # Appending to existing file.
-            content_crc = SourceFile.current_files_info[basename][0]
+            content_crc = SourceFile.current_files_info[basename].crc
             content_crc = zlib.crc32(content, content_crc) & 0xffffffff
 
-        is_same_content = prev_file_info[0] == content_crc
+        is_same_content = prev_file_info.crc == content_crc
 
         if is_same_content:
-            file_time = prev_file_info[1]
+            file_time = prev_file_info.time
         else:
             file_time = time.time()
-        SourceFile.current_files_info[basename] = (content_crc, file_time)
+        SourceFile.current_files_info[basename] = \
+            SourceFile.FileCheckInfo(content_crc, file_time)
 
         write_mode = 'a'
         if os.path.exists(self.filename):

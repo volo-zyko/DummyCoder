@@ -28,3 +28,6 @@ def enumerate_files(start_path, file_ending,
 
             yield filename
 
+
+class PathNotExists(BaseException):
+    pass

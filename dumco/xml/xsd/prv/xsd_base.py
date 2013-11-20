@@ -21,19 +21,20 @@ class XsdBase(object):
         self.__dict__[name] = value
 
 
-def restrict_base_attributes(base, attr_uses, factory,
-                             prohibited_attr_uses, redefined_attr_uses):
+def restrict_base_attributes(base, factory, prohibited, redefined):
     # Utility function common for XsdSimpleRestriction and XsdComplexRestriction
     # which adds attribute uses only if they are not restricted by derived
     # type.
-    is_attr_in_list = lambda attr, attrlist: any(
-        map(lambda x: attr.name == x.attribute.name and
-                      attr.schema == x.attribute.schema,
-            attrlist))
+    def is_attr_in_list(attr_use, attrlist):
+        return any(map(
+            lambda x: attr_use.attribute.name == x.attribute.name, attrlist))
+
+    res_attr_uses = []
     for u in base.attribute_uses:
         if (not dumco.schema.checks.is_any(u.attribute) and
-            (is_attr_in_list(u.attribute, prohibited_attr_uses) or
-             is_attr_in_list(u.attribute, redefined_attr_uses))):
+            (is_attr_in_list(u, prohibited) or is_attr_in_list(u, redefined))):
             continue
 
-        attr_uses.append(u)
+        res_attr_uses.append(u)
+
+    return res_attr_uses

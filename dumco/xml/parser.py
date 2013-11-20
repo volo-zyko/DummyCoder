@@ -1,6 +1,7 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
 from __future__ import print_function
+import collections
 
 import os.path
 import xml.sax
@@ -10,6 +11,8 @@ from dumco.utils.file_utils import enumerate_files
 
 
 class _XmlContentHandler(xml.sax.handler.ContentHandler):
+    NamespacePair = collections.namedtuple('NamespacePair', ['prefix', 'uri'])
+
     def __init__(self, document_path, documents, element_factory):
         xml.sax.handler.ContentHandler.__init__(self)
 
@@ -21,7 +24,8 @@ class _XmlContentHandler(xml.sax.handler.ContentHandler):
         self.namespace_stack = []
 
     def startPrefixMapping(self, prefix, uri):
-        self.namespace_stack.append((prefix, uri))
+        self.namespace_stack.append(
+            _XmlContentHandler.NamespacePair(prefix, uri))
 
         self.element_factory.define_namespace(prefix, uri)
 
@@ -30,14 +34,14 @@ class _XmlContentHandler(xml.sax.handler.ContentHandler):
 
         removed = False
         for i in xrange(len(self.namespace_stack) - 1, -1, -1):
-            if prefix != self.namespace_stack[i][0]:
+            if prefix != self.namespace_stack[i].prefix:
                 continue
 
             if not removed:
                 del self.namespace_stack[i]
                 removed = True
             else:
-                uri = self.namespace_stack[i][1]
+                uri = self.namespace_stack[i].uri
                 break
 
         self.element_factory.define_namespace(prefix, uri)

@@ -225,17 +225,18 @@ int main(int argc, char *argv[])
     xs::DOMConfiguration* conf(parser->getDomConfig());
 
     conf->setParameter(xs::XMLUni::fgDOMComments, false);
-    conf->setParameter(xs::XMLUni::fgDOMDatatypeNormalization, true);
+    conf->setParameter(xs::XMLUni::fgDOMDatatypeNormalization, false);
     conf->setParameter(xs::XMLUni::fgDOMEntities, false);
     conf->setParameter(xs::XMLUni::fgDOMNamespaces, true);
-    conf->setParameter(xs::XMLUni::fgDOMValidate, true);
+    conf->setParameter(xs::XMLUni::fgDOMValidate, false);
     conf->setParameter(xs::XMLUni::fgDOMElementContentWhitespace, false);
     conf->setParameter(xs::XMLUni::fgXercesSchema, true);
     conf->setParameter(xs::XMLUni::fgXercesSchemaFullChecking, true);
+    conf->setParameter(xs::XMLUni::fgXercesLoadExternalDTD, false);
+    conf->setParameter(xs::XMLUni::fgXercesContinueAfterFatalError, true);
     conf->setParameter(xs::XMLUni::fgXercesValidationErrorAsFatal, false);
-#if XERCES_VERSION_MINOR >= 1
-    conf->setParameter(xs::XMLUni::fgXercesHandleMultipleImports, true);
-#endif
+    conf->setParameter(xs::XMLUni::fgXercesUseCachedGrammarInParse, true);
+    conf->setParameter(xs::XMLUni::fgXercesCacheGrammarFromParse, true);
 
     SVErrorHandler eh;
     conf->setParameter(xs::XMLUni::fgDOMErrorHandler, &eh);
@@ -247,14 +248,18 @@ int main(int argc, char *argv[])
         impl->createDOMBuilder(xs::DOMImplementationLS::MODE_SYNCHRONOUS, 0));
 
     parser->setFeature(xs::XMLUni::fgDOMComments, false);
-    parser->setFeature(xs::XMLUni::fgDOMDatatypeNormalization, true);
+    parser->setFeature(xs::XMLUni::fgDOMDatatypeNormalization, false);
     parser->setFeature(xs::XMLUni::fgDOMEntities, false);
     parser->setFeature(xs::XMLUni::fgDOMNamespaces, true);
-    parser->setFeature(xs::XMLUni::fgDOMValidation, true);
+    parser->setFeature(xs::XMLUni::fgDOMValidation, false);
     parser->setFeature(xs::XMLUni::fgDOMWhitespaceInElementContent, false);
     parser->setFeature(xs::XMLUni::fgXercesSchema, true);
     parser->setFeature(xs::XMLUni::fgXercesSchemaFullChecking, true);
+    parser->setFeature(xs::XMLUni::fgXercesLoadExternalDTD, false);
+    parser->setFeature(xs::XMLUni::fgXercesContinueAfterFatalError, true);
     parser->setFeature(xs::XMLUni::fgXercesValidationErrorAsFatal, false);
+    parser->setFeature(xs::XMLUni::fgXercesUseCachedGrammarInParse, true);
+    parser->setFeature(xs::XMLUni::fgXercesCacheGrammarFromParse, true);
 
     SVErrorHandler eh;
     parser->setErrorHandler(&eh);

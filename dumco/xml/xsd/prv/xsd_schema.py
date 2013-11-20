@@ -79,12 +79,12 @@ class XsdSchema(xsd_base.XsdBase):
         for name in sorted(self.simple_types.iterkeys()):
             schema_st = self.simple_types[name].finalize(factory)
             schema_st.nameit([self], factory.namer, forged_names)
-            schema_element.simple_types[schema_st.name] = schema_st
+            schema_element.simple_types.append(schema_st)
 
         for name in sorted(self.complex_types.iterkeys()):
             schema_ct = self.complex_types[name].finalize(factory)
             schema_ct.nameit([self], factory.namer, forged_names)
-            schema_element.complex_types[schema_ct.name] = schema_ct
+            schema_element.complex_types.append(schema_ct)
 
         for (parents, t) in sorted(self.unnamed_types,
                                    key=lambda x: len(x[0])):
@@ -92,19 +92,22 @@ class XsdSchema(xsd_base.XsdBase):
             schema_type.nameit(parents, factory.namer, forged_names)
 
             if dumco.schema.checks.is_complex_type(schema_type):
-                schema_element.complex_types[schema_type.name] = schema_type
+                schema_element.complex_types.append(schema_type)
             elif dumco.schema.checks.is_simple_type(schema_type):
-                schema_element.simple_types[schema_type.name] = schema_type
+                schema_element.simple_types.append(schema_type)
 
         for elem in self.elements.itervalues():
-            schema_elem = elem.finalize(factory)
-            name = schema_elem.term.name
-            schema_element.elements[name] = schema_elem.term
+            particle = elem.finalize(factory)
+            schema_element.elements.append(particle.term)
 
         for attr in self.attributes.itervalues():
-            schema_attr_use = attr.finalize(factory)
-            name = schema_attr_use.attribute.name
-            schema_element.attribute_uses[name] = schema_attr_use
+            attr_use = attr.finalize(factory)
+            schema_element.attributes.append(attr_use.attribute)
+
+        schema_element.simple_types.sort(key=lambda st: st.name)
+        schema_element.complex_types.sort(key=lambda ct: ct.name)
+        schema_element.elements.sort(key=lambda e: e.name)
+        schema_element.attributes.sort(key=lambda a: a.name)
 
     @staticmethod
     def _get_schema_location(attrs_or_node, factory, schema_path):
@@ -121,7 +124,7 @@ class XsdSchema(xsd_base.XsdBase):
                 pass
 
         # Just ignore xml.xsd loading.
-        if location == dumco.schema.checks.XML_XSD_URI:
+        if location == dumco.schema.base.XML_XSD_URI:
             location = None
 
         path = None

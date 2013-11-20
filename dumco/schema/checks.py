@@ -6,12 +6,6 @@ import enums
 import uses
 
 
-# Constants.
-XML_NAMESPACE = 'http://www.w3.org/XML/1998/namespace'
-XML_XSD_URI = 'http://www.w3.org/2001/xml.xsd'
-XSD_NAMESPACE = 'http://www.w3.org/2001/XMLSchema'
-
-
 def _attribute_count(schema_type):
     if is_complex_type(schema_type):
         return len(list(enums.enum_attribute_uses(schema_type)))
@@ -20,11 +14,11 @@ def _attribute_count(schema_type):
 
 # General checks.
 def is_xsd_namespace(uri):
-    return uri == XSD_NAMESPACE
+    return uri == base.XSD_NAMESPACE
 
 
 def is_xml_namespace(uri):
-    return uri == XML_NAMESPACE
+    return uri == base.XML_NAMESPACE
 
 
 # Type checks.
@@ -148,4 +142,4 @@ def is_text(text):
 
 def is_xml_attribute(attr):
     return (isinstance(attr, base.XmlAttribute) or
-            (is_attribute(attr) and attr.schema.target_ns == XML_NAMESPACE))
+            (is_attribute(attr) and is_xml_namespace(attr.schema.target_ns)))
