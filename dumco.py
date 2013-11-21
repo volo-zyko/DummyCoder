@@ -15,13 +15,12 @@ from dumco.cxx.opacity_manager import OpacityManager
 
 import dumco.schema.fb2_namer
 import dumco.schema.oxml_namer
+from dumco.schema.parsing.xml_parser import XmlLoader
+from dumco.schema.parsing.xml_schema.element_factory import XsdElementFactory
+from dumco.schema.parsing.xml_schema.dump_xsd import dump_xsd
 
 from dumco.utils.ns_converter import NamespaceConverter
 from dumco.utils.file_utils import PathNotExists
-
-from dumco.xml.parser import XmlLoader
-from dumco.xml.xsd.element_factory import XsdElementFactory
-from dumco.xml.xsd.dump_xsd import dump_xsd
 
 
 def process_arguments():

@@ -10,7 +10,7 @@ import dumco.schema.checks
 import dumco.schema.elements
 import dumco.schema.namer
 
-import dumco.xml.parser
+import dumco.schema.parsing.xml_parser
 
 import xsd_any
 import xsd_attribute
@@ -168,7 +168,7 @@ class XsdSchema(xsd_base.XsdBase):
             all_schemata[schema_path] = None
             factory.reset()
 
-            raise dumco.xml.parser.ParseRestart(
+            raise dumco.schema.parsing.xml_parser.ParseRestart(
                 StringIO.StringIO(xsd_root.toxml('utf-8')))
 
         return (parent_element, {
