@@ -4,15 +4,15 @@ import collections
 
 
 def function_once(func):
-    _OptionalValue = collections.namedtuple(
-        '_OptionalValue', ['defined', 'value'])
+    OptionalValue = collections.namedtuple(
+        'OptionalValue', ['defined', 'value'])
 
     def decorated(*args, **kwargs):
         if not decorated.run.defined:
-            decorated.run = _OptionalValue(True, func(*args, **kwargs))
+            decorated.run = OptionalValue(True, func(*args, **kwargs))
         return decorated.run.value
 
-    decorated.run = _OptionalValue(False, None)
+    decorated.run = OptionalValue(False, None)
     return decorated
 
 

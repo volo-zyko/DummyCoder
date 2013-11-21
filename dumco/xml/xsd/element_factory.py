@@ -16,8 +16,6 @@ class XsdElementFactory(object):
 
         # These internals should not be reset.
         self.included_schema_paths = {}
-        # Either path to XSD file or XSD as StringIO.
-        self.current_xsd = None
 
         # All prefices encountered during schemata loading.
         self.all_namespace_prefices = {dumco.schema.base.XML_NAMESPACE: 'xml'}
@@ -97,8 +95,6 @@ class XsdElementFactory(object):
         self.dispatcher = self.dispatcher_stack.pop()
 
     def end_document(self):
-        self.current_xsd = None
-
         # There might remain single xml namespace.
         assert len(self.namespaces) == 1 or len(self.namespaces) == 0
         assert len(self.dispatcher_stack) == 0

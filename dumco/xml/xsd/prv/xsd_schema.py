@@ -27,9 +27,6 @@ def xsd_schema(attrs, parent_element, factory, schema_path, all_schemata):
     schema = XsdSchema(attrs, schema_path)
     all_schemata[schema_path] = schema
 
-    if factory.current_xsd is None:
-        factory.current_xsd = schema_path
-
     return (schema, {
         'annotation': factory.noop_handler,
         'attribute': xsd_attribute.xsd_attribute,
@@ -159,87 +156,73 @@ class XsdSchema(xsd_base.XsdBase):
     @staticmethod
     def xsd_include(attrs, parent_element, factory,
                     schema_path, all_schemata):
-        new_schema_path = \
-            XsdSchema._get_schema_location(attrs, factory, schema_path)
+        new_schema_path = XsdSchema._get_schema_location(attrs, factory,
+                                                         schema_path)
 
         if new_schema_path is not None:
             assert os.path.isfile(new_schema_path), \
                 'File {} does not exist'.format(new_schema_path)
 
-            inc_paths = \
-                factory.included_schema_paths.setdefault(schema_path, set())
-            if (os.path.isfile(new_schema_path) and
-                new_schema_path not in inc_paths and
-                new_schema_path not in factory.included_schema_paths):
-                inc_paths.add(new_schema_path)
+            # Restart parsing with a new xsd.
+            xsd_root = _include_xsds(schema_path, schema_path, factory)
+            all_schemata[schema_path] = None
+            factory.reset()
 
-                current_xsd_copy = factory.current_xsd
-                if isinstance(current_xsd_copy, StringIO.StringIO):
-                    # Copy StringIO so that in a new stream we start
-                    # reading from the beginning.
-                    current_xsd_copy = \
-                        StringIO.StringIO(factory.current_xsd.getvalue())
-
-                # Restart parsing with a new xsd.
-                factory.current_xsd = _merge_xsds(current_xsd_copy, schema_path,
-                                                  new_schema_path, factory)
-                all_schemata[schema_path] = None
-                factory.reset()
-
-                raise dumco.xml.parser.ParseRestart(factory.current_xsd)
+            raise dumco.xml.parser.ParseRestart(
+                StringIO.StringIO(xsd_root.toxml('utf-8')))
 
         return (parent_element, {
             'annotation': factory.noop_handler,
         })
 
 
-def _merge_xsds(curr_document, curr_path, new_path, factory):
-    orig_dom = xml.dom.minidom.parse(curr_document)
-    new_dom = xml.dom.minidom.parse(new_path)
-
-    orig_root = orig_dom.documentElement
-    new_root = new_dom.documentElement
-
+def _include_xsds(schema_path, curr_path, factory):
     def is_schema_node(node, name):
         return (node.nodeType == node.ELEMENT_NODE and
             dumco.schema.checks.is_xsd_namespace(node.namespaceURI) and
             node.localName == name)
 
-    assert is_schema_node(orig_root, 'schema'), 'Not a schema document'
-    assert is_schema_node(new_root, 'schema'), 'Not a schema document'
+    orig_dom = xml.dom.minidom.parse(curr_path)
+    orig_root = orig_dom.documentElement
 
-    # Find the right include directive and remove it from original xsd.
-    found_include = False
-    for n in orig_root.childNodes:
+    assert is_schema_node(orig_root, 'schema'), 'Not a schema document'
+
+    for n in list(orig_root.childNodes):
         if not is_schema_node(n, 'include'):
             continue
 
-        path = XsdSchema._get_schema_location(n, factory, curr_path)
-        if path is not None and path == new_path:
-            found_include = True
-            orig_root.removeChild(n)
-            break
+        n_path = XsdSchema._get_schema_location(n, factory, curr_path)
+        if n_path is None:
+            continue
 
-    assert found_include, 'Cannot find include {} for removal'.format(new_path)
+        orig_root.removeChild(n)
 
-    # Copy components from included xsd to including xsd.
-    for n in new_root.childNodes:
-        new = orig_dom.importNode(n, True)
+        included_paths = \
+            factory.included_schema_paths.setdefault(schema_path, set())
+        if n_path in factory.included_schema_paths or n_path in included_paths:
+            continue
+        included_paths.add(n_path)
 
-        if is_schema_node(new, 'include'):
-            path = XsdSchema._get_schema_location(n, factory, new_path)
-            new.setAttribute('schemaLocation', path)
+        n_dom = _include_xsds(schema_path, n_path, factory)
+        n_root = n_dom.documentElement
 
-        if is_schema_node(new, 'import'):
-            path = XsdSchema._get_schema_location(n, factory, new_path)
-            new.setAttribute('schemaLocation', path)
+        # Copy components from included xsd to including xsd.
+        for m in n_root.childNodes:
+            assert not is_schema_node(m, 'include')
 
-        orig_root.appendChild(new)
+            m_new = orig_dom.importNode(m, True)
 
-    # Copy namespace declarations.
-    for a in [new_root.attributes.item(i)
-              for i in xrange(0, new_root.attributes.length)]:
-        if a.name.startswith('xmlns:') and not orig_root.hasAttribute(a.name):
-            orig_root.setAttribute(a.name, a.value)
+            if is_schema_node(m, 'import'):
+                m_path = XsdSchema._get_schema_location(m, factory, n_path)
+                m_new.setAttribute('schemaLocation', m_path)
 
-    return StringIO.StringIO(orig_dom.toxml('utf-8'))
+            orig_root.appendChild(m_new)
+
+        # Copy namespace declarations.
+        for i in xrange(0, n_root.attributes.length):
+            a = n_root.attributes.item(i)
+            if (a.name.startswith('xmlns:') and
+                not orig_root.hasAttribute(a.name)):
+                orig_root.setAttribute(a.name, a.value)
+
+    return orig_dom
