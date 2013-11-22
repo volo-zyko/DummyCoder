@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-concatenate-message</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="device-feature-types.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:element name="ConcatenateMessage">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="messagesToConcatenate" type="csta:MessageIDList"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="ConcatenateMessageResponse">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="concatenatedMessage" type="csta:MessageID"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:complexType name="MessageIDList">
+    <xsd:sequence>
+      <xsd:element name="messageIDItem" type="csta:MessageID" minOccurs="0" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+</xsd:schema>

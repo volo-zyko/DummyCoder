@@ -171,7 +171,9 @@ $COVERAGE_BEGIN_COMMAND "$PWD/dumco.py" -h
 $COVERAGE_APPEND_COMMAND "$PWD/dumco.py" --version
 
 opts=('-n oxml')
-opts+=('-n fb2')
+if [ -n "$COVERAGE_BEGIN_COMMAND" ]; then
+    opts+=('-n fb2')
+fi
 
 for opt in "${opts[@]}"
 do
@@ -206,7 +208,7 @@ done
 # prefices='--uri-prefices http://www.gribuser.ru/'
 # single_run UT/schemas/FB20/ '-n fb2' rfilter "$prefices $content_class $content_class_header"
 
-if [ "$COVERAGE_BEGIN_COMMAND" != '' ]; then
+if [ -n "$COVERAGE_BEGIN_COMMAND" ]; then
     test -d "$COVERAGE_REPORT_DIR" && rm -rf "$COVERAGE_REPORT_DIR"
     coverage html -d "$COVERAGE_REPORT_DIR"
 

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-call-detail-records-report</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:include schemaLocation="call-detail-record.xsd"/>
+  <xsd:element name="CDRReport">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="csta:cdrCrossRefID"/>
+        <xsd:element name="numberOfRecordsSent">
+          <xsd:simpleType>
+            <xsd:restriction base="xsd:integer">
+              <xsd:minInclusive value="1"/>
+              <xsd:maxInclusive value="128"/>
+            </xsd:restriction>
+          </xsd:simpleType>
+        </xsd:element>
+        <xsd:element name="cdrInfo" type="csta:CDRInfo"/>
+        <xsd:element name="lastStoredCDRReportSent" type="xsd:boolean" minOccurs="0"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="CDRReportResponse">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+</xsd:schema>

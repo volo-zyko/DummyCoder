@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-get-display</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="device-identifiers.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:include schemaLocation="physical-device-features.xsd"/>
+  <xsd:element name="GetDisplay">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="device" type="csta:DeviceID"/>
+        <xsd:element name="display" type="csta:DisplayID" minOccurs="0"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="GetDisplayResponse">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="displayList" type="csta:DisplayList"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:complexType name="DisplayList">
+    <xsd:sequence>
+      <xsd:element name="displayListItem" type="csta:DisplayListItem" minOccurs="0" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="DisplayListItem">
+    <xsd:sequence>
+      <xsd:element name="displayID" type="csta:DisplayID"/>
+      <xsd:element name="logicalRows" type="xsd:long"/>
+      <xsd:element name="logicalColumns" type="xsd:long"/>
+      <xsd:element name="physicalRows" type="xsd:long" minOccurs="0"/>
+      <xsd:element name="physicalColumns" type="xsd:long" minOccurs="0"/>
+      <xsd:element name="physicalBaseRowNumber" type="xsd:long" minOccurs="0"/>
+      <xsd:element name="physicalBaseColumnNumber" type="xsd:long" minOccurs="0"/>
+      <xsd:element name="characterSet" type="csta:CharacterSet" minOccurs="0"/>
+      <xsd:element name="contentsOfDisplay" type="xsd:string"/>
+    </xsd:sequence>
+  </xsd:complexType>
+</xsd:schema>

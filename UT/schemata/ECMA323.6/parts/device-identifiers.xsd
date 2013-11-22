@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-device-identifiers</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="media-services.xsd"/>
+  <xsd:include schemaLocation="empty.xsd"/>
+  <xsd:complexType name="ExtendedDeviceID">
+    <xsd:choice>
+      <xsd:element name="deviceIdentifier" type="csta:DeviceID"/>
+      <xsd:element name="notKnown" type="csta:Empty"/>
+      <xsd:element name="restricted" type="csta:Empty"/>
+    </xsd:choice>
+  </xsd:complexType>
+  <xsd:complexType name="CallingDeviceID">
+    <xsd:complexContent>
+      <xsd:extension base="csta:ExtendedDeviceID"/>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <xsd:element name="callingDevice" type="csta:CallingDeviceID"/>
+  <xsd:complexType name="CalledDeviceID">
+    <xsd:complexContent>
+      <xsd:extension base="csta:ExtendedDeviceID"/>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <xsd:element name="calledDevice" type="csta:CalledDeviceID"/>
+  <xsd:complexType name="SubjectDeviceID">
+    <xsd:complexContent>
+      <xsd:extension base="csta:ExtendedDeviceID"/>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <xsd:complexType name="RedirectionDeviceID">
+    <xsd:choice>
+      <xsd:element name="numberDialed" type="csta:DeviceID"/>
+      <xsd:element name="notKnown" type="csta:Empty"/>
+      <xsd:element name="notRequired" type="csta:Empty"/>
+      <xsd:element name="notSpecified" type="csta:Empty"/>
+      <xsd:element name="restricted" type="csta:Empty"/>
+    </xsd:choice>
+  </xsd:complexType>
+  <xsd:element name="lastRedirectionDevice" type="csta:RedirectionDeviceID"/>
+  <xsd:complexType name="AssociatedCallingDeviceID">
+    <xsd:complexContent>
+      <xsd:extension base="csta:ExtendedDeviceID"/>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <xsd:element name="associatedCallingDevice" type="csta:AssociatedCallingDeviceID"/>
+  <xsd:complexType name="AssociatedCalledDeviceID">
+    <xsd:complexContent>
+      <xsd:extension base="csta:ExtendedDeviceID"/>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <xsd:element name="associatedCalledDevice" type="csta:AssociatedCalledDeviceID"/>
+  <xsd:complexType name="NetworkCallingDeviceID">
+    <xsd:complexContent>
+      <xsd:extension base="csta:ExtendedDeviceID"/>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <xsd:element name="networkCallingDevice" type="csta:NetworkCallingDeviceID"/>
+  <xsd:complexType name="NetworkCalledDeviceID">
+    <xsd:complexContent>
+      <xsd:extension base="csta:ExtendedDeviceID"/>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <xsd:element name="networkCalledDevice" type="csta:NetworkCalledDeviceID"/>
+  <xsd:complexType name="DeviceID">
+    <xsd:annotation>
+      <xsd:documentation>uses flattened structure</xsd:documentation>
+    </xsd:annotation>
+    <xsd:simpleContent>
+      <xsd:extension base="csta:DeviceIDType">
+        <xsd:attribute name="typeOfNumber" default="dialingNumber">
+          <xsd:simpleType>
+            <xsd:restriction base="xsd:string">
+              <xsd:enumeration value="dialingNumber"/>
+              <xsd:enumeration value="deviceNumber"/>
+              <xsd:enumeration value="implicitPublic"/>
+              <xsd:enumeration value="explicitPublic:unknown"/>
+              <xsd:enumeration value="explicitPublic:international"/>
+              <xsd:enumeration value="explicitPublic:national"/>
+              <xsd:enumeration value="explicitPublic:networkspecific"/>
+              <xsd:enumeration value="explicitPublic:subscriber"/>
+              <xsd:enumeration value="explicitPublic:abbreviated"/>
+              <xsd:enumeration value="implicitPrivate"/>
+              <xsd:enumeration value="explicitPrivate:unknown"/>
+              <xsd:enumeration value="explicitPrivate:level3RegionalNumber"/>
+              <xsd:enumeration value="explicitPrivate:level2RegionalNumber"/>
+              <xsd:enumeration value="explicitPrivate:level1RegionalNumber"/>
+              <xsd:enumeration value="explicitPrivate:pTNSpecificNumber"/>
+              <xsd:enumeration value="explicitPrivate:localNumber"/>
+              <xsd:enumeration value="explicitPrivate:abbreviated"/>
+              <xsd:enumeration value="other"/>
+            </xsd:restriction>
+          </xsd:simpleType>
+        </xsd:attribute>
+        <xsd:attribute name="mediaClass" type="csta:MediaClassAttribute" default="notKnown"/>
+        <xsd:attribute name="connectionRate" use="optional">
+          <xsd:simpleType>
+            <xsd:restriction base="xsd:long">
+              <xsd:minInclusive value="0"/>
+            </xsd:restriction>
+          </xsd:simpleType>
+        </xsd:attribute>
+        <xsd:attribute name="bitRate" default="constant">
+          <xsd:simpleType>
+            <xsd:restriction base="xsd:string">
+              <xsd:enumeration value="constant"/>
+              <xsd:enumeration value="variable"/>
+            </xsd:restriction>
+          </xsd:simpleType>
+        </xsd:attribute>
+        <xsd:attribute name="delayTolerance" type="xsd:long" use="optional"/>
+        <xsd:attribute name="switchingSubDomainCCIEType" use="optional">
+          <xsd:simpleType>
+            <xsd:restriction base="xsd:string">
+              <xsd:enumeration value="isdn"/>
+              <xsd:enumeration value="atm"/>
+              <xsd:enumeration value="isoEthernet"/>
+              <xsd:enumeration value="rsvp"/>
+              <xsd:enumeration value="other"/>
+              <xsd:enumeration value="sip"/>
+            </xsd:restriction>
+          </xsd:simpleType>
+        </xsd:attribute>
+        <xsd:attribute name="switchingSubDomainInformationElements" use="optional">
+          <xsd:simpleType>
+            <xsd:restriction base="xsd:hexBinary"/>
+          </xsd:simpleType>
+        </xsd:attribute>
+        <xsd:attribute name="privateNumber" type="xsd:boolean" default="false" use="optional"/>
+        <xsd:attribute name="privateName" type="xsd:boolean" default="false" use="optional"/>
+      </xsd:extension>
+    </xsd:simpleContent>
+  </xsd:complexType>
+  <xsd:simpleType name="OtherPlan">
+    <xsd:restriction base="xsd:hexBinary"/>
+  </xsd:simpleType>
+  <xsd:simpleType name="DeviceIDType">
+    <xsd:union memberTypes="csta:OtherPlan csta:Number"/>
+  </xsd:simpleType>
+  <xsd:simpleType name="Number">
+    <xsd:restriction base="xsd:string"/>
+  </xsd:simpleType>
+  <xsd:simpleType name="MediaClassComponents">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="voice"/>
+      <xsd:enumeration value="data"/>
+      <xsd:enumeration value="image"/>
+      <xsd:enumeration value="audio"/>
+      <xsd:enumeration value="other"/>
+      <xsd:enumeration value="notKnown"/>
+      <xsd:enumeration value="chat"/>
+      <xsd:enumeration value="email"/>
+      <xsd:enumeration value="message"/>
+      <xsd:enumeration value="im"/>
+      <xsd:enumeration value="sms"/>
+      <xsd:enumeration value="mms"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="MediaClassAttribute">
+    <xsd:list itemType="csta:MediaClassComponents"/>
+  </xsd:simpleType>
+</xsd:schema>

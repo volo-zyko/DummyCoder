@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-set-location-information</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="status-reporting.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:element name="SetLocationInformation">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="device" type="csta:DeviceID"/>
+        <xsd:element name="locationInfo" type="csta:LocationInfo" minOccurs="0"/>
+        <xsd:element name="replaceMode" type="csta:ReplaceMode" minOccurs="0"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="SetLocationInformationResponse">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:simpleType name="ReplaceMode">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="replaceAll"/>
+      <xsd:enumeration value="replacePortion"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+</xsd:schema>

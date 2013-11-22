@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-lamp-mode-event</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="device-identifiers.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:include schemaLocation="physical-device-features.xsd"/>
+  <xsd:include schemaLocation="status-reporting.xsd"/>
+  <xsd:element name="LampModeEvent">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="csta:monitorCrossRefID"/>
+        <xsd:element name="device" type="csta:SubjectDeviceID"/>
+        <xsd:element name="lamp" type="csta:LampID"/>
+        <xsd:element name="lampLabel" minOccurs="0">
+          <xsd:simpleType>
+            <xsd:restriction base="xsd:string">
+              <xsd:minLength value="0"/>
+            </xsd:restriction>
+          </xsd:simpleType>
+        </xsd:element>
+        <xsd:element name="lampMode" type="csta:LampMode"/>
+        <xsd:element name="lampBrightness" type="csta:LampBrightness" minOccurs="0"/>
+        <xsd:element name="lampColor" type="csta:LampColor" minOccurs="0"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+</xsd:schema>

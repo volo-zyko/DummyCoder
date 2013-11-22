@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-change-system-status-filter</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="device-feature-types.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:element name="ChangeSysStatFilter">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="csta:sysStatRegisterID"/>
+        <xsd:element name="requestedStatusFilter" type="csta:StatusFilterList"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="ChangeSysStatFilterResponse">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="actualStatusFilter" type="csta:StatusFilterList"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:complexType name="StatusFilterList">
+    <xsd:sequence>
+      <xsd:element name="initializing" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="enabled" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="normal" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="messageLost" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="disabled" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="partiallyDisabled" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="overloadImminent" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="overloadReached" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="overloadRelieved" type="xsd:boolean" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+</xsd:schema>

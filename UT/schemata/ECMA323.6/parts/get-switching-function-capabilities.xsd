@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSPY v5 rel. 4 U (http://www.xmlspy.com) by Thomas Miller (Siemens Enterprise Networks) -->
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xsd:annotation>
+		<xsd:documentation>CSTA-get-switching-function-capabilities</xsd:documentation>
+	</xsd:annotation>
+	<xsd:include schemaLocation="status-reporting.xsd"/>
+	<xsd:include schemaLocation="security.xsd"/>
+	<xsd:include schemaLocation="extension-types.xsd"/>
+	<xsd:include schemaLocation="call-control.xsd"/>
+	<xsd:include schemaLocation="capability-exchange.xsd"/>
+	<xsd:include schemaLocation="data-call-types.xsd"/>
+	<xsd:element name="GetSwitchingFunctionCaps">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element ref="csta:extensions" minOccurs="0"/>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+	<xsd:element name="GetSwitchingFunctionCapsResponse">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="switchingSubDomainName">
+					<xsd:simpleType>
+						<xsd:restriction base="xsd:string">
+							<xsd:minLength value="0"/>
+						</xsd:restriction>
+					</xsd:simpleType>
+				</xsd:element>
+				<xsd:element name="manufacturerName">
+					<xsd:simpleType>
+						<xsd:restriction base="xsd:string">
+							<xsd:minLength value="0"/>
+						</xsd:restriction>
+					</xsd:simpleType>
+				</xsd:element>
+				<xsd:element name="profiles" type="csta:Profiles"/>
+				<xsd:element name="deviceIDFormat" type="csta:DeviceIDFormat"/>
+				<xsd:element name="swDomainFeatures" type="csta:SwDomainFeatures"/>
+				<xsd:element name="swAppearanceAddressability" type="csta:SwAppearanceAddressability"/>
+				<xsd:element name="swAppearanceTypes" type="csta:SwAppearanceTypes"/>
+				<xsd:element name="ignoreUnsupportedParameters" type="csta:IgnoreUnsupportedParameters"/>
+				<xsd:element name="callCharacteristicsSupported" type="csta:CallCharacteristics" minOccurs="0"/>
+				<xsd:element name="mediaClassSupport" type="csta:MonitorMediaClass" minOccurs="0"/>
+				<xsd:element name="numberOfChannels" type="csta:NumberOfChannels" minOccurs="0"/>
+				<xsd:element name="maxChannelBind" type="csta:MaxChannelBind" minOccurs="0"/>
+				<xsd:element name="miscMediaCallCharacteristics" type="csta:MiscMediaCallCharacteristics" minOccurs="0"/>
+				<xsd:element name="connectionRateList" type="csta:ConnectionRateList" minOccurs="0"/>
+				<xsd:element name="delayToleranceList" type="csta:DelayToleranceList" minOccurs="0"/>
+				<xsd:element name="pauseTime" type="csta:PauseTime" minOccurs="0"/>
+				<xsd:element name="currentTime" type="csta:TimeInfo" minOccurs="0"/>
+				<xsd:element name="messageSeqNumbers" type="csta:MessageSeqNumbers" minOccurs="0"/>
+				<xsd:element name="timeStampMode" type="csta:TimeStampMode" minOccurs="0"/>
+				<xsd:element name="securityMode" type="csta:SecurityMode" minOccurs="0"/>
+				<xsd:element name="securityFormat" type="csta:SecurityFormat" minOccurs="0"/>
+				<xsd:element name="privateDataFormat" type="csta:SecurityFormat" minOccurs="0"/>
+				<xsd:element name="transAndConfSetup" type="csta:TransAndConfSetup" minOccurs="0"/>
+				<xsd:element name="monitorFilterItems" type="csta:MonitorFilterItems" minOccurs="0"/>
+				<xsd:element name="miscMonitorCaps" type="csta:MiscMonitorCaps" minOccurs="0"/>
+				<xsd:element name="correlatorDataSupported" type="xsd:boolean" minOccurs="0"/>
+				<xsd:element name="dynamicFeatureSupported" type="csta:DynamicFeatureSupported" minOccurs="0"/>
+				<xsd:element name="callLinkageOptions" type="csta:CallLinkageOptions" minOccurs="0"/>
+				<xsd:element name="aCDModels" type="csta:ACDModels" minOccurs="0"/>
+				<xsd:element name="agentLogOnModels" type="csta:AgentLogOnModels" minOccurs="0"/>
+				<xsd:element name="agentStateModels" type="csta:AgentStateModels" minOccurs="0"/>
+				<xsd:element name="connectionView" type="csta:ConnectionView"/>
+				<xsd:element name="maxLengthParameters" type="csta:MaxLengthParameters"/>
+				<xsd:element name="maxLengthParametersCont" type="csta:MaxLengthParametersContinued" minOccurs="0"/>
+				<xsd:element name="servEvtsList" type="csta:ServEvtsList" minOccurs="0"/>
+				<xsd:element name="privateDataVersionList" type="csta:PrivateDataVersionList" minOccurs="0"/>
+				<xsd:element name="systemStatusTimer" minOccurs="0">
+					<xsd:simpleType>
+						<xsd:restriction base="xsd:long">
+							<xsd:minInclusive value="0"/>
+							<xsd:maxInclusive value="180"/>
+						</xsd:restriction>
+					</xsd:simpleType>
+				</xsd:element>
+				<xsd:element name="simpleThreshold" type="xsd:long" minOccurs="0"/>
+				<xsd:element name="filterThreshold" type="csta:FilterThreshold" minOccurs="0"/>
+				<xsd:element name="mediaServiceCapsList" type="csta:MediaServiceCapsList" minOccurs="0"/>
+				<xsd:element name="maxDeviceHistoryEntries" type="xsd:short" minOccurs="0"/>
+				<xsd:element name="maxDestinationDevicesForDeflect" type="xsd:short" minOccurs="0"/>
+				<xsd:element name="extensions" type="csta:CSTACommonArguments" minOccurs="0"/>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+	<xsd:complexType name="MonitorFilterItems">
+		<xsd:sequence>
+			<xsd:element name="deviceOnDeviceMonitorFilter" type="csta:MonitorFilter" minOccurs="0"/>
+			<xsd:element name="deviceOnConnectionMonitorFilter" type="csta:MonitorFilter" minOccurs="0"/>
+			<xsd:element name="callOnDeviceMonitorFilter" type="csta:MonitorFilter" minOccurs="0"/>
+			<xsd:element name="callOnConnectionMonitorFilter" type="csta:MonitorFilter" minOccurs="0"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="MessageSeqNumbers">
+		<xsd:sequence>
+			<xsd:element name="allEvents" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="allAcks" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="allServReqs" type="xsd:boolean" minOccurs="0"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="SecurityMode">
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="allEvents"/>
+			<xsd:enumeration value="allAcks"/>
+			<xsd:enumeration value="allServReqs"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:complexType name="SecurityFormat">
+		<xsd:sequence>
+			<xsd:element name="octetStringFromSF" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="otherTypeFromSF" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="octetStringToSF" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="otherTypeToSF" type="xsd:boolean" minOccurs="0"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Profiles">
+		<xsd:sequence>
+			<xsd:element name="basicTelephonyProfile" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="routeingProfile" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="l1aVoiceBrowserProfile" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="l1bVoiceBrowserProfile" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="l2VoiceBrowserProfile" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="minimalUACSTACallControlProfile" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="basicUACSTAtCallControlProfile" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="advancedUACSTACallControlProfile" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="conferencingUACSTACallControlProfile" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="basicUACSTADeviceFeatureProfile" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="speakerUACSTADeviceFeatureProfile" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="basicSpeechServiceProfile" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="advancedSpeechServiceProfile" type="xsd:boolean" minOccurs="0"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="DynamicFeatureSupported">
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="none"/>
+			<xsd:enumeration value="all"/>
+			<xsd:enumeration value="some"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:complexType name="CallLinkageOptions">
+		<xsd:sequence>
+			<xsd:element name="callLinkageFeatureSupported" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="threadLinkageFeatureSupported" type="xsd:boolean" minOccurs="0"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="AgentStateModels">
+		<xsd:sequence>
+			<xsd:element name="multiState" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="multiStateSemiIndependentLinked" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="agentOriented" type="xsd:boolean" minOccurs="0"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="ConnectionView">
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="fixed"/>
+			<xsd:enumeration value="local"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:complexType name="ServEvtsList">
+		<xsd:sequence>
+			<xsd:element name="capExchangeServList" type="csta:CapExchangeServList" minOccurs="0"/>
+			<xsd:element name="systemServList" type="csta:SystemStatusServList" minOccurs="0"/>
+			<xsd:element name="monitoringServList" type="csta:MonitoringServList" minOccurs="0"/>
+			<xsd:element name="snapshotServList" type="csta:SnapshotServList" minOccurs="0"/>
+			<xsd:element name="callControlServList" type="csta:CallControlServList" minOccurs="0"/>
+			<xsd:element name="callControlEvtsList" type="csta:CallControlEvtsList" minOccurs="0"/>
+			<xsd:element name="callAssociatedServList" type="csta:CallAssociatedServList" minOccurs="0"/>
+			<xsd:element name="callAssociatedEvtsList" type="csta:CallAssociatedEvtsList" minOccurs="0"/>
+			<xsd:element name="mediaServList" type="csta:MediaServList" minOccurs="0"/>
+			<xsd:element name="mediaEvtsList" type="csta:MediaEvtsList" minOccurs="0"/>
+			<xsd:element name="routeingServList" type="csta:RouteingServList" minOccurs="0"/>
+			<xsd:element name="physDevServList" type="csta:PhysDevServList" minOccurs="0"/>
+			<xsd:element name="physDevEvtsList" type="csta:PhysDevEvtsList" minOccurs="0"/>
+			<xsd:element name="logicalServList" type="csta:LogicalServList" minOccurs="0"/>
+			<xsd:element name="logicalEvtsList" type="csta:LogicalEvtsList" minOccurs="0"/>
+			<xsd:element name="deviceMaintEvtsList" type="csta:DeviceMaintEvtsList" minOccurs="0"/>
+			<xsd:element name="iOServicesServList" type="csta:IOServicesServList" minOccurs="0"/>
+			<xsd:element name="dataCollectionServList" type="csta:DataCollectionServList" minOccurs="0"/>
+			<xsd:element name="voiceServList" type="csta:VoiceServList" minOccurs="0"/>
+			<xsd:element name="voiceEvtsList" type="csta:VoiceEvtsList" minOccurs="0"/>
+			<xsd:element name="cdrServList" type="csta:CDRServList" minOccurs="0"/>
+			<xsd:element name="vendorSpecificServList" type="csta:VendorSpecificServList" minOccurs="0"/>
+			<xsd:element name="vendorSpecificEvtsList" type="csta:VendorSpecificEvtsList" minOccurs="0"/>
+			<xsd:element name="statusReportingServList" type="csta:StatusReportingServList" minOccurs="0"/>
+			<xsd:element name="locationServicesServList" type="csta:LocationServicesServList" minOccurs="0"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="StatusReportingServList">
+		<xsd:sequence>
+			<xsd:element name="monitoringServices" type="csta:MonitoringServList" minOccurs="0"/>
+			<xsd:element name="snapshotServices" type="csta:SnapshotServList" minOccurs="0"/>
+			<xsd:element name="systemServices" type="csta:SystemStatusServList" minOccurs="0"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="MiscMediaCallCharacteristics">
+		<xsd:sequence>
+			<xsd:element name="supportAdjustment" type="xsd:boolean" minOccurs="0"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="PrivateDataVersionList">
+		<xsd:sequence>
+			<xsd:element name="privateDataVersion" type="xsd:long" minOccurs="0" maxOccurs="unbounded"/>
+		</xsd:sequence>
+	</xsd:complexType>
+</xsd:schema>

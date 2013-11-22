@@ -12,14 +12,12 @@ import dumco.schema.namer
 
 import dumco.schema.parsing.xml_parser
 
-import xsd_any
 import xsd_attribute
 import xsd_attribute_group
 import xsd_base
 import xsd_complex_type
 import xsd_element
 import xsd_group
-import xsd_sequence
 import xsd_simple_type
 
 
@@ -63,10 +61,21 @@ class XsdSchema(xsd_base.XsdBase):
         self.simple_types = {}
         self.unnamed_types = []
 
-    def set_imports(self, all_schemata):
-        self.imports = {
-            all_schemata[path].schema_element.target_ns: all_schemata[path]
-            for path in self.imports.iterkeys()}
+    def set_imports(self, all_schemata, factory):
+        self.imports = {}
+
+        for path in all_schemata.iterkeys():
+            if any([(path in included_paths) for included_paths
+                    in factory.included_schema_paths.itervalues()]):
+                continue
+
+            schema = all_schemata[path]
+
+            assert schema.schema_element.target_ns not in self.imports, \
+                'Attempting to redefine imported schema for {}'.format(
+                    schema.schema_element.target_ns)
+
+            self.imports[schema.schema_element.target_ns] = schema
 
     @method_once
     def finalize(self, all_schemata, factory):
@@ -147,7 +156,6 @@ class XsdSchema(xsd_base.XsdBase):
             if os.path.isfile(new_schema_path):
                 all_schemata[new_schema_path] = all_schemata[new_schema_path] \
                     if new_schema_path in all_schemata else None
-                all_schemata[schema_path].imports[new_schema_path] = None
 
         return (parent_element, {
             'annotation': factory.noop_handler,

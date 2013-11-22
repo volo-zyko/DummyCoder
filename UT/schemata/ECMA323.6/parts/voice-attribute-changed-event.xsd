@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-voice-attribute-changed-event</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="event-cause.xsd"/>
+  <xsd:include schemaLocation="call-connection-identifiers.xsd"/>
+  <xsd:include schemaLocation="device-feature-types.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:include schemaLocation="call-control.xsd"/>
+  <xsd:include schemaLocation="physical-device-features.xsd"/>
+  <xsd:include schemaLocation="status-reporting.xsd"/>
+  <xsd:element name="VoiceAttributeChangedEvent">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="csta:monitorCrossRefID"/>
+        <xsd:element name="connection" type="csta:ConnectionID"/>
+        <xsd:element name="message" type="csta:MessageID" minOccurs="0"/>
+        <xsd:element name="resource" type="csta:ResourceID" minOccurs="0"/>
+        <xsd:element name="playVolume" type="csta:Volume" minOccurs="0"/>
+        <xsd:element name="recordingGain" minOccurs="0">
+          <xsd:simpleType>
+            <xsd:restriction base="xsd:integer">
+              <xsd:minInclusive value="0"/>
+              <xsd:maxInclusive value="100"/>
+            </xsd:restriction>
+          </xsd:simpleType>
+        </xsd:element>
+        <xsd:element name="speed" type="xsd:long" minOccurs="0"/>
+        <xsd:element name="currentPosition" type="xsd:long" minOccurs="0"/>
+        <xsd:element name="grammars" minOccurs="0" maxOccurs="unbounded">
+          <xsd:complexType>
+            <xsd:sequence minOccurs="0">
+              <xsd:any namespace="##any" maxOccurs="unbounded"/>
+            </xsd:sequence>
+            <xsd:attribute name="name" type="xsd:string"/>
+            <xsd:attribute name="src" type="xsd:anyURI"/>
+            <xsd:anyAttribute namespace="##any"/>
+          </xsd:complexType>
+        </xsd:element>
+        <xsd:element name="language" type="xsd:language" minOccurs="0"/>
+        <xsd:element name="mode">
+          <xsd:simpleType>
+            <xsd:restriction base="xsd:string">
+              <xsd:enumeration value="automatic"/>
+              <xsd:enumeration value="single"/>
+              <xsd:enumeration value="multiple"/>
+            </xsd:restriction>
+          </xsd:simpleType>
+        </xsd:element>
+        <xsd:element name="retainAudio" type="xsd:boolean" minOccurs="0"/>
+        <xsd:element name="silenceTimeout" type="xsd:float" minOccurs="0"/>
+        <xsd:element name="maxTimeout" type="xsd:float" minOccurs="0"/>
+        <xsd:element name="babbleTimeout" type="xsd:float" minOccurs="0"/>
+        <xsd:element name="endSilence" type="xsd:float" minOccurs="0"/>
+        <xsd:element name="rejectionThreshold" minOccurs="0">
+          <xsd:simpleType>
+            <xsd:restriction base="xsd:float">
+              <xsd:maxInclusive value="1.0"/>
+              <xsd:minInclusive value="0.0"/>
+            </xsd:restriction>
+          </xsd:simpleType>
+        </xsd:element>
+        <xsd:element name="autoInterruptible" type="xsd:boolean" minOccurs="0"/>
+        <xsd:element name="innerXml" minOccurs="0">
+          <xsd:complexType>
+            <xsd:sequence>
+              <xsd:any/>
+            </xsd:sequence>
+          </xsd:complexType>
+        </xsd:element>
+        <xsd:element name="interdigitTimeout" type="xsd:float" minOccurs="0"/>
+        <xsd:element name="preflush" type="xsd:boolean" minOccurs="0"/>
+        <xsd:element ref="csta:cause" minOccurs="0"/>
+        <xsd:element ref="csta:servicesPermitted" minOccurs="0"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+</xsd:schema>

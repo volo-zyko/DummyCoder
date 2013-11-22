@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<!-- XML Schema for SOAP v 1.1 Envelope -->
+<!-- Copyright 2000 DevelopMentor, International Business Machines Corporation,      Lotus Development Corporation, Microsoft, UserLand Software -->
+<schema targetNamespace="http://schemas.xmlsoap.org/soap/envelope/" xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://schemas.xmlsoap.org/soap/envelope/">
+  <!-- SOAP envelope, header and body -->
+  <element name="Envelope" type="tns:Envelope"/>
+  <complexType name="Envelope">
+    <sequence>
+      <element ref="tns:Header" minOccurs="0"/>
+      <element ref="tns:Body"/>
+      <any namespace="##any" minOccurs="0" maxOccurs="0"/>
+    </sequence>
+    <anyAttribute/>
+  </complexType>
+  <element name="Header" type="tns:Header"/>
+  <complexType name="Header">
+    <sequence>
+      <any namespace="##any" minOccurs="0" maxOccurs="0"/>
+    </sequence>
+    <anyAttribute/>
+  </complexType>
+  <element name="Body" type="tns:Body"/>
+  <complexType name="Body">
+    <sequence>
+      <any namespace="##any" minOccurs="0" maxOccurs="0"/>
+    </sequence>
+    <anyAttribute/>
+  </complexType>
+  <!-- Global Attributes.  The following attributes are intended         to be usable via qualified attribute names on any complex type        referencing them.  -->
+  <attribute name="mustUnderstand">
+    <simpleType>
+      <restriction base="boolean">
+        <pattern value="0|1"/>
+      </restriction>
+    </simpleType>
+  </attribute>
+  <!-- 'encodingStyle' indicates any canonicalization conventions followed        in the contents of the containing element.  For example, the value        'http://schemas.xmlsoap.org/soap/encoding/' indicates         the pattern described in SOAP specification. -->
+  <!-- SOAP fault reporting structure -->
+  <complexType name="Fault" final="extension">
+    <sequence>
+      <element name="faultcode" type="QName"/>
+      <element name="faultstring" type="string"/>
+      <element name="detail" type="tns:detail" minOccurs="0"/>
+    </sequence>
+  </complexType>
+  <complexType name="detail">
+    <sequence>
+      <any minOccurs="0" maxOccurs="0"/>
+    </sequence>
+    <anyAttribute/>
+  </complexType>
+</schema>

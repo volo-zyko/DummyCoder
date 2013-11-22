@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-data-collected</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:include schemaLocation="media-services.xsd"/>
+  <xsd:include schemaLocation="data-collection.xsd"/>
+  <xsd:element name="DataCollected">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="csta:dcollCrossRefID"/>
+        <xsd:element name="digitsData" type="csta:DigitsData" minOccurs="0"/>
+        <xsd:element name="telTonesData" type="csta:TelTonesData" minOccurs="0"/>
+        <xsd:element name="connectionInformation" type="csta:ConnectionInformation" minOccurs="0"/>
+        <xsd:element name="dcollcause" type="csta:DcollCause" minOccurs="0"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="DataCollectedResponse">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:complexType name="DigitsData">
+    <xsd:sequence>
+      <xsd:element name="digitsDetected">
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:string">
+            <xsd:minLength value="0"/>
+            <xsd:maxLength value="64"/>
+          </xsd:restriction>
+        </xsd:simpleType>
+      </xsd:element>
+      <xsd:element name="digitsDuration" type="csta:DigitsDurationList" minOccurs="0"/>
+      <xsd:element name="digitsPauseDuration" type="csta:DigitsPauseDurationList" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="TelTonesData">
+    <xsd:sequence>
+      <xsd:element name="toneDetected" type="csta:ToneDetected"/>
+      <xsd:element name="toneFrequency" type="xsd:long" minOccurs="0"/>
+      <xsd:element name="toneDuration" type="xsd:long" minOccurs="0"/>
+      <xsd:element name="tonePauseDuration" type="xsd:long" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:simpleType name="ToneDetected">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="beep"/>
+      <xsd:enumeration value="billing"/>
+      <xsd:enumeration value="busy"/>
+      <xsd:enumeration value="carrier"/>
+      <xsd:enumeration value="confirmation"/>
+      <xsd:enumeration value="dial"/>
+      <xsd:enumeration value="faxCNG"/>
+      <xsd:enumeration value="hold"/>
+      <xsd:enumeration value="howler"/>
+      <xsd:enumeration value="intrusion"/>
+      <xsd:enumeration value="modemCNG"/>
+      <xsd:enumeration value="park"/>
+      <xsd:enumeration value="recordWarning"/>
+      <xsd:enumeration value="reorder"/>
+      <xsd:enumeration value="ringback"/>
+      <xsd:enumeration value="silence"/>
+      <xsd:enumeration value="sitVC"/>
+      <xsd:enumeration value="sitIC"/>
+      <xsd:enumeration value="sitRO"/>
+      <xsd:enumeration value="sitNC"/>
+      <xsd:enumeration value="other"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="DcollCause">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="flushCharReceived"/>
+      <xsd:enumeration value="charCountReceived"/>
+      <xsd:enumeration value="timeout"/>
+      <xsd:enumeration value="sfTerminated"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:complexType name="DigitsDurationList">
+    <xsd:sequence>
+      <xsd:element name="digitsDurationItem" type="xsd:long" minOccurs="0" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="DigitsPauseDurationList">
+    <xsd:sequence>
+      <xsd:element name="digitsPauseDurationItem" type="xsd:long" minOccurs="0" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+</xsd:schema>

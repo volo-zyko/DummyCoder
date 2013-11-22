@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-objects-for-encapsulation</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="call-control.xsd"/>
+  <xsd:include schemaLocation="device-feature-types.xsd"/>
+  <xsd:element name="CSTAObjectTypes">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="csta:correlatorData" minOccurs="0"/>
+        <xsd:element ref="csta:userData" minOccurs="0"/>
+        <xsd:element ref="csta:callLinkageData" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+</xsd:schema>

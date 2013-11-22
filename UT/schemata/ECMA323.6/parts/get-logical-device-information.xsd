@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-get-logical-device-information</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="device-identifiers.xsd"/>
+  <xsd:include schemaLocation="status-reporting.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:include schemaLocation="capability-exchange.xsd"/>
+  <xsd:include schemaLocation="data-call-types.xsd"/>
+  <xsd:element name="GetLogicalDeviceInformation">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="device" type="csta:DeviceID"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="GetLogicalDeviceInformationResponse">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="deviceCategory" type="csta:DeviceCategory" default="station" minOccurs="0"/>
+        <xsd:element name="groupDeviceAttributes" type="csta:GroupDeviceAttributes" minOccurs="0"/>
+        <xsd:element name="namedDeviceTypes" type="csta:NamedDeviceTypes" minOccurs="0"/>
+        <xsd:element name="shortFormDeviceID" type="csta:DeviceID" minOccurs="0"/>
+        <xsd:element name="hasPhysicalElement" type="xsd:boolean"/>
+        <xsd:element name="acdModels" type="csta:ACDModels"/>
+        <xsd:element name="agentLogOnModels" type="csta:AgentLogOnModels" minOccurs="0"/>
+        <xsd:element name="appearanceAddressable" type="xsd:boolean"/>
+        <xsd:element name="appearanceType" type="csta:AppearanceType"/>
+        <xsd:element name="appearanceList" minOccurs="0">
+          <xsd:complexType>
+            <xsd:sequence>
+              <xsd:element name="appearance" type="xsd:string" minOccurs="0" maxOccurs="unbounded"/>
+            </xsd:sequence>
+          </xsd:complexType>
+        </xsd:element>
+        <xsd:element name="otherPhysicalDeviceList" minOccurs="0">
+          <xsd:complexType>
+            <xsd:sequence>
+              <xsd:element name="deviceID" type="csta:DeviceID" minOccurs="0" maxOccurs="unbounded"/>
+            </xsd:sequence>
+          </xsd:complexType>
+        </xsd:element>
+        <xsd:element name="miscMonitorCaps" type="csta:MiscMonitorCaps" minOccurs="0"/>
+        <xsd:element name="associatedGroupList" minOccurs="0">
+          <xsd:complexType>
+            <xsd:sequence>
+              <xsd:element name="deviceID" type="csta:DeviceID" minOccurs="0" maxOccurs="unbounded"/>
+            </xsd:sequence>
+          </xsd:complexType>
+        </xsd:element>
+        <xsd:element name="maxCallbacks" type="xsd:long" minOccurs="0"/>
+        <xsd:element name="maxAutoAnswerRings" type="xsd:long" minOccurs="0"/>
+        <xsd:element name="maxActiveCalls" type="xsd:long" minOccurs="0"/>
+        <xsd:element name="maxHeldCalls" type="xsd:long" minOccurs="0"/>
+        <xsd:element name="maxFwdSettings" type="xsd:long" minOccurs="0"/>
+        <xsd:element name="maxDevicesInConf" type="xsd:long" minOccurs="0"/>
+        <xsd:element name="transAndConfSetup" type="csta:TransAndConfSetup" minOccurs="0"/>
+        <xsd:element name="deviceOnDeviceMonitorFilter" type="csta:MonitorFilter" minOccurs="0"/>
+        <xsd:element name="deviceOnConnectionMonitorFilter" type="csta:MonitorFilter" minOccurs="0"/>
+        <xsd:element name="callOnDeviceMonitorFilter" type="csta:MonitorFilter" minOccurs="0"/>
+        <xsd:element name="callOnConnectionMonitorFilter" type="csta:MonitorFilter" minOccurs="0"/>
+        <xsd:element name="mediaClassSupport" type="csta:MonitorMediaClass" minOccurs="0"/>
+        <xsd:element name="mediaServiceCapsList" type="csta:MediaServiceCapsList" minOccurs="0"/>
+        <xsd:element name="connectionRateList" type="csta:ConnectionRateList" minOccurs="0"/>
+        <xsd:element name="delayToleranceList" type="csta:DelayToleranceList" minOccurs="0"/>
+        <xsd:element name="numberOfChannels" type="csta:NumberOfChannels" minOccurs="0"/>
+        <xsd:element name="maxChannelBind" type="csta:MaxChannelBind" minOccurs="0"/>
+        <xsd:element name="routeingServList" type="csta:RouteingServList" minOccurs="0"/>
+        <xsd:element name="logDevServList" type="csta:LogDevServList" minOccurs="0"/>
+        <xsd:element name="logDevEvtsList" type="csta:LogDevEvtsList" minOccurs="0"/>
+        <xsd:element name="deviceMaintEvtsList" type="csta:DeviceMaintEvtsList" minOccurs="0"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+</xsd:schema>

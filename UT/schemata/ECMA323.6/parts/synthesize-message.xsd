@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-synthesize-message</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="device-feature-types.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:element name="SynthesizeMessage">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="textToBeSynthesized" type="xsd:string"/>
+        <xsd:element name="control" type="csta:ControlData" minOccurs="0"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="SynthesizeMessageResponse">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="synthesizedMessage" type="csta:MessageID"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+</xsd:schema>

@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xsd:annotation>
+		<xsd:documentation>CSTA-call-control</xsd:documentation>
+	</xsd:annotation>
+	<xsd:include schemaLocation="security.xsd"/>
+	<xsd:simpleType name="AutoOriginate">
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="prompt"/>
+			<xsd:enumeration value="doNotPrompt"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:complexType name="CallCharacteristics">
+		<xsd:sequence>
+			<xsd:element name="acdCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="lowPriorityCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="priorityCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="highPriorityCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="maintainanceCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="directAgent" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="assistCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="voiceUnitCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="privateCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="personalCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="sensitiveCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="confidentialCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="encryptedCall" type="xsd:boolean" minOccurs="0"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:element name="callCharacteristics" type="csta:CallCharacteristics"/>
+	<xsd:simpleType name="CallQualifyingData">
+		<xsd:restriction base="xsd:hexBinary">
+			<xsd:minLength value="0"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="ConsultOptions">
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="unrestricted"/>
+			<xsd:enumeration value="consultOnly"/>
+			<xsd:enumeration value="transferOnly"/>
+			<xsd:enumeration value="conferenceOnly"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:element name="consultOptions" type="csta:ConsultOptions"/>
+	<xsd:complexType name="NetworkCapability">
+		<xsd:sequence>
+			<xsd:element name="networkType">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:enumeration value="iSDNPublic"/>
+						<xsd:enumeration value="nonISDNPublic"/>
+						<xsd:enumeration value="iSDNPrivate"/>
+						<xsd:enumeration value="nonISDNPrivate"/>
+						<xsd:enumeration value="other"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="eventsProvided" minOccurs="0">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="bridged" type="xsd:boolean" minOccurs="0"/>
+						<xsd:element name="callCleared" type="xsd:boolean" minOccurs="0"/>
+						<xsd:element name="conferenced" type="xsd:boolean" minOccurs="0"/>
+						<xsd:element name="connectionCleared" type="xsd:boolean" minOccurs="0"/>
+						<xsd:element name="delivered" type="xsd:boolean" minOccurs="0"/>
+						<xsd:element name="digitsDialed" type="xsd:boolean" minOccurs="0"/>
+						<xsd:element name="diverted" type="xsd:boolean" minOccurs="0"/>
+						<xsd:element name="established" type="xsd:boolean" minOccurs="0"/>
+						<xsd:element name="failed" type="xsd:boolean" minOccurs="0"/>
+						<xsd:element name="held" type="xsd:boolean" minOccurs="0"/>
+						<xsd:element name="networkCapabilitiesChange" type="xsd:boolean" minOccurs="0"/>
+						<xsd:element name="networkReached" type="xsd:boolean" minOccurs="0"/>
+						<xsd:element name="offered" type="xsd:boolean" minOccurs="0"/>
+						<xsd:element name="originated" type="xsd:boolean" minOccurs="0"/>
+						<xsd:element name="queued" type="xsd:boolean" minOccurs="0"/>
+						<xsd:element name="retrieved" type="xsd:boolean" minOccurs="0"/>
+						<xsd:element name="serviceInitiated" type="xsd:boolean" minOccurs="0"/>
+						<xsd:element name="transferred" type="xsd:boolean" minOccurs="0"/>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="ProgressIndicator">
+		<xsd:sequence>
+			<xsd:element name="progressLocation">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:enumeration value="user"/>
+						<xsd:enumeration value="privateNetServingLocal"/>
+						<xsd:enumeration value="publicNetServingLocal"/>
+						<xsd:enumeration value="transitNetwork"/>
+						<xsd:enumeration value="publicNetServingRemote"/>
+						<xsd:enumeration value="privateNetServingRemote"/>
+						<xsd:enumeration value="localInterface"/>
+						<xsd:enumeration value="internationalNetwork"/>
+						<xsd:enumeration value="networkBeyondInterwk"/>
+						<xsd:enumeration value="other"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="progressDescription">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:enumeration value="iSDNProgressDesc"/>
+						<xsd:enumeration value="qSIGProgressDesc"/>
+						<xsd:enumeration value="other"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="ServicesPermitted">
+		<xsd:sequence>
+			<xsd:element name="callControlServices" type="csta:CallControlServices"/>
+			<xsd:element name="callAssociatedServices" type="csta:CallAssociatedServices"/>
+			<xsd:element name="mediaAttachementServices" type="csta:MediaAttachmentServices"/>
+			<xsd:element name="routeingServices" type="csta:RouteingServices"/>
+			<xsd:element name="voiceServices" type="csta:VoiceServices"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:element name="servicesPermitted" type="csta:ServicesPermitted"/>
+	<xsd:complexType name="CallLinkageDataList">
+		<xsd:sequence>
+			<xsd:element name="newCallLinkageData" type="csta:CallLinkageData"/>
+			<xsd:element name="oldCallLinkageData" type="csta:CallLinkageData"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="CallLinkageData">
+		<xsd:sequence>
+			<xsd:element name="globalCallData" type="csta:GlobalCallData"/>
+			<xsd:element name="threadData" type="csta:ThreadData" minOccurs="0"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:element name="callLinkageData" type="csta:CallLinkageData"/>
+	<xsd:complexType name="GlobalCallData">
+		<xsd:sequence>
+			<xsd:element name="globalCallSwitchingSubDomainName" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="globalCallLinkageID" type="csta:GlobalCallLinkageID"/>
+			<xsd:element name="callLinkageIDTimestamp" type="csta:TimeInfo" minOccurs="0"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="GlobalCallLinkageID">
+		<xsd:choice>
+			<xsd:element name="subDomainCallLinkageID">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="globallyUniqueCallLinkageID">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:choice>
+	</xsd:complexType>
+	<xsd:complexType name="ThreadData">
+		<xsd:sequence>
+			<xsd:element name="threadSwitchingSubDomainName" minOccurs="0">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="threadLinkageID" type="csta:ThreadLinkageID"/>
+			<xsd:element name="threadIDTimeStamp" type="csta:TimeInfo" minOccurs="0"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="ThreadLinkageID">
+		<xsd:choice>
+			<xsd:element name="subDomainThreadID">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="globallyUniqueThreadID">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:minLength value="1"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:choice>
+	</xsd:complexType>
+	<xsd:complexType name="CallControlServices">
+		<xsd:sequence>
+			<xsd:element name="acceptCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="alternateCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="answerCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="callBack" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="callBackMessage" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="campOnCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="clearCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="clearConnection" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="conferenceCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="consultationCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="deflectCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="dialDigits" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="directedPickupCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="groupPickupCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="holdCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="intrudeCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="joinCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="makeCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="makePredictiveCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="parkCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="reconnectCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="retrieveCall" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="sendMessage" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="singleStepConference" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="singleStepTransfer" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="transferCall" type="xsd:boolean" minOccurs="0"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="CallAssociatedServices">
+		<xsd:sequence>
+			<xsd:element name="associateData" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="cancelTelephonyTones" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="generateDigits" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="generateTelephonyTones" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="sendUserInformation" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="changeConnectionInformation" type="xsd:boolean" minOccurs="0"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="MediaAttachmentServices">
+		<xsd:sequence>
+			<xsd:element name="attachMediaService" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="detachMediaService" type="xsd:boolean" minOccurs="0"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="RouteingServices">
+		<xsd:sequence>
+			<xsd:element name="routeRegister" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="routeRegisterCancel" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="routeRegisterAbort" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="reRoute" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="routeEnd" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="routeReject" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="routeRequest" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="routeSelect" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="routeUsed" type="xsd:boolean" minOccurs="0"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="VoiceServices">
+		<xsd:sequence>
+			<xsd:element name="activate" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="clear" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="deactivate" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="concatenateMessage" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="deleteMessage" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="playMessage" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="queryVoiceAttribute" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="recordMessage" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="reposition" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="resume" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="review" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="setVoiceAttribute" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="stop" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="suspend" type="xsd:boolean" minOccurs="0"/>
+			<xsd:element name="synthesizeMessage" type="xsd:boolean" minOccurs="0"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="LocationInfo">
+		<xsd:sequence>
+			<xsd:any namespace="##any" maxOccurs="unbounded"/>
+			<!-- Allows RFC-4119 (Presence), RFC-4479 (GEOPRIV), & RFC-4479 (Data-Model), etc. namespaces & objects in instance-->
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="LocationInfoList">
+		<xsd:sequence>
+			<xsd:element name="locationInfoEntry" type="csta:LocationInfo" maxOccurs="unbounded"/>
+		</xsd:sequence>
+	</xsd:complexType>
+</xsd:schema>

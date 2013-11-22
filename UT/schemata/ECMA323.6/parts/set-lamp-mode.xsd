@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-set-lamp-mode</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="device-identifiers.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:include schemaLocation="physical-device-features.xsd"/>
+  <xsd:element name="SetLampMode">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="device" type="csta:DeviceID"/>
+        <xsd:element name="lamp" type="csta:LampID"/>
+        <xsd:element name="lampMode" type="csta:LampMode"/>
+        <xsd:element name="lampBrightness" type="csta:LampBrightness" minOccurs="0"/>
+        <xsd:element name="lampColor" type="csta:LampColor" minOccurs="0"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="SetLampModeResponse">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+</xsd:schema>

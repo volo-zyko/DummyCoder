@@ -64,8 +64,8 @@ class ComplexType(base.SchemaBase):
     def urtype():
         urtype = ComplexType('anyType', None)
 
-        seqpart = uses.Particle(None, None, 1, 1, Sequence(None))
-        anypart = uses.Particle(None, None, 1, base.UNBOUNDED, Any(Any.ANY, None))
+        seqpart = uses.Particle(None, 1, 1, Sequence(None))
+        anypart = uses.Particle(None, 1, base.UNBOUNDED, Any(Any.ANY, None))
         anyattr = uses.AttributeUse(None, None, None, Any(Any.ANY, None))
 
         seqpart.term.particles.append(anypart)

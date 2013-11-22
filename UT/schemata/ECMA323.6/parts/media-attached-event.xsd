@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-media-attached-event</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="device-identifiers.xsd"/>
+  <xsd:include schemaLocation="call-connection-identifiers.xsd"/>
+  <xsd:include schemaLocation="connection-states.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:include schemaLocation="call-control.xsd"/>
+  <xsd:include schemaLocation="media-services.xsd"/>
+  <xsd:include schemaLocation="status-reporting.xsd"/>
+  <xsd:element name="MediaAttachedEvent">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="csta:monitorCrossRefID"/>
+        <xsd:element name="mediaConnection" type="csta:ConnectionID"/>
+        <xsd:element name="mediaDevice" type="csta:SubjectDeviceID"/>
+        <xsd:element name="mediaServiceType" type="csta:MediaServiceType"/>
+        <xsd:element name="mediaServiceVersion" type="xsd:long" minOccurs="0"/>
+        <xsd:element name="mediaServiceInstanceID" type="csta:MediaServiceInstanceID" minOccurs="0"/>
+        <xsd:element name="mediaStreamID" type="csta:MediaStreamID" minOccurs="0"/>
+        <xsd:element ref="csta:mediaCallCharacteristics" minOccurs="0"/>
+        <xsd:element ref="csta:callCharacteristics" minOccurs="0"/>
+        <xsd:element ref="csta:localConnectionInfo" minOccurs="0"/>
+        <xsd:element name="mediaConnectionInfo" type="csta:ConnectionInformation" minOccurs="0"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+</xsd:schema>

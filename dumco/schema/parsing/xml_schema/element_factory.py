@@ -118,7 +118,7 @@ class XsdElementFactory(object):
         # Set schema prefices and original imports which are necessary during
         # per-schema finalization.
         for schema in sorted_all_schemata:
-            schema.set_imports(all_schemata)
+            schema.set_imports(all_schemata, self)
 
             schema.schema_element.set_prefix(self.all_namespace_prefices)
 
@@ -229,11 +229,10 @@ class XsdElementFactory(object):
 
         if not xsd_head.abstract and len(substitution_group.particles) == 0:
             substitution_group.particles.append(dumco.schema.uses.Particle(
-                xsd_head.qualified, head.constraint, 1, 1, head))
+                xsd_head.qualified, 1, 1, head))
 
         substitution_group.particles.append(dumco.schema.uses.Particle(
-            xsd_element.qualified, xsd_element.schema_element.term.constraint,
-            1, 1, xsd_element.schema_element.term))
+            xsd_element.qualified, 1, 1, xsd_element.schema_element.term))
 
     def add_to_parent_schema(self, element, attrs, schema,
                              fieldname, is_type=False):

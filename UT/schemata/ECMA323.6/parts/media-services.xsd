@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:include schemaLocation="empty.xsd"/>
+  <xsd:annotation>
+    <xsd:documentation>CSTA-media-services</xsd:documentation>
+  </xsd:annotation>
+  <xsd:simpleType name="MediaServiceType">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="cstaVoiceUnit"/>
+      <xsd:enumeration value="dataModem"/>
+      <xsd:enumeration value="digitalDataIsochronousIeee1394"/>
+      <xsd:enumeration value="digitalDataIsochronousGeoport"/>
+      <xsd:enumeration value="digitalDataIsochronousIeeeAtm"/>
+      <xsd:enumeration value="digitalDataIsochronousIeeeIsdn"/>
+      <xsd:enumeration value="digitalDataApi"/>
+      <xsd:enumeration value="ectfS100MediaServicesDefault"/>
+      <xsd:enumeration value="ectfS100MediaServicesAppServices"/>
+      <xsd:enumeration value="cstaIVRScript1"/>
+      <xsd:enumeration value="cstaIVRScript2"/>
+      <xsd:enumeration value="cstaIVRScript3"/>
+      <xsd:enumeration value="cstaIVRScript4"/>
+      <xsd:enumeration value="cstaIVRScript5"/>
+      <xsd:enumeration value="cstaIVRScript6"/>
+      <xsd:enumeration value="cstaIVRScript7"/>
+      <xsd:enumeration value="cstaIVRScript8"/>
+      <xsd:enumeration value="cstaIVRScript9"/>
+      <xsd:enumeration value="cstaIVRScript10"/>
+      <xsd:enumeration value="liveSoundCaptureAnalog"/>
+      <xsd:enumeration value="liveSoundTransmitAnalog"/>
+      <xsd:enumeration value="liveSoundCaptureIeee1394"/>
+      <xsd:enumeration value="liveSoundTransmitIeee1394"/>
+      <xsd:enumeration value="liveSoundCaptureTransmitGeoport"/>
+      <xsd:enumeration value="liveSoundCaptureTransmitAtm"/>
+      <xsd:enumeration value="liveSoundCaptureTransmitISDN"/>
+      <xsd:enumeration value="soundCaptureTransmitADPCM"/>
+      <xsd:enumeration value="soundCaptureTransmitApi"/>
+      <xsd:enumeration value="usb"/>
+      <xsd:enumeration value="sfSpecific1"/>
+      <xsd:enumeration value="sfSpecific2"/>
+      <xsd:enumeration value="sfSpecific3"/>
+      <xsd:enumeration value="sfSpecific4"/>
+      <xsd:enumeration value="sfSpecific5"/>
+      <xsd:enumeration value="sfSpecific6"/>
+      <xsd:enumeration value="sfSpecific7"/>
+      <xsd:enumeration value="sfSpecific8"/>
+      <xsd:enumeration value="sfSpecific9"/>
+      <xsd:enumeration value="sfSpecific10"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="MediaStreamID">
+    <xsd:restriction base="xsd:string">
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="MediaServiceInstanceID">
+    <xsd:restriction base="xsd:string">
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:complexType name="ConnectionInformation">
+    <xsd:sequence>
+      <xsd:element name="flowDirection" minOccurs="0">
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="transmit"/>
+            <xsd:enumeration value="receive"/>
+            <xsd:enumeration value="transmitAndReceive"/>
+            <xsd:enumeration value="none"/>
+          </xsd:restriction>
+        </xsd:simpleType>
+      </xsd:element>
+      <xsd:element name="numberOfChannels" type="xsd:long" default="1" minOccurs="0"/>
+      <xsd:element name="mediaSessionInfo" type="xsd:string" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:simpleType name="ConnectionMode">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="consultationConference"/>
+      <xsd:enumeration value="consultationConferenceHold"/>
+      <xsd:enumeration value="directedPickup"/>
+      <xsd:enumeration value="join"/>
+      <xsd:enumeration value="singleStepConference"/>
+      <xsd:enumeration value="singleStepConferenceHold"/>
+      <xsd:enumeration value="singleStepTransfer"/>
+      <xsd:enumeration value="transfer"/>
+      <xsd:enumeration value="direct"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:complexType name="ConnectionModeBMap">
+    <xsd:sequence>
+      <xsd:element name="consultationConference" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="consultationConferenceHold" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="deflect" type="xsd:boolean" minOccurs="0"/>
+	  <xsd:element name="directedPickup" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="join" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="singleStepConference" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="singleStepConferenceHold" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="singleStepTransfer" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="transfer" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="direct" type="xsd:boolean" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="MediaCallCharacteristics">
+    <xsd:sequence>
+      <xsd:element name="mediaClass" type="csta:MediaClass"/>
+      <xsd:element name="connectionRate" minOccurs="0">
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:long">
+            <xsd:minInclusive value="0"/>
+          </xsd:restriction>
+        </xsd:simpleType>
+      </xsd:element>
+      <xsd:element name="bitRate" default="constant" minOccurs="0">
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="constant"/>
+            <xsd:enumeration value="variable"/>
+          </xsd:restriction>
+        </xsd:simpleType>
+      </xsd:element>
+      <xsd:element name="delayTolerance" type="xsd:long" minOccurs="0"/>
+      <xsd:element name="switchingSubDomainCCIEType" minOccurs="0">
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="isdn"/>
+            <xsd:enumeration value="atm"/>
+            <xsd:enumeration value="isoEthernet"/>
+            <xsd:enumeration value="rsvp"/>
+            <xsd:enumeration value="sip"/>
+			<xsd:enumeration value="other"/>
+          </xsd:restriction>
+        </xsd:simpleType>
+      </xsd:element>
+      <xsd:element name="switchingSubDomainInformationElements" minOccurs="0">
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:hexBinary"/>
+        </xsd:simpleType>
+      </xsd:element>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:element name="mediaCallCharacteristics" type="csta:MediaCallCharacteristics"/>
+  <xsd:complexType name="MediaClass">
+    <xsd:sequence>
+      <xsd:element name="voice" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="data" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="image" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="audio" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="other" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="notKnown" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="chat" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="email" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="message" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="im" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="sms" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="mms" type="xsd:boolean" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+</xsd:schema>

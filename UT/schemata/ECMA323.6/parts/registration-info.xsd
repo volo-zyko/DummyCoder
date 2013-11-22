@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" 
+xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" 
+elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+  <xsd:annotation>
+    <xsd:documentation>CSTA-registration-info</xsd:documentation>
+  </xsd:annotation>
+  
+  <xsd:include schemaLocation="status-reporting.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:include schemaLocation="capability-exchange.xsd"/>
+
+  <xsd:element name="RegistrationInfo">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="serviceCrossRefID" type="csta:ServiceCrossRefID"/>
+        <xsd:element name="segmentID" type="xsd:long" minOccurs="0"/>
+        <xsd:element name="lastSegment" type="xsd:boolean"/>
+        <xsd:element name="registrationList" type="csta:RegistrationList" maxOccurs="unbounded"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  
+</xsd:schema>

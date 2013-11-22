@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-route-request</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="device-identifiers.xsd"/>
+  <xsd:include schemaLocation="call-connection-identifiers.xsd"/>
+  <xsd:include schemaLocation="device-feature-types.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:include schemaLocation="call-control.xsd"/>
+  <xsd:include schemaLocation="media-services.xsd"/>
+  <xsd:element name="RouteRequest">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="csta:crossRefIdentifier"/>
+        <xsd:element ref="csta:routeRegisterReqID" minOccurs="0"/>
+        <xsd:element name="currentRoute" type="csta:CalledDeviceID"/>
+        <xsd:element ref="csta:callingDevice" minOccurs="0"/>
+        <xsd:element name="routeingDevice" type="csta:SubjectDeviceID" minOccurs="0"/>
+        <xsd:element name="routedCall" type="csta:ConnectionID" minOccurs="0"/>
+        <xsd:element name="routeSelAlgorithm" type="csta:SelectValue" minOccurs="0"/>
+        <xsd:element ref="csta:associatedCallingDevice" minOccurs="0"/>
+        <xsd:element ref="csta:associatedCalledDevice" minOccurs="0"/>
+        <xsd:element name="priority" type="xsd:boolean" minOccurs="0"/>
+        <xsd:element name="replyTimeout" type="xsd:long" minOccurs="0"/>
+        <xsd:element ref="csta:correlatorData" minOccurs="0"/>
+        <xsd:element ref="csta:mediaCallCharacteristics" minOccurs="0"/>
+        <xsd:element ref="csta:callCharacteristics" minOccurs="0"/>
+        <xsd:element name="routeCallInfo" type="csta:ConnectionInformation" minOccurs="0"/>
+        <xsd:element ref="csta:callLinkageData" minOccurs="0"/>
+                <xsd:element ref="csta:subjectOfCall" minOccurs="0"/>
+        <xsd:element ref="csta:messageInfo" minOccurs="0"/>
+        <xsd:element ref="csta:languagePreferences" minOccurs="0"/>
+        <xsd:element ref="csta:deviceHistory" minOccurs="0"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:annotation>
+    <xsd:documentation>There is no positive response to this request.</xsd:documentation>
+  </xsd:annotation>
+</xsd:schema>

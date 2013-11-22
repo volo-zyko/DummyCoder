@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSPY v5 rel. 4 U (http://www.xmlspy.com) by Thomas Miller (Siemens Enterprise Networks) -->
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:import namespace="http://schemas.xmlsoap.org/soap/envelope/" schemaLocation="my_envelope.xsd"/>
+  <xsd:annotation>
+    <xsd:documentation>csta</xsd:documentation>
+  </xsd:annotation>
+  <xsd:annotation>
+    <xsd:documentation>Capability Exchange Services</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="parts/get-csta-features.xsd"/>
+  <xsd:include schemaLocation="parts/get-logical-device-information.xsd"/>
+  <xsd:include schemaLocation="parts/get-physical-device-information.xsd"/>
+  <xsd:include schemaLocation="parts/get-switching-function-capabilities.xsd"/>
+  <xsd:include schemaLocation="parts/get-switching-function-devices.xsd"/>
+  <xsd:include schemaLocation="parts/switching-function-devices.xsd"/>
+  <xsd:annotation>
+    <xsd:documentation>System Services</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="parts/change-system-status-filter.xsd"/>
+  <xsd:include schemaLocation="parts/system-register.xsd"/>
+  <xsd:include schemaLocation="parts/system-register-abort.xsd"/>
+  <xsd:include schemaLocation="parts/system-register-cancel.xsd"/>
+  <xsd:include schemaLocation="parts/request-system-status.xsd"/>
+  <xsd:include schemaLocation="parts/system-status.xsd"/>
+  <xsd:include schemaLocation="parts/switching-functions-capabilities-changed.xsd"/>
+  <xsd:include schemaLocation="parts/switching-functions-devices-changed.xsd"/>
+  <xsd:include schemaLocation="parts/get-registrations.xsd"/>
+  <xsd:include schemaLocation="parts/registration-info.xsd"/>
+  <xsd:annotation>
+    <xsd:documentation>Monitoring Services</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="parts/change-monitor-filter.xsd"/>
+  <xsd:include schemaLocation="parts/monitor-start.xsd"/>
+  <xsd:include schemaLocation="parts/monitor-stop.xsd"/>
+  <xsd:include schemaLocation="parts/get-monitors.xsd"/>
+  <xsd:include schemaLocation="parts/monitor-info.xsd"/>
+  <xsd:annotation>
+    <xsd:documentation>Snapshot  Services</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="parts/snapshot-call.xsd"/>
+  <xsd:include schemaLocation="parts/snapshot-device.xsd"/>
+  <xsd:include schemaLocation="parts/snapshot-call-data.xsd"/>
+  <xsd:include schemaLocation="parts/snapshot-device-data.xsd"/>
+  <xsd:annotation>
+    <xsd:documentation>Call Control Services</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="parts/accept-call.xsd"/>
+  <xsd:include schemaLocation="parts/alternate-call.xsd"/>
+  <xsd:include schemaLocation="parts/answer-call.xsd"/>
+  <xsd:include schemaLocation="parts/call-back-call-related.xsd"/>
+  <xsd:include schemaLocation="parts/call-back-message-call-related.xsd"/>
+  <xsd:include schemaLocation="parts/camp-on-call.xsd"/>
+  <xsd:include schemaLocation="parts/clear-call.xsd"/>
+  <xsd:include schemaLocation="parts/clear-connection.xsd"/>
+  <xsd:include schemaLocation="parts/conference-call.xsd"/>
+  <xsd:include schemaLocation="parts/consultation-call.xsd"/>
+  <xsd:include schemaLocation="parts/deflect-call.xsd"/>
+  <xsd:include schemaLocation="parts/dial-digits.xsd"/>
+  <xsd:include schemaLocation="parts/directed-pickup-call.xsd"/>
+  <xsd:include schemaLocation="parts/group-pickup-call.xsd"/>
+  <xsd:include schemaLocation="parts/hold-call.xsd"/>
+  <xsd:include schemaLocation="parts/intrude-call.xsd"/>
+  <xsd:include schemaLocation="parts/join-call.xsd"/>
+  <xsd:include schemaLocation="parts/make-call.xsd"/>
+  <xsd:include schemaLocation="parts/make-connection.xsd"/>
+  <xsd:include schemaLocation="parts/make-predictive-call.xsd"/>
+  <xsd:include schemaLocation="parts/park-call.xsd"/>
+  <xsd:include schemaLocation="parts/reconnect-call.xsd"/>
+  <xsd:include schemaLocation="parts/retrieve-call.xsd"/>
+  <xsd:include schemaLocation="parts/send-message.xsd"/>
+  <xsd:include schemaLocation="parts/single-step-conference-call.xsd"/>
+  <xsd:include schemaLocation="parts/single-step-transfer.xsd"/>
+  <xsd:include schemaLocation="parts/transfer-call.xsd"/>
+  <xsd:annotation>
+    <xsd:documentation>Call Control Events</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="parts/bridged-event.xsd"/>
+  <xsd:include schemaLocation="parts/call-cleared-event.xsd"/>
+  <xsd:include schemaLocation="parts/conferenced-event.xsd"/>
+  <xsd:include schemaLocation="parts/connection-cleared-event.xsd"/>
+  <xsd:include schemaLocation="parts/delivered-event.xsd"/>
+  <xsd:include schemaLocation="parts/digits-dialed-event.xsd"/>
+  <xsd:include schemaLocation="parts/diverted-event.xsd"/>
+  <xsd:include schemaLocation="parts/failed-event.xsd"/>
+  <xsd:include schemaLocation="parts/established-event.xsd"/>
+  <xsd:include schemaLocation="parts/held-event.xsd"/>
+  <xsd:include schemaLocation="parts/network-capabilities-changed-event.xsd"/>
+  <xsd:include schemaLocation="parts/network-reached-event.xsd"/>
+  <xsd:include schemaLocation="parts/offered-event.xsd"/>
+  <xsd:include schemaLocation="parts/originated-event.xsd"/>
+  <xsd:include schemaLocation="parts/queued-event.xsd"/>
+  <xsd:include schemaLocation="parts/retrieved-event.xsd"/>
+  <xsd:include schemaLocation="parts/service-initiated-event.xsd"/>
+  <xsd:include schemaLocation="parts/transfered-event.xsd"/>
+  <xsd:annotation>
+    <xsd:documentation>Call Associated Services</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="parts/associate-data.xsd"/>
+  <xsd:include schemaLocation="parts/cancel-telephony-tones.xsd"/>
+  <xsd:include schemaLocation="parts/change-connection-information.xsd"/>
+  <xsd:include schemaLocation="parts/generate-digits.xsd"/>
+  <xsd:include schemaLocation="parts/generate-telephony-tones.xsd"/>
+  <xsd:include schemaLocation="parts/send-user-information.xsd"/>
+  <xsd:annotation>
+    <xsd:documentation>Call Associated Events</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="parts/call-information-event.xsd"/>
+  <xsd:include schemaLocation="parts/charging-event.xsd"/>
+  <xsd:include schemaLocation="parts/digits-generated-event.xsd"/>
+  <xsd:include schemaLocation="parts/telephony-tones-generated-event.xsd"/>
+  <xsd:include schemaLocation="parts/service-completion-failure-event.xsd"/>
+  <xsd:annotation>
+    <xsd:documentation>Media Attachment Services</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="parts/attach-media-service.xsd"/>
+  <xsd:include schemaLocation="parts/detach-media-service.xsd"/>
+  <xsd:annotation>
+    <xsd:documentation>Media Attachment Events</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="parts/media-attached-event.xsd"/>
+  <xsd:include schemaLocation="parts/media-detached-event.xsd"/>
+  <xsd:annotation>
+    <xsd:documentation>Routeing Services</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="parts/route-register.xsd"/>
+  <xsd:include schemaLocation="parts/route-register-abort.xsd"/>
+  <xsd:include schemaLocation="parts/route-register-cancel.xsd"/>
+  <xsd:include schemaLocation="parts/re-route.xsd"/>
+  <xsd:include schemaLocation="parts/route-end.xsd"/>
+  <xsd:include schemaLocation="parts/route-reject.xsd"/>
+  <xsd:include schemaLocation="parts/route-request.xsd"/>
+  <xsd:include schemaLocation="parts/route-select.xsd"/>
+  <xsd:include schemaLocation="parts/route-used.xsd"/>
+  <xsd:annotation>
+    <xsd:documentation>Physical Device Services</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="parts/button-press.xsd"/>
+  <xsd:include schemaLocation="parts/get-auditory-apparatus-information.xsd"/>
+  <xsd:include schemaLocation="parts/get-button-information.xsd"/>
+  <xsd:include schemaLocation="parts/get-display.xsd"/>
+  <xsd:include schemaLocation="parts/get-hookswitch-status.xsd"/>
+  <xsd:include schemaLocation="parts/get-lamp-information.xsd"/>
+  <xsd:include schemaLocation="parts/get-lamp-mode.xsd"/>
+  <xsd:include schemaLocation="parts/get-message-waiting-indicator.xsd"/>
+  <xsd:include schemaLocation="parts/get-microphone-gain.xsd"/>
+  <xsd:include schemaLocation="parts/get-microphone-mute.xsd"/>
+  <xsd:include schemaLocation="parts/get-ringer-status.xsd"/>
+  <xsd:include schemaLocation="parts/get-speaker-mute.xsd"/>
+  <xsd:include schemaLocation="parts/get-speaker-volume.xsd"/>
+  <xsd:include schemaLocation="parts/set-button-information.xsd"/>
+  <xsd:include schemaLocation="parts/set-display.xsd"/>
+  <xsd:include schemaLocation="parts/set-hookswitch-status.xsd"/>
+  <xsd:include schemaLocation="parts/set-lamp-mode.xsd"/>
+  <xsd:include schemaLocation="parts/set-message-waiting-indicator.xsd"/>
+  <xsd:include schemaLocation="parts/set-microphone-gain.xsd"/>
+  <xsd:include schemaLocation="parts/set-microphone-mute.xsd"/>
+  <xsd:include schemaLocation="parts/set-ringer-status.xsd"/>
+  <xsd:include schemaLocation="parts/set-speaker-mute.xsd"/>
+  <xsd:include schemaLocation="parts/set-speaker-volume.xsd"/>
+  <xsd:annotation>
+    <xsd:documentation>Physical Device Events</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="parts/button-information-event.xsd"/>
+  <xsd:include schemaLocation="parts/button-press-event.xsd"/>
+  <xsd:include schemaLocation="parts/display-updated-event.xsd"/>
+  <xsd:include schemaLocation="parts/hookswitch-event.xsd"/>
+  <xsd:include schemaLocation="parts/lamp-mode-event.xsd"/>
+  <xsd:include schemaLocation="parts/message-waiting-event.xsd"/>
+  <xsd:include schemaLocation="parts/microphone-gain-event.xsd"/>
+  <xsd:include schemaLocation="parts/microphone-mute-event.xsd"/>
+  <xsd:include schemaLocation="parts/ringer-status-event.xsd"/>
+  <xsd:include schemaLocation="parts/speaker-mute-event.xsd"/>
+  <xsd:include schemaLocation="parts/speaker-volume-event.xsd"/>
+  <xsd:annotation>
+    <xsd:documentation>Logical Device Services</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="parts/call-back-non-call-related.xsd"/>
+  <xsd:include schemaLocation="parts/call-back-message-non-call-related.xsd"/>
+  <xsd:include schemaLocation="parts/cancel-call-back.xsd"/>
+  <xsd:include schemaLocation="parts/cancel-call-back-message.xsd"/>
+  <xsd:include schemaLocation="parts/get-agent-state.xsd"/>
+  <xsd:include schemaLocation="parts/get-auto-answer.xsd"/>
+  <xsd:include schemaLocation="parts/get-auto-work-mode.xsd"/>
+  <xsd:include schemaLocation="parts/get-call-back.xsd"/>
+  <xsd:include schemaLocation="parts/get-caller-id-status.xsd"/>
+  <xsd:include schemaLocation="parts/get-do-not-disturb.xsd"/>
+  <xsd:include schemaLocation="parts/get-forwarding.xsd"/>
+  <xsd:include schemaLocation="parts/get-last-number-dialed.xsd"/>
+  <xsd:include schemaLocation="parts/get-routeing-mode.xsd"/>
+  <xsd:include schemaLocation="parts/set-agent-state.xsd"/>
+  <xsd:include schemaLocation="parts/set-auto-answer.xsd"/>
+  <xsd:include schemaLocation="parts/set-auto-work-mode.xsd"/>
+  <xsd:include schemaLocation="parts/set-caller-id-status.xsd"/>
+  <xsd:include schemaLocation="parts/set-do-not-disturb.xsd"/>
+  <xsd:include schemaLocation="parts/set-forwarding.xsd"/>
+  <xsd:include schemaLocation="parts/set-routeing-mode.xsd"/>
+  <xsd:annotation>
+    <xsd:documentation>Logical Device Events</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="parts/agent-busy-event.xsd"/>
+  <xsd:include schemaLocation="parts/agent-logged-off-event.xsd"/>
+  <xsd:include schemaLocation="parts/agent-logged-on-event.xsd"/>
+  <xsd:include schemaLocation="parts/agent-not-ready-event.xsd"/>
+  <xsd:include schemaLocation="parts/agent-ready-event.xsd"/>
+  <xsd:include schemaLocation="parts/agent-working-after-call-event.xsd"/>
+  <xsd:include schemaLocation="parts/auto-answer-event.xsd"/>
+  <xsd:include schemaLocation="parts/auto-work-mode-event.xsd"/>
+  <xsd:include schemaLocation="parts/call-back-event.xsd"/>
+  <xsd:include schemaLocation="parts/call-back-message-event.xsd"/>
+  <xsd:include schemaLocation="parts/caller-id-status-event.xsd"/>
+  <xsd:include schemaLocation="parts/do-not-disturb-event.xsd"/>
+  <xsd:include schemaLocation="parts/forwarding-event.xsd"/>
+  <xsd:include schemaLocation="parts/routeing-event.xsd"/>
+  <xsd:annotation>
+    <xsd:documentation>Device Maintenance Events</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="parts/back-in-service-event.xsd"/>
+  <xsd:include schemaLocation="parts/device-capabilities-changed-event.xsd"/>
+  <xsd:include schemaLocation="parts/out-of-service-event.xsd"/>
+  <xsd:include schemaLocation="parts/partially-in-service-event.xsd"/>
+  <xsd:annotation>
+    <xsd:documentation>I/O Services</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="parts/io-register.xsd"/>
+  <xsd:include schemaLocation="parts/io-register-abort.xsd"/>
+  <xsd:include schemaLocation="parts/io-register-cancel.xsd"/>
+  <xsd:include schemaLocation="parts/data-path-resumed.xsd"/>
+  <xsd:include schemaLocation="parts/data-path-suspended.xsd"/>
+  <xsd:include schemaLocation="parts/fast-data.xsd"/>
+  <xsd:include schemaLocation="parts/resume-data-path.xsd"/>
+  <xsd:include schemaLocation="parts/send-broadcast-data.xsd"/>
+  <xsd:include schemaLocation="parts/send-data.xsd"/>
+  <xsd:include schemaLocation="parts/send-multicast-data.xsd"/>
+  <xsd:include schemaLocation="parts/start-data-path.xsd"/>
+  <xsd:include schemaLocation="parts/stop-data-path.xsd"/>
+  <xsd:include schemaLocation="parts/suspend-data-path.xsd"/>
+  <xsd:annotation>
+    <xsd:documentation>Data Collection Services</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="parts/data-collected.xsd"/>
+  <xsd:include schemaLocation="parts/data-collection-resumed.xsd"/>
+  <xsd:include schemaLocation="parts/data-collection-suspended.xsd"/>
+  <xsd:include schemaLocation="parts/resume-data-collection.xsd"/>
+  <xsd:include schemaLocation="parts/start-data-collection.xsd"/>
+  <xsd:include schemaLocation="parts/stop-data-collection.xsd"/>
+  <xsd:include schemaLocation="parts/suspend-data-collection.xsd"/>
+  <xsd:annotation>
+    <xsd:documentation>Voice Services</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="parts/activate.xsd"/>
+  <xsd:include schemaLocation="parts/clear.xsd"/>
+  <xsd:include schemaLocation="parts/concatenate-message.xsd"/>
+  <xsd:include schemaLocation="parts/deactivate.xsd"/>
+  <xsd:include schemaLocation="parts/delete-message.xsd"/>
+  <xsd:include schemaLocation="parts/play-message.xsd"/>
+  <xsd:include schemaLocation="parts/query-voice-attribute.xsd"/>
+  <xsd:include schemaLocation="parts/queue-service.xsd"/>
+  <xsd:include schemaLocation="parts/record-message.xsd"/>
+  <xsd:include schemaLocation="parts/reposition.xsd"/>
+  <xsd:include schemaLocation="parts/resume.xsd"/>
+  <xsd:include schemaLocation="parts/review.xsd"/>
+  <xsd:include schemaLocation="parts/set-voice-attribute.xsd"/>
+  <xsd:include schemaLocation="parts/start.xsd"/>
+  <xsd:include schemaLocation="parts/stop.xsd"/>
+  <xsd:include schemaLocation="parts/suspend.xsd"/>
+  <xsd:include schemaLocation="parts/synthesize-message.xsd"/>
+  <xsd:annotation>
+    <xsd:documentation>Voice Events</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="parts/bookmark-reached-event.xsd"/>
+  <xsd:include schemaLocation="parts/completed-event.xsd"/>
+  <xsd:include schemaLocation="parts/dtmf-detected-event.xsd"/>
+  <xsd:include schemaLocation="parts/emptied-event.xsd"/>
+  <xsd:include schemaLocation="parts/interruption-detected-event.xsd"/>
+  <xsd:include schemaLocation="parts/not-recognized-event.xsd"/>
+  <xsd:include schemaLocation="parts/play-event.xsd"/>
+  <xsd:include schemaLocation="parts/recognized-event.xsd"/>
+  <xsd:include schemaLocation="parts/record-event.xsd"/>
+  <xsd:include schemaLocation="parts/review-event.xsd"/>
+  <xsd:include schemaLocation="parts/silence-timeout-expired-event.xsd"/>
+  <xsd:include schemaLocation="parts/speech-detected-event.xsd"/>
+  <xsd:include schemaLocation="parts/started-event.xsd"/>
+  <xsd:include schemaLocation="parts/stop-event.xsd"/>
+  <xsd:include schemaLocation="parts/suspend-play-event.xsd"/>
+  <xsd:include schemaLocation="parts/suspend-record-event.xsd"/>
+  <xsd:include schemaLocation="parts/voice-attribute-changed-event.xsd"/>
+  <xsd:include schemaLocation="parts/voice-error-occurred-event.xsd"/>
+  <xsd:annotation>
+    <xsd:documentation>Call Detail Record Services</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="parts/call-detail-records-notification.xsd"/>
+  <xsd:include schemaLocation="parts/call-detail-records-report.xsd"/>
+  <xsd:include schemaLocation="parts/send-stored-call-detail-records.xsd"/>
+  <xsd:include schemaLocation="parts/start-call-detail-records-transmission.xsd"/>
+  <xsd:include schemaLocation="parts/stop-call-detail-records-transmission.xsd"/>
+  <xsd:annotation>
+    <xsd:documentation>Location Services</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="parts/get-location-information.xsd"/>
+  <xsd:include schemaLocation="parts/set-location-information.xsd"/>
+  <xsd:include schemaLocation="parts/location-tracking-session-resumed.xsd"/>
+  <xsd:include schemaLocation="parts/location-tracking-session-suspended.xsd"/>
+  <xsd:include schemaLocation="parts/resume-location-tracking-session.xsd"/>
+  <xsd:include schemaLocation="parts/location-information-report.xsd"/>
+  <xsd:include schemaLocation="parts/start-location-tracking-session.xsd"/>
+  <xsd:include schemaLocation="parts/stop-location-tracking-session.xsd"/>
+  <xsd:include schemaLocation="parts/suspend-location-tracking-session.xsd"/>
+  <xsd:include schemaLocation="parts/get-location-tracking-capabilities.xsd"/>
+  <xsd:include schemaLocation="parts/get-location-tracking-sessions.xsd"/>
+  <xsd:include schemaLocation="parts/location-session-info.xsd"/>
+  <xsd:annotation>
+    <xsd:documentation>Vendor Specific Extensions Services</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="parts/escape-register.xsd"/>
+  <xsd:include schemaLocation="parts/escape-register-abort.xsd"/>
+  <xsd:include schemaLocation="parts/escape-register-cancel.xsd"/>
+  <xsd:include schemaLocation="parts/escape.xsd"/>
+  <xsd:include schemaLocation="parts/private-data-version-selection.xsd"/>
+  <xsd:annotation>
+    <xsd:documentation>Vendor Specific Extensions Events</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="parts/private-event.xsd"/>
+</xsd:schema>

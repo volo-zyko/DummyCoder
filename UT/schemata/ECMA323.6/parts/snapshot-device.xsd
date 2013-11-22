@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-snapshot-device</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="device-identifiers.xsd"/>
+  <xsd:include schemaLocation="status-reporting.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:include schemaLocation="capability-exchange.xsd"/>
+  <xsd:element name="SnapshotDevice">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="snapshotObject" type="csta:DeviceID"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="SnapshotDeviceResponse">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="crossRefIDorSnapshotData">
+          <xsd:complexType>
+            <xsd:choice>
+              <xsd:element name="serviceCrossRefID" type="csta:ServiceCrossRefID"/>
+              <xsd:element name="snapshotData" type="csta:SnapshotDeviceDataList"/>
+            </xsd:choice>
+          </xsd:complexType>
+        </xsd:element>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+</xsd:schema>

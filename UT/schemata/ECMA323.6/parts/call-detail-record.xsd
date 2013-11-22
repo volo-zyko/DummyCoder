@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-call-detail-record</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="device-identifiers.xsd"/>
+  <xsd:include schemaLocation="call-connection-identifiers.xsd"/>
+  <xsd:include schemaLocation="device-feature-types.xsd"/>
+  <xsd:include schemaLocation="security.xsd"/>
+  <xsd:include schemaLocation="call-control.xsd"/>
+  <xsd:include schemaLocation="capability-exchange.xsd"/>
+  <xsd:include schemaLocation="charge-info.xsd"/>
+  <xsd:include schemaLocation="media-services.xsd"/>
+  <xsd:simpleType name="CDRCrossRefID">
+    <xsd:restriction base="xsd:string">
+      <xsd:minLength value="0"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:element name="cdrCrossRefID" type="csta:CDRCrossRefID"/>
+  <xsd:simpleType name="CDRReason">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="timeout"/>
+      <xsd:enumeration value="thresholdReached"/>
+      <xsd:enumeration value="other"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:complexType name="CDRInfo">
+    <xsd:sequence>
+      <xsd:element name="cdrInformationItem" type="csta:CDRInformationItem" minOccurs="0" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="CDRInformationItem">
+    <xsd:sequence>
+      <xsd:element name="recordNumber" minOccurs="0">
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:integer">
+            <xsd:minInclusive value="1"/>
+            <xsd:maxInclusive value="128"/>
+          </xsd:restriction>
+        </xsd:simpleType>
+      </xsd:element>
+      <xsd:element name="recordCreationTime" type="csta:TimeInfo"/>
+      <xsd:element ref="csta:callingDevice" minOccurs="0"/>
+      <xsd:element ref="csta:calledDevice" minOccurs="0"/>
+      <xsd:element ref="csta:associatedCallingDevice" minOccurs="0"/>
+      <xsd:element ref="csta:associatedCalledDevice" minOccurs="0"/>
+      <xsd:element ref="csta:networkCallingDevice" minOccurs="0"/>
+      <xsd:element ref="csta:networkCalledDevice" minOccurs="0"/>
+      <xsd:element ref="csta:callCharacteristics" minOccurs="0"/>
+      <xsd:element ref="csta:mediaCallCharacteristics" minOccurs="0"/>
+      <xsd:element name="chargedDevice" type="csta:ChargedDevice" minOccurs="0"/>
+      <xsd:element name="recordedCall" type="csta:ConnectionID" minOccurs="0"/>
+      <xsd:element name="nodeNumber" type="csta:NodeNumber" minOccurs="0"/>
+      <xsd:element name="tariffTable" type="xsd:long" minOccurs="0"/>
+      <xsd:element name="connectionStart" type="csta:TimeInfo" minOccurs="0"/>
+      <xsd:element name="connectionEnd" type="csta:TimeInfo" minOccurs="0"/>
+      <xsd:element name="connectionDuration" type="xsd:long" minOccurs="0"/>
+      <xsd:element name="accessCode" type="xsd:string" minOccurs="0"/>
+      <xsd:element name="carrier" type="xsd:long" minOccurs="0"/>
+      <xsd:element name="selectedRoute" type="xsd:long" minOccurs="0"/>
+      <xsd:element name="billingID" type="csta:BillingID" minOccurs="0"/>
+      <xsd:element name="chargingInfo" type="csta:ChargingInfo" minOccurs="0"/>
+      <xsd:element name="supplServiceInfo" type="csta:SupplServiceInfo" minOccurs="0"/>
+      <xsd:element name="reasonForTerm" type="csta:ReasonForTerm" minOccurs="0"/>
+      <xsd:element name="authCode" type="csta:AuthCode" minOccurs="0"/>
+      <xsd:element name="accountInfo" type="csta:AccountInfo" minOccurs="0"/>
+      <xsd:element name="deviceCategory" type="csta:DeviceCategory" minOccurs="0"/>
+      <xsd:element name="namedDeviceTypes" type="csta:NamedDeviceTypes" minOccurs="0"/>
+      <xsd:element name="operatorDevice" type="csta:DeviceID" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="ChargedDevice">
+    <xsd:choice>
+      <xsd:element name="operator" type="csta:DeviceID"/>
+      <xsd:element name="nonOperator" type="csta:DeviceID"/>
+    </xsd:choice>
+  </xsd:complexType>
+  <xsd:complexType name="NodeNumber">
+    <xsd:sequence>
+      <xsd:element name="area0" type="xsd:long" minOccurs="0"/>
+      <xsd:element name="area1" type="xsd:long" minOccurs="0"/>
+      <xsd:element name="area2" type="xsd:long" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:simpleType name="BillingID">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="normalCharging"/>
+      <xsd:enumeration value="reverseCharging"/>
+      <xsd:enumeration value="creditCardCharging"/>
+      <xsd:enumeration value="callForwarding"/>
+      <xsd:enumeration value="callDeflection"/>
+      <xsd:enumeration value="callTransfer"/>
+      <xsd:enumeration value="other"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:complexType name="SupplServiceInfo">
+    <xsd:sequence>
+      <xsd:element name="normalCall" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="consultationCall" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="transferCall" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="callCompletion" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="callForwarding" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="callDiversion" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="conferencing" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="intrusion" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="userUserInfo" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="other" type="xsd:boolean" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:simpleType name="ReasonForTerm">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="normalClearing"/>
+      <xsd:enumeration value="unsuccessfulCallAttempt"/>
+      <xsd:enumeration value="abnormalTermination"/>
+      <xsd:enumeration value="callTransferred"/>
+      <xsd:enumeration value="other"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:complexType name="CDRTimePeriod">
+    <xsd:sequence>
+      <xsd:element name="beginningOfCDR" type="csta:TimeInfo"/>
+      <xsd:element name="endOfCDR" type="csta:TimeInfo"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:simpleType name="CDRTransferMode">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="transferAtEndOfCall"/>
+      <xsd:enumeration value="transferOnRequest"/>
+      <xsd:enumeration value="transferOnThresholdReached"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="CDRTermReason">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="endOfDataDetected"/>
+      <xsd:enumeration value="errorDetected"/>
+      <xsd:enumeration value="thresholdReached"/>
+      <xsd:enumeration value="other"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+</xsd:schema>

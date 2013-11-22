@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-extension-types</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="security.xsd"/>
+  <xsd:complexType name="CSTACommonArguments">
+    <xsd:sequence>
+      <xsd:element name="security" type="csta:CSTASecurityData" minOccurs="0"/>
+      <xsd:element name="privateData" type="csta:CSTAPrivateData" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="CSTAPrivateData">
+    <xsd:choice>
+      <xsd:element name="string">
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:hexBinary"/>
+        </xsd:simpleType>
+      </xsd:element>
+      <xsd:element name="private">
+        <xsd:annotation>
+          <xsd:documentation>private: the actual encoding has to be replaced here</xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:any namespace="##any" maxOccurs="unbounded"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+    </xsd:choice>
+  </xsd:complexType>
+  <xsd:element name="extensions" type="csta:CSTACommonArguments"/>
+</xsd:schema>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-fast-data</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="switching-function-objects.xsd"/>
+  <xsd:include schemaLocation="device-feature-types.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:include schemaLocation="physical-device-features.xsd"/>
+  <xsd:element name="FastData">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="ioRegisterReqID" type="csta:IORegisterReqID" minOccurs="0"/>
+        <xsd:element name="object" type="csta:CSTAObject"/>
+        <xsd:element name="dataPathType" type="csta:DataPathType" minOccurs="0"/>
+        <xsd:element name="displayAttribute" type="csta:DisplayAttribute" minOccurs="0"/>
+        <xsd:element name="ioData">
+          <xsd:simpleType>
+            <xsd:restriction base="xsd:hexBinary">
+              <xsd:minLength value="0"/>
+            </xsd:restriction>
+          </xsd:simpleType>
+        </xsd:element>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="FastDataResponse">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:complexType name="DisplayAttribute">
+    <xsd:sequence>
+      <xsd:element name="displayID" type="csta:DisplayID" minOccurs="0"/>
+      <xsd:element name="physicalBaseRowNumber" type="xsd:long" minOccurs="0"/>
+      <xsd:element name="physicalBaseColumnNumber" type="xsd:long" minOccurs="0"/>
+      <xsd:element name="offset" type="xsd:long" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+</xsd:schema>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-get-call-back</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="device-identifiers.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:element name="GetCallBack">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="device" type="csta:DeviceID"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="GetCallBackResponse">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="callBackList" type="csta:CallBackList" minOccurs="0"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:complexType name="CallBackList">
+    <xsd:sequence>
+      <xsd:element name="callBackListItem" type="csta:CallBackListItem" minOccurs="0" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="CallBackListItem">
+    <xsd:sequence>
+      <xsd:element name="originatingDevice" type="csta:DeviceID"/>
+      <xsd:element name="targetDevice" type="csta:DeviceID"/>
+      <xsd:element name="callBackMessageIndicator" type="xsd:boolean" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+</xsd:schema>

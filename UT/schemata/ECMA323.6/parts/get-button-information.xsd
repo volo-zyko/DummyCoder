@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-get-button-information</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="device-identifiers.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:include schemaLocation="physical-device-features.xsd"/>
+  <xsd:element name="GetButtonInformation">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="device" type="csta:DeviceID"/>
+        <xsd:element name="button" type="csta:ButtonID" minOccurs="0"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="GetButtonInformationResponse">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="buttonList" type="csta:ButtonList"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:complexType name="ButtonList">
+    <xsd:sequence>
+      <xsd:element name="buttonItem" type="csta:ButtonItem" minOccurs="0" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="ButtonItem">
+    <xsd:sequence>
+      <xsd:element name="button" type="csta:ButtonID"/>
+      <xsd:element name="buttonLabel" type="xsd:string" minOccurs="0"/>
+      <xsd:element name="buttonLabelSettable" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="buttonFunction" type="xsd:string" minOccurs="0"/>
+      <xsd:element name="buttonAssociatedNumber" type="csta:DeviceID" minOccurs="0"/>
+      <xsd:element name="buttonAssociatedNumberSettable" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="buttonPressIndicator" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="lampList" type="csta:LampIDList" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="LampIDList">
+    <xsd:sequence>
+      <xsd:element name="lampID" type="csta:LampID" minOccurs="0" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+</xsd:schema>

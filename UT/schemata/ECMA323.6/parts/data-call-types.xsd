@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-data-call-types</xsd:documentation>
+  </xsd:annotation>
+  <xsd:simpleType name="NumberOfChannels">
+    <xsd:restriction base="xsd:long"/>
+  </xsd:simpleType>
+  <xsd:simpleType name="MaxChannelBind">
+    <xsd:restriction base="xsd:long"/>
+  </xsd:simpleType>
+  <xsd:complexType name="ConnectionRateList">
+    <xsd:sequence>
+      <xsd:element name="connectionRate" type="xsd:long" minOccurs="0" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="DelayToleranceList">
+    <xsd:sequence>
+      <xsd:element name="delayTolerance" type="xsd:long" minOccurs="0" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+</xsd:schema>

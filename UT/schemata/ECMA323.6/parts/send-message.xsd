@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-send-message</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="device-identifiers.xsd"/>
+  <xsd:include schemaLocation="call-connection-identifiers.xsd"/>
+  <xsd:include schemaLocation="device-feature-types.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:include schemaLocation="call-control.xsd"/>
+  <xsd:include schemaLocation="media-services.xsd"/>
+  <xsd:element name="SendMessage">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="callingDevice" type="csta:DeviceID"/>
+        <xsd:element name="destinationDevices" type="csta:DeviceListItems"/>
+        <xsd:element name="messageInfo" type="csta:MessageInfo"/>
+        <xsd:element ref="csta:accountCode" minOccurs="0"/>
+        <xsd:element ref="csta:authCode" minOccurs="0"/>
+        <xsd:element ref="csta:correlatorData" minOccurs="0"/>
+        <xsd:element ref="csta:callCharacteristics" minOccurs="0"/>
+        <xsd:element ref="csta:mediaCallCharacteristics" minOccurs="0"/>
+        <xsd:element ref="csta:subjectOfCall" minOccurs="0"/>
+        <xsd:element ref="csta:languagePreferences" minOccurs="0"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="SendMessageResponse">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="connectionList" type="csta:ConnectionListItems"/>
+        <xsd:element ref="csta:mediaCallCharacteristics" minOccurs="0"/>
+        <xsd:element name="listOfCallLinkageData" type="csta:CallLinkageDataListItems" minOccurs="0"/>
+		<xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:complexType name="DeviceListItems">
+    <xsd:sequence>
+      <xsd:element name="device" type="csta:DeviceID" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="ConnectionListItems">
+    <xsd:sequence>
+      <xsd:element name="connection" type="csta:ConnectionID" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="CallLinkageDataListItems">
+    <xsd:sequence>
+      <xsd:element name="callLinkageData" type="csta:CallLinkageData" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+</xsd:schema>

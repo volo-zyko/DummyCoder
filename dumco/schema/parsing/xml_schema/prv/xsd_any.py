@@ -56,7 +56,7 @@ class XsdAny(xsd_base.XsdBase):
                 dumco.schema.elements.Any(namespace,
                                           parent_schema.schema_element))
         else:
-            self.schema_element = dumco.schema.uses.Particle(None, None,
+            self.schema_element = dumco.schema.uses.Particle(None,
                 factory.particle_min_occurs(attrs),
                 factory.particle_max_occurs(attrs),
                 dumco.schema.elements.Any(namespace,

@@ -44,7 +44,7 @@ class XsdElement(xsd_base.XsdBase):
 
         self.schema = parent_schema
         self.schema_element = dumco.schema.uses.Particle(
-            self.qualified, element.constraint,
+            self.qualified,
             factory.particle_min_occurs(attrs),
             factory.particle_max_occurs(attrs),
             element)

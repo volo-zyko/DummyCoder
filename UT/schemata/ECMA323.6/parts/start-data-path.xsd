@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-start-data-path</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="switching-function-objects.xsd"/>
+  <xsd:include schemaLocation="device-feature-types.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:include schemaLocation="physical-device-features.xsd"/>
+  <xsd:element name="StartDataPath">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="ioRegisterReqID" type="csta:IORegisterReqID" minOccurs="0"/>
+        <xsd:element name="object" type="csta:CSTAObject"/>
+        <xsd:element name="dataPathDirection" type="csta:DataPathDirection" minOccurs="0"/>
+        <xsd:element name="dataPathType" type="csta:DataPathType" minOccurs="0"/>
+        <xsd:element name="displayID" type="csta:DisplayID" minOccurs="0"/>
+        <xsd:element name="numberOfCharactersToCollect" type="xsd:long" minOccurs="0"/>
+        <xsd:element name="terminationCharacter" minOccurs="0">
+          <xsd:simpleType>
+            <xsd:restriction base="xsd:string">
+              <xsd:length value="1"/>
+            </xsd:restriction>
+          </xsd:simpleType>
+        </xsd:element>
+        <xsd:element name="timeout" type="xsd:long" minOccurs="0"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="StartDataPathResponse">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="ioCrossRefID" type="csta:IOCrossRefID"/>
+        <xsd:element name="numberOfCharactersToCollect" type="xsd:long" minOccurs="0"/>
+        <xsd:element name="terminationCharacter" minOccurs="0">
+          <xsd:simpleType>
+            <xsd:restriction base="xsd:string">
+              <xsd:length value="1"/>
+            </xsd:restriction>
+          </xsd:simpleType>
+        </xsd:element>
+        <xsd:element name="timeout" type="xsd:long" minOccurs="0"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:simpleType name="DataPathDirection">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="computeFunctionToObject"/>
+      <xsd:enumeration value="objectToComputeFunction"/>
+      <xsd:enumeration value="bidirectional"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+</xsd:schema>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-monitor-start</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="status-reporting.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:element name="MonitorStart">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="monitorObject" type="csta:MonitorObject"/>
+        <xsd:element name="requestedMonitorFilter" type="csta:MonitorFilter" minOccurs="0"/>
+        <xsd:element name="monitorType" type="csta:MonitorType" minOccurs="0"/>
+        <xsd:element name="requestedMonitorMediaClass" type="csta:MonitorMediaClass" minOccurs="0"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="MonitorStartResponse">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="csta:monitorCrossRefID"/>
+        <xsd:element name="actualMonitorFilter" type="csta:MonitorFilter" minOccurs="0"/>
+        <xsd:element name="actualMonitorMediaClass" type="csta:MonitorMediaClass" minOccurs="0"/>
+        <xsd:element name="monitorExistingCalls" type="xsd:boolean" minOccurs="0"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+</xsd:schema>

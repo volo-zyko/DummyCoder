@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-send-data</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="event-cause.xsd"/>
+  <xsd:include schemaLocation="device-feature-types.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:element name="SendData">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="ioCrossRefID" type="csta:IOCrossRefID"/>
+        <xsd:element name="ioRegisterReqID" type="csta:IORegisterReqID" minOccurs="0"/>
+        <xsd:element name="displayAttributes" type="csta:DisplayAttributeList" minOccurs="0"/>
+        <xsd:element name="ioData">
+          <xsd:simpleType>
+            <xsd:restriction base="xsd:hexBinary">
+              <xsd:minLength value="0"/>
+            </xsd:restriction>
+          </xsd:simpleType>
+        </xsd:element>
+        <xsd:element name="ioCause" type="csta:EventCause" minOccurs="0"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="SendDataResponse">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+</xsd:schema>

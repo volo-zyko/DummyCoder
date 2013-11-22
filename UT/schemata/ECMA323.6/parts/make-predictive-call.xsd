@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-make-predictive-call</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="device-identifiers.xsd"/>
+  <xsd:include schemaLocation="call-connection-identifiers.xsd"/>
+  <xsd:include schemaLocation="device-feature-types.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:include schemaLocation="call-control.xsd"/>
+  <xsd:include schemaLocation="media-services.xsd"/>
+  <xsd:element name="MakePredictiveCall">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="callingDevice" type="csta:DeviceID"/>
+        <xsd:element name="calledDirectoryNumber" type="csta:DeviceID"/>
+        <xsd:element name="signallingDetection" type="csta:SignallingDetection" minOccurs="0"/>
+        <xsd:element name="destinationDetection" type="csta:DestinationDetection" minOccurs="0"/>
+        <xsd:element name="defaultAction" type="csta:DetectionAction" minOccurs="0"/>
+        <xsd:element ref="csta:accountCode" minOccurs="0"/>
+        <xsd:element ref="csta:authCode" minOccurs="0"/>
+        <xsd:element name="autoOriginate" type="csta:AutoOriginate" default="prompt" minOccurs="0"/>
+        <xsd:element name="alertTime" type="xsd:long" minOccurs="0"/>
+        <xsd:element ref="csta:correlatorData" minOccurs="0"/>
+        <xsd:element ref="csta:callCharacteristics" minOccurs="0"/>
+        <xsd:element ref="csta:userData" minOccurs="0"/>
+        <xsd:element ref="csta:subjectOfCall" minOccurs="0"/>
+        <xsd:element ref="csta:languagePreferences" minOccurs="0"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="MakePredictiveCallResponse">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="initiatedCall" type="csta:ConnectionID"/>
+        <xsd:element name="initiatedCallInfo" type="csta:ConnectionInformation" minOccurs="0"/>
+        <xsd:element ref="csta:callLinkageData" minOccurs="0"/>
+		<xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:complexType name="SignallingDetection">
+    <xsd:sequence>
+      <xsd:element name="signallingCondition" type="csta:SignallingCondition"/>
+      <xsd:element name="signallingConditionsAction" type="csta:SignallingConditionsAction"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:simpleType name="SignallingCondition">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="callDelivered"/>
+      <xsd:enumeration value="callEstablished"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="SignallingConditionsAction">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="destinationDetection"/>
+      <xsd:enumeration value="remainConnected"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:complexType name="DestinationDetection">
+    <xsd:sequence>
+      <xsd:element name="detectionItem" type="csta:DetectionItem" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="DetectionItem">
+    <xsd:sequence>
+      <xsd:element name="destinationCondition" type="csta:DestinationCondition"/>
+      <xsd:element name="detectionAction" type="csta:DetectionAction"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:simpleType name="DestinationCondition">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="humanVoice"/>
+      <xsd:enumeration value="answeringMachine"/>
+      <xsd:enumeration value="facsimileMachine"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="DetectionAction">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="clearCalledConnection"/>
+      <xsd:enumeration value="remainConnected"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+</xsd:schema>

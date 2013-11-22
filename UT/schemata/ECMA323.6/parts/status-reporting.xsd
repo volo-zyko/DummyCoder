@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-status-reporting</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="call-control.xsd"/>
+  <xsd:include schemaLocation="switching-function-objects.xsd"/>
+  <xsd:include schemaLocation="device-identifiers.xsd"/>
+  <xsd:include schemaLocation="call-connection-identifiers.xsd"/>
+  <xsd:include schemaLocation="connection-states.xsd"/>
+  <xsd:include schemaLocation="media-services.xsd"/>
+  <xsd:include schemaLocation="device-feature-types.xsd"/>
+  <xsd:include schemaLocation="empty.xsd"/>
+  <xsd:complexType name="MonitorObject">
+    <xsd:complexContent>
+      <xsd:extension base="csta:CSTAObject"/>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <xsd:simpleType name="MonitorCrossRefID">
+    <xsd:restriction base="xsd:string">
+      <xsd:minLength value="0"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:element name="monitorCrossRefID" type="csta:MonitorCrossRefID"/>
+  <xsd:complexType name="MonitorFilter">
+    <xsd:sequence>
+      <xsd:element name="callcontrol" type="csta:CallControlEvents" minOccurs="0"/>
+      <xsd:element name="callAssociated" type="csta:CallAssociatedEvents" minOccurs="0"/>
+      <xsd:element name="mediaAttachment" type="csta:MediaAttachmentEvents" minOccurs="0"/>
+      <xsd:element name="physicalDeviceFeature" type="csta:PhysicalDeviceFeatureEvents" minOccurs="0"/>
+      <xsd:element name="logicalDeviceFeature" type="csta:LogicalDeviceFeatureEvents" minOccurs="0"/>
+      <xsd:element name="maintenance" type="csta:DeviceMaintenanceEvents" minOccurs="0"/>
+      <xsd:element name="voice" type="csta:VoiceEvents" minOccurs="0"/>
+      <xsd:element name="private" type="csta:VendorSpecEvents" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:simpleType name="MonitorType">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="call"/>
+      <xsd:enumeration value="device"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:complexType name="MonitorMediaClass">
+    <xsd:sequence>
+      <xsd:element name="voice" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="data" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="image" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="audio" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="other" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="chat" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="email" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="message" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="im" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="sms" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="mms" type="xsd:boolean" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="CallControlEvents">
+    <xsd:sequence>
+      <xsd:element name="bridged" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="callCleared" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="conferenced" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="connectionCleared" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="delivered" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="digitsDialed" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="diverted" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="established" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="failed" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="held" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="networkCapabilitiesChanged" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="networkReached" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="offered" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="originated" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="queued" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="retrieved" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="serviceInitiated" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="transferred" type="xsd:boolean" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="CallAssociatedEvents">
+    <xsd:sequence>
+      <xsd:element name="callInformation" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="charging" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="digitsGenerated" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="telephonyTonesGenerated" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="serviceCompletionFailure" type="xsd:boolean" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="MediaAttachmentEvents">
+    <xsd:sequence>
+      <xsd:element name="mediaAttached" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="mediaDetached" type="xsd:boolean" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="PhysicalDeviceFeatureEvents">
+    <xsd:sequence>
+      <xsd:element name="buttonInformation" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="buttonPress" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="displayUpdated" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="hookswitch" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="lampMode" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="messageWaiting" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="microphoneGain" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="microphoneMute" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="ringerStatus" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="speakerMute" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="speakerVolume" type="xsd:boolean" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="LogicalDeviceFeatureEvents">
+    <xsd:sequence>
+      <xsd:element name="agentBusy" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="agentLoggedOn" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="agentLoggedOff" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="agentNotReady" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="agentReady" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="agentWorkingAfterCall" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="autoAnswer" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="autoWorkMode" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="callBack" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="callBackMessage" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="callerIDStatus" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="doNotDisturb" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="forwarding" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="presenceState" type="xsd:boolean" minOccurs="0"/>
+	  <xsd:element name="routeingMode" type="xsd:boolean" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="DeviceMaintenanceEvents">
+    <xsd:sequence>
+      <xsd:element name="backInService" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="deviceCapabilityChanged" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="outOfService" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="partiallyInService" type="xsd:boolean" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="VoiceEvents">
+    <xsd:sequence>
+      <xsd:element name="bookmarkReached" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="completed" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="dtmfDetected" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="emptied" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="interruptionDetected" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="notRecognized" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="play" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="recognized" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="record" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="review" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="started" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="silenceTimeoutExpired" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="speechDetected" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="stop" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="suspendPlay" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="suspendRecord" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="voiceAttributesChanged" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="voiceErrorOccurred" type="xsd:boolean" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="VendorSpecEvents">
+    <xsd:sequence>
+      <xsd:element name="private" type="xsd:boolean" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="SnapshotDeviceDataList">
+    <xsd:sequence>
+      <xsd:element name="snapshotDeviceResponseInfo" type="csta:SnapshotDeviceResponseInfo" minOccurs="0" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="SnapshotDeviceResponseInfo">
+    <xsd:sequence>
+      <xsd:element name="connectionIdentifier" type="csta:ConnectionID"/>
+      <xsd:element name="endpointDevice" type="csta:SubjectDeviceID" minOccurs="0"/>
+      <xsd:element name="localCallState" type="csta:CallState"/>
+      <xsd:element ref="csta:servicesPermitted" minOccurs="0"/>
+      <xsd:element name="mediaServiceInfoList" type="csta:DeviceMediaInfoList" minOccurs="0"/>
+      <xsd:element ref="csta:mediaCallCharacteristics" minOccurs="0"/>
+      <xsd:element ref="csta:callLinkageData" minOccurs="0"/>
+	</xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="DeviceMediaInfoList">
+    <xsd:sequence>
+      <xsd:element name="deviceMediaInfo" minOccurs="0" maxOccurs="unbounded">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="mediaStreamID" type="csta:MediaStreamID" minOccurs="0"/>
+            <xsd:element name="connectionInformation" type="csta:ConnectionInformation" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="SnapshotCallDataList">
+    <xsd:sequence>
+      <xsd:element name="snapshotCallResponseInfo" type="csta:SnapshotCallResponseInfo" minOccurs="0" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="SnapshotCallResponseInfo">
+    <xsd:sequence>
+      <xsd:element name="deviceOnCall" type="csta:SubjectDeviceID"/>
+      <xsd:element name="callIdentifier" type="csta:ConnectionID" minOccurs="0"/>
+      <xsd:element name="localConnectionInfo" type="csta:LocalConnectionState" minOccurs="0"/>
+      <xsd:element ref="csta:servicesPermitted" minOccurs="0"/>
+      <xsd:element name="mediaServiceInfoList" type="csta:CallMediaInfoList" minOccurs="0"/>
+      <xsd:element name="locationInfo" type="csta:LocationInfo" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="CallMediaInfoList">
+    <xsd:sequence>
+      <xsd:element name="callMediaInfo" minOccurs="0" maxOccurs="unbounded">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="mediaServiceType" type="csta:MediaServiceType"/>
+            <xsd:element name="mediaServiceVersion" type="xsd:long" minOccurs="0"/>
+            <xsd:element name="mediaServiceInstance" type="csta:MediaServiceInstanceID" minOccurs="0"/>
+            <xsd:element name="mediaStreamID" type="csta:MediaStreamID" minOccurs="0"/>
+            <xsd:element name="connectionInformation" type="csta:ConnectionInformation" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="CallState">
+    <xsd:choice>
+      <xsd:element name="compoundCallState" type="csta:CompoundCallState"/>
+      <xsd:element name="simpleCallState" type="csta:SimpleCallState"/>
+      <xsd:element name="unknown" type="csta:Empty"/>
+    </xsd:choice>
+  </xsd:complexType>
+  <xsd:complexType name="CompoundCallState">
+    <xsd:sequence>
+      <xsd:element name="localConnectionState" type="csta:LocalConnectionState" minOccurs="0" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:simpleType name="SimpleCallState">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="callNull"/>
+      <xsd:enumeration value="callPending"/>
+      <xsd:enumeration value="callOriginated"/>
+      <xsd:enumeration value="callDelivered"/>
+      <xsd:enumeration value="callDeliveredHeld"/>
+      <xsd:enumeration value="callReceived"/>
+      <xsd:enumeration value="callEstablished"/>
+      <xsd:enumeration value="callEstablishedHeld"/>
+      <xsd:enumeration value="callReceivedOnHold"/>
+      <xsd:enumeration value="callEstablishedOnHold"/>
+      <xsd:enumeration value="callQueued"/>
+      <xsd:enumeration value="callQueuedHeld"/>
+      <xsd:enumeration value="callFailed"/>
+      <xsd:enumeration value="callFailedHeld"/>
+      <xsd:enumeration value="callBlocked"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:complexType name="RegistrationTypeList">
+    <xsd:sequence>
+      <xsd:element name="registrationType" type="csta:RegistrationType" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:simpleType name="RegistrationType">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="escapeRegister"/>
+      <xsd:enumeration value="ioRegister"/>
+      <xsd:enumeration value="routeRegister"/>
+      <xsd:enumeration value="sysStatRegister"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:complexType name="RegistrationList">
+    <xsd:sequence>
+      <xsd:element name="registrationListEntry" type="csta:RegistrationListEntry" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="RegistrationListEntry">
+    <xsd:sequence>
+      <xsd:element name="registrationType" type="csta:RegistrationType"/>
+      <xsd:element name="registrationID" type="xsd:string"/>
+      <xsd:element name="registrationObject" type="csta:DeviceID" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="MonitorList">
+    <xsd:sequence>
+      <xsd:element name="monitorListEntry" type="csta:MonitorListEntry" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="MonitorListEntry">
+    <xsd:sequence>
+      <xsd:element name="monitorCrossRefID" type="csta:MonitorCrossRefID"/>
+      <xsd:element name="monitorObject" type="csta:DeviceID"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="LocationSessionInfoList">
+    <xsd:sequence>
+      <xsd:element name="locationSessionListEntry" type="csta:LocationSessionListEntry" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="LocationSessionListEntry">
+    <xsd:sequence>
+      <xsd:element ref="csta:locCrossRefId"/>
+      <xsd:element name="locDevice" type="csta:DeviceID"/>
+    </xsd:sequence>
+  </xsd:complexType>
+</xsd:schema>

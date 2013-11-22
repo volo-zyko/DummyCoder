@@ -1,0 +1,319 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-error-definition</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="empty.xsd"/>
+  <xsd:simpleType name="OperationErrors">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="generic"/>
+      <xsd:enumeration value="atLeastOneConditionalParameterNotProvided"/>
+      <xsd:enumeration value="featureAlreadySet"/>
+      <xsd:enumeration value="invalidMsgID"/>
+      <xsd:enumeration value="invalidParameterValue"/>
+      <xsd:enumeration value="invalidAccountCode"/>
+      <xsd:enumeration value="invalidAgentGroup"/>
+      <xsd:enumeration value="invalidAgentIdentifier"/>
+      <xsd:enumeration value="invalidAgentPassword"/>
+      <xsd:enumeration value="invalidAgentState"/>
+      <xsd:enumeration value="invalidAlertTime"/>
+      <xsd:enumeration value="invalidAllocationState"/>
+      <xsd:enumeration value="invalidAuthCode"/>
+      <xsd:enumeration value="invalidAutoAnswer"/>
+      <xsd:enumeration value="invalidBitRate"/>
+      <xsd:enumeration value="invalidButtonIdentifier"/>
+      <xsd:enumeration value="invalidCallType"/>
+      <xsd:enumeration value="invalidConnectionRate"/>
+      <xsd:enumeration value="invalidConsultPurpose"/>
+      <xsd:enumeration value="invalidCorrelatorData"/>
+      <xsd:enumeration value="invalidCrossRefID"/>
+      <xsd:enumeration value="invalidDelayTolerance"/>
+      <xsd:enumeration value="invalidDestination"/>
+      <xsd:enumeration value="invalidDestinationDetect"/>
+      <xsd:enumeration value="invalidDoNotDisturb"/>
+      <xsd:enumeration value="invalidEscapeCrossRefID"/>
+      <xsd:enumeration value="invalidFeature"/>
+      <xsd:enumeration value="invalidFile"/>
+      <xsd:enumeration value="invalidFlowDirection"/>
+      <xsd:enumeration value="invalidForwardingDestination"/>
+      <xsd:enumeration value="invalidForwardingFlag"/>
+      <xsd:enumeration value="invalidForwardingType"/>
+      <xsd:enumeration value="invalidHookswitchType"/>
+      <xsd:enumeration value="invalidHookswitchComponent"/>
+      <xsd:enumeration value="invalidLampMode"/>
+      <xsd:enumeration value="invalidLampID"/>
+      <xsd:enumeration value="invalidMessageWaitingSetting"/>
+      <xsd:enumeration value="invalidMicrophoneGain"/>
+      <xsd:enumeration value="invalidMicrophoneMute"/>
+      <xsd:enumeration value="invalidMonitorCrossRefID"/>
+      <xsd:enumeration value="invalidMonitorFilter"/>
+      <xsd:enumeration value="invalidMonitorObject"/>
+      <xsd:enumeration value="invalidMonitorType"/>
+      <xsd:enumeration value="invalidNumberOFChannels"/>
+      <xsd:enumeration value="invalidParticipationType"/>
+      <xsd:enumeration value="invalidRemainRetry"/>
+      <xsd:enumeration value="invalidRingCount"/>
+      <xsd:enumeration value="invalidRingPattern"/>
+      <xsd:enumeration value="invalidRingVolume"/>
+      <xsd:enumeration value="invalidRouteingAlgorithm"/>
+      <xsd:enumeration value="invalidRouteingCrossRefID"/>
+      <xsd:enumeration value="invalidRouteRegistrationCrossRefID"/>
+      <xsd:enumeration value="invalidSpeakerVolume"/>
+      <xsd:enumeration value="invalidSpeakerMute"/>
+      <xsd:enumeration value="invalidSwitchingSubdomainCharsType"/>
+      <xsd:enumeration value="invalidObjectType"/>
+      <xsd:enumeration value="invalidActiveCallObject"/>
+      <xsd:enumeration value="invalidCalledDeviceObjectType"/>
+      <xsd:enumeration value="invalidCallingDeviceObjectType"/>
+      <xsd:enumeration value="invalidCallToBePickedUpObjectType"/>
+      <xsd:enumeration value="invalidCallToDivertObjectType"/>
+      <xsd:enumeration value="invalidCallToParkObjectType"/>
+      <xsd:enumeration value="invalidDestinationDeviceObject"/>
+      <xsd:enumeration value="invalidHeldCallObject"/>
+      <xsd:enumeration value="invalidMonitorObjectType"/>
+      <xsd:enumeration value="invalidParkToObjectType"/>
+      <xsd:enumeration value="messageIDRequired"/>
+      <xsd:enumeration value="notDifferentDevices"/>
+      <xsd:enumeration value="notSameDevice"/>
+      <xsd:enumeration value="objectNotKnown"/>
+      <xsd:enumeration value="invalidCallID"/>
+      <xsd:enumeration value="invalidActiveCallID"/>
+      <xsd:enumeration value="invalidHeldCallID"/>
+      <xsd:enumeration value="invalidConnectionID"/>
+      <xsd:enumeration value="invalidActiveConnectionID"/>
+      <xsd:enumeration value="invalidHeldConnectionID"/>
+      <xsd:enumeration value="invalidDeviceID"/>
+      <xsd:enumeration value="invalidActiveDeviceID"/>
+      <xsd:enumeration value="invalidCalledDeviceID"/>
+      <xsd:enumeration value="invalidCallingDeviceID"/>
+      <xsd:enumeration value="invalidCallToParkDeviceID"/>
+      <xsd:enumeration value="invalidDestinationDeviceID"/>
+      <xsd:enumeration value="invalidDivertingDeviceID"/>
+      <xsd:enumeration value="invalidHeldDeviceID"/>
+      <xsd:enumeration value="invalidParkToDeviceID"/>
+      <xsd:enumeration value="invalidPickUpDeviceID"/>
+      <xsd:enumeration value="parameterNotSupported"/>
+      <xsd:enumeration value="accountCodeNotSupported"/>
+      <xsd:enumeration value="agentGroupNotSupported"/>
+      <xsd:enumeration value="agentPasswordNotSupported"/>
+      <xsd:enumeration value="agentStateNotSupported"/>
+      <xsd:enumeration value="alertTimeNotSupported"/>
+      <xsd:enumeration value="allocationNotSupported"/>
+      <xsd:enumeration value="authorisationCodeNotSupported"/>
+      <xsd:enumeration value="autoAnswerNotSupported"/>
+      <xsd:enumeration value="bitRateNotSupported"/>
+      <xsd:enumeration value="buttonNotSupported"/>
+      <xsd:enumeration value="callTypeNotSupported"/>
+      <xsd:enumeration value="charactersToSendNotSupported"/>
+      <xsd:enumeration value="connectionRateNotSupported"/>
+      <xsd:enumeration value="connectionReservationNotSupported"/>
+      <xsd:enumeration value="consultPurposeNotSupported"/>
+      <xsd:enumeration value="correlatorDataNotSupported"/>
+      <xsd:enumeration value="delayToleranceNotSupported"/>
+      <xsd:enumeration value="destinationDetectNotSupported"/>
+      <xsd:enumeration value="digitModeNotSupported"/>
+      <xsd:enumeration value="errorValueNotSupported"/>
+      <xsd:enumeration value="flowDirectionNotSupported"/>
+      <xsd:enumeration value="forwardingDestinationNotSupported"/>
+      <xsd:enumeration value="lampNotSupported"/>
+      <xsd:enumeration value="monitorTypeNotSupported"/>
+      <xsd:enumeration value="numberOfChannelsNotSupported"/>
+      <xsd:enumeration value="parameterTypeNotSupported"/>
+      <xsd:enumeration value="priorityNotSupported"/>
+      <xsd:enumeration value="privateDataNotSupported"/>
+      <xsd:enumeration value="pulseDurationNotSupported"/>
+      <xsd:enumeration value="pulseRateNotSupported"/>
+      <xsd:enumeration value="remainRetryNotSupported"/>
+      <xsd:enumeration value="ringCountNotSupported"/>
+      <xsd:enumeration value="routeUsedNotSupported"/>
+      <xsd:enumeration value="securityNotSupported"/>
+      <xsd:enumeration value="swSubdomainCCIETypeNotSupported"/>
+      <xsd:enumeration value="toneDurationNotSupported"/>
+      <xsd:enumeration value="sysStatRegIDNotSupported"/>
+      <xsd:enumeration value="userDataNotSupported"/>
+      <xsd:enumeration value="privilegeViolationSpecifiedDevice"/>
+      <xsd:enumeration value="privilegeViolationActiveDevice"/>
+      <xsd:enumeration value="privilegeViolationCalledDevice"/>
+      <xsd:enumeration value="privilegeViolationCallingDevice"/>
+      <xsd:enumeration value="privilegeViolationCallToParkDevice"/>
+      <xsd:enumeration value="privilegeViolationDestinationDevice"/>
+      <xsd:enumeration value="privilegeViolationOnDivertingDevice"/>
+      <xsd:enumeration value="privilegeViolationHeldDevice"/>
+      <xsd:enumeration value="privilegeViolationOnParkToDevice"/>
+      <xsd:enumeration value="privilegeViolationPickUpDevice"/>
+      <xsd:enumeration value="routeingTimerExpired"/>
+      <xsd:enumeration value="requestIncompatibleWithObject"/>
+      <xsd:enumeration value="requestIncompatibleWithConnection"/>
+      <xsd:enumeration value="requestIncompatibleWithActiveConnection"/>
+      <xsd:enumeration value="requestIncompatibleWithHeldConnection"/>
+      <xsd:enumeration value="requestIncompatibleWithDevice"/>
+      <xsd:enumeration value="requestIncompatibleWithCalledDevice"/>
+      <xsd:enumeration value="requestIncompatibleWithCallingDevice"/>
+      <xsd:enumeration value="requestIncompatibleWithSubjectDevice"/>
+      <xsd:enumeration value="requestIncompatibleWithActiveDevice"/>
+      <xsd:enumeration value="requestIncompatibleWithCallToParkDevice"/>
+      <xsd:enumeration value="requestIncompatibleWithDestinationDevice"/>
+      <xsd:enumeration value="requestIncompatibleWithDivertingDevice"/>
+      <xsd:enumeration value="requestIncompatibleWithHeldDevice"/>
+      <xsd:enumeration value="requestIncompatibleWithMedia"/>
+      <xsd:enumeration value="requestIncompatibleWithParkToDevice"/>
+      <xsd:enumeration value="requestIncompatibleWithPickupDevice"/>
+      <xsd:enumeration value="serviceNotSupported"/>
+      <xsd:enumeration value="securityViolation"/>
+      <xsd:enumeration value="valueOutOfRange"/>
+      <xsd:enumeration value="agentStateOutOfRange"/>
+      <xsd:enumeration value="alertTimeOutOfRange"/>
+      <xsd:enumeration value="allocationOutOfRange"/>
+      <xsd:enumeration value="autoAnswerOutOfRange"/>
+      <xsd:enumeration value="bitRateOutOfRange"/>
+      <xsd:enumeration value="callTypeOutOfRange"/>
+      <xsd:enumeration value="connectionRateOutOfRange"/>
+      <xsd:enumeration value="connectionReservoationOutOfRange"/>
+      <xsd:enumeration value="consultPurposeOutOfRange"/>
+      <xsd:enumeration value="correlatorDataOutOfRange"/>
+      <xsd:enumeration value="delayToleranceOutOfRange"/>
+      <xsd:enumeration value="destinationDetectOutOfRange"/>
+      <xsd:enumeration value="digitModeOutOfRange"/>
+      <xsd:enumeration value="doNotDisturbOutOfRange"/>
+      <xsd:enumeration value="flowDirectionOutOfRange"/>
+      <xsd:enumeration value="forwardingFlagOutOfRange"/>
+      <xsd:enumeration value="forwardingTypeOutOfRange"/>
+      <xsd:enumeration value="hookswitchComponentOutOfRange"/>
+      <xsd:enumeration value="hookswitchTypeOutOfRange"/>
+      <xsd:enumeration value="lampModeOutOfRange"/>
+      <xsd:enumeration value="messageWaitingSettingOutOfRange"/>
+      <xsd:enumeration value="micGainOutOfRange"/>
+      <xsd:enumeration value="micMuteOutOfRange"/>
+      <xsd:enumeration value="monitorTypeOutOfRange"/>
+      <xsd:enumeration value="numberOfChannelsOutOfRange"/>
+      <xsd:enumeration value="participationTypeOutOfRange"/>
+      <xsd:enumeration value="pulseDurationOutOfRange"/>
+      <xsd:enumeration value="pulseRateOutOfRange"/>
+      <xsd:enumeration value="ringCountOutOfRange"/>
+      <xsd:enumeration value="ringPatternOutOfRange"/>
+      <xsd:enumeration value="ringVolumnOutOfRange"/>
+      <xsd:enumeration value="routeingAlgorithmOutOfRange"/>
+      <xsd:enumeration value="speakerMuteOutOfRange"/>
+      <xsd:enumeration value="speakerVolumeOutOfRange"/>
+      <xsd:enumeration value="switchingCcittTypeOutOfRange"/>
+      <xsd:enumeration value="systemStatusOutOfRange"/>
+      <xsd:enumeration value="toneCharacterOutOfRange"/>
+      <xsd:enumeration value="toneDurationOutOfRange"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="SecurityErrors">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="generic"/>
+      <xsd:enumeration value="sequenceNumberViolated"/>
+      <xsd:enumeration value="timeStampViolated"/>
+      <xsd:enumeration value="securityInfoViolated"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="StateIncompatibilityErrors">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="generic"/>
+      <xsd:enumeration value="invalidObjectState"/>
+      <xsd:enumeration value="invalidDeviceState"/>
+      <xsd:enumeration value="connectedCallExists"/>
+      <xsd:enumeration value="invalidActiveDeviceState"/>
+      <xsd:enumeration value="invalidCalledDeviceState"/>
+      <xsd:enumeration value="invalidCallingDeviceState"/>
+      <xsd:enumeration value="invalidCallToParkDeviceState"/>
+      <xsd:enumeration value="invalidDestinationDeviceState"/>
+      <xsd:enumeration value="invalidDivertingDeviceState"/>
+      <xsd:enumeration value="invalidHeldDeviceState"/>
+      <xsd:enumeration value="invalidParkToDeviceState"/>
+      <xsd:enumeration value="invalidConnectionState"/>
+      <xsd:enumeration value="invalidActiveConnectionState"/>
+      <xsd:enumeration value="invalidConnectionIDForActiveCall"/>
+      <xsd:enumeration value="invalidHeldConnectionState"/>
+      <xsd:enumeration value="noActiveCall"/>
+      <xsd:enumeration value="noCallToAnswer"/>
+      <xsd:enumeration value="noCallToClear"/>
+      <xsd:enumeration value="noCallToComplete"/>
+      <xsd:enumeration value="noConnectionToClear"/>
+      <xsd:enumeration value="noHeldCall"/>
+      <xsd:enumeration value="incorrectMsgState"/>
+      <xsd:enumeration value="beginningOfMsg"/>
+      <xsd:enumeration value="endOfMsg"/>
+      <xsd:enumeration value="msgSuspended"/>
+      <xsd:enumeration value="notAbleToPlay"/>
+      <xsd:enumeration value="notAbleToResume"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="SystemResourceAvailabilityErrors">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="generic"/>
+      <xsd:enumeration value="resourceBusy"/>
+      <xsd:enumeration value="internalResourceBusy"/>
+      <xsd:enumeration value="classifierBusy"/>
+      <xsd:enumeration value="noMediaChannelsAvailable"/>
+      <xsd:enumeration value="channelsInUseForBridgedDevices"/>
+      <xsd:enumeration value="channelsInUseForData"/>
+      <xsd:enumeration value="toneDetectorBusy"/>
+      <xsd:enumeration value="toneGeneratorBusy"/>
+      <xsd:enumeration value="networkBusy"/>
+      <xsd:enumeration value="resourceOutOfService"/>
+      <xsd:enumeration value="deviceOutOfService"/>
+      <xsd:enumeration value="activeDeviceOutOfService"/>
+      <xsd:enumeration value="calledDeviceOutOfService"/>
+      <xsd:enumeration value="callingDeviceOutOfService"/>
+      <xsd:enumeration value="callToParkDeviceOutOfService"/>
+      <xsd:enumeration value="destinationDeviceOutOfService"/>
+      <xsd:enumeration value="divertingDeviceOutOfService"/>
+      <xsd:enumeration value="heldDeviceOutOfService"/>
+      <xsd:enumeration value="parkToDeviceOutOfService"/>
+      <xsd:enumeration value="pickupDeviceOutOfService"/>
+      <xsd:enumeration value="networkOutOfService"/>
+      <xsd:enumeration value="otherResourceOutOfService"/>
+      <xsd:enumeration value="resourceLimitExceeded"/>
+      <xsd:enumeration value="overallMonitorLimitExceeded"/>
+      <xsd:enumeration value="conferenceMemberLimitExceeded"/>
+      <xsd:enumeration value="registrationLimitExceeded"/>
+      <xsd:enumeration value="conferenceResourceCannotBeSatisfied"/>
+      <xsd:enumeration value="maxDevicesExceeded"/>
+      <xsd:enumeration value="startTimeOutOfRange"/>
+      <xsd:enumeration value="durationExceeded"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="SubscribedResourceAvailabilityErrors">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="generic"/>
+      <xsd:enumeration value="objectMonitorLimitExceeded"/>
+      <xsd:enumeration value="trunkLimitExceeded"/>
+      <xsd:enumeration value="outstandingReqLimitExceeded"/>
+      <xsd:enumeration value="objectRegistrationLimitExceeded"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="PerformanceManagementErrors">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="generic"/>
+      <xsd:enumeration value="performanceLimitExceeded"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="PrivateDataInfoErrors">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="cSTAPrivateDataInfoError"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:element name="CSTAErrorCode" type="csta:UniversalFailure"/>
+  <xsd:complexType name="UniversalFailure">
+    <xsd:choice>
+      <xsd:element name="operation" type="csta:OperationErrors"/>
+      <xsd:element name="security" type="csta:SecurityErrors"/>
+      <xsd:element name="stateIncompatibility" type="csta:StateIncompatibilityErrors"/>
+      <xsd:element name="systemResourceAvailibility" type="csta:SystemResourceAvailabilityErrors"/>
+      <xsd:element name="subscribedResourceAvailability" type="csta:SubscribedResourceAvailabilityErrors"/>
+      <xsd:element name="performanceManagement" type="csta:PerformanceManagementErrors"/>
+      <xsd:element name="privateData" type="csta:PrivateDataInfoErrors"/>
+      <xsd:element name="privateErrorCode" type="xsd:string"/>
+      <xsd:element name="unspecified" type="csta:Empty"/>
+    </xsd:choice>
+  </xsd:complexType>
+  <xsd:complexType name="ErrorValue">
+    <xsd:complexContent>
+      <xsd:extension base="csta:UniversalFailure"/>
+    </xsd:complexContent>
+  </xsd:complexType>
+  <xsd:element name="ErrorValue" type="csta:ErrorValue"/>
+</xsd:schema>

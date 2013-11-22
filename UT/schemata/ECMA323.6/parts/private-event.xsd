@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-private-event</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="security.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:include schemaLocation="status-reporting.xsd"/>
+  <xsd:element name="PrivateEvent">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="csta:monitorCrossRefID"/>
+        <xsd:element name="security" type="csta:CSTASecurityData" minOccurs="0"/>
+        <xsd:element name="privateData" type="csta:CSTAPrivateData"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+</xsd:schema>

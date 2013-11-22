@@ -60,26 +60,22 @@ class CommonNamer(object):
             self.force_index += 1
 
         parent_name = parent.name
+        index = str(self.force_index) if with_index else ''
 
         if dumco.schema.checks.is_complex_type(element):
             if dumco.schema.checks.is_element(parent):
-                return self._name_ct_from_parent_elem(
-                    parent_name, self.force_index if with_index else '')
+                return self._name_ct_from_parent_elem(parent_name, index)
             else: # pragma: no cover
                 assert False
         elif dumco.schema.checks.is_simple_type(element):
             if dumco.schema.checks.is_element(parent):
-                return self._name_st_from_parent_elem(
-                    parent_name, self.force_index if with_index else '')
+                return self._name_st_from_parent_elem(parent_name, index)
             elif dumco.schema.checks.is_attribute(parent):
-                return self._name_st_from_parent_attr(
-                    parent_name, self.force_index if with_index else '')
+                return self._name_st_from_parent_attr(parent_name, index)
             elif dumco.schema.checks.is_complex_type(parent):
-                return self._name_st_from_parent_ct(
-                    parent_name, self.force_index if with_index else '')
+                return self._name_st_from_parent_ct(parent_name, index)
             elif dumco.schema.checks.is_restriction_type(parent):
-                return self._name_st_from_parent_restriction_st(
-                    parent_name, self.force_index if with_index else '')
+                return self._name_st_from_parent_restriction_st(parent_name, index)
             elif dumco.schema.checks.is_union_type(parent):
                 if element in parent.union:
                     tmp = parent.union.index(element)
@@ -87,32 +83,27 @@ class CommonNamer(object):
                     # SubST was reduced when constructing union ST.
                     tmp = self.force_index
 
-                index = str(tmp) if tmp > 0 else ''
-                return self._name_st_from_parent_union_st(
-                    parent_name, index, self.force_index if with_index else '')
+                uindex = str(tmp) if tmp > 0 else ''
+                return self._name_st_from_parent_union_st(parent_name, uindex, index)
             elif dumco.schema.checks.is_list_type(parent):
-                return self._name_st_from_parent_list_st(
-                    parent_name, self.force_index if with_index else '')
+                return self._name_st_from_parent_list_st(parent_name, index)
             else: # pragma: no cover
                 assert False
         elif dumco.schema.checks.is_particle(element):
             assert (dumco.schema.checks.is_particle(parent) or
                     dumco.schema.checks.is_complex_type(parent))
 
-            index = ''
+            pindex = ''
             if dumco.schema.checks.is_particle(parent):
                 tmp = self._particle_index(element, parent.term)
-                index = str(tmp) if tmp is not None else ''
+                pindex = str(tmp) if tmp is not None else ''
 
             if dumco.schema.checks.is_sequence(element.term):
-                return self._name_sequence(
-                    parent_name, index, self.force_index if with_index else '')
+                return self._name_sequence(parent_name, pindex, index)
             elif dumco.schema.checks.is_choice(element.term):
-                return self._name_choice(
-                    parent_name, index, self.force_index if with_index else '')
+                return self._name_choice(parent_name, pindex, index)
             elif dumco.schema.checks.is_all(element.term):
-                return self._name_all(
-                    parent_name, index, self.force_index if with_index else '')
+                return self._name_all(parent_name, pindex, index)
             else: # pragma: no cover
                 assert False
         else: # pragma: no cover

@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-physical-device-features</xsd:documentation>
+  </xsd:annotation>
+  <xsd:complexType name="AuditoryApparatusList">
+    <xsd:sequence>
+      <xsd:element name="auditoryApparatusItem" type="csta:AuditoryApparatusItem" minOccurs="0" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="AuditoryApparatusItem">
+    <xsd:sequence>
+      <xsd:element name="auditoryApparatus" type="csta:AuditoryApparatusID"/>
+      <xsd:element name="auditoryApparatusType">
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="speakerphone"/>
+            <xsd:enumeration value="handset"/>
+            <xsd:enumeration value="headset"/>
+            <xsd:enumeration value="speakerOnlyPhone"/>
+            <xsd:enumeration value="other"/>
+          </xsd:restriction>
+        </xsd:simpleType>
+      </xsd:element>
+      <xsd:element name="speaker">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="present" type="xsd:boolean" minOccurs="0"/>
+            <xsd:element name="volumeSettable" type="xsd:boolean" minOccurs="0"/>
+            <xsd:element name="volumeReadable" type="xsd:boolean" minOccurs="0"/>
+            <xsd:element name="muteSettable" type="xsd:boolean" minOccurs="0"/>
+            <xsd:element name="muteReadable" type="xsd:boolean" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="microphone">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="present" type="xsd:boolean" minOccurs="0"/>
+            <xsd:element name="gainSettable" type="xsd:boolean" minOccurs="0"/>
+            <xsd:element name="gainReadable" type="xsd:boolean" minOccurs="0"/>
+            <xsd:element name="muteSettable" type="xsd:boolean" minOccurs="0"/>
+            <xsd:element name="muteReadable" type="xsd:boolean" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="hookswitch">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="hookswitchSettable" type="xsd:boolean" minOccurs="0"/>
+            <xsd:element name="hookswitchOnHook" type="xsd:boolean" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="hookswitchID" type="csta:HookswitchID"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:simpleType name="AuditoryApparatusID">
+    <xsd:restriction base="xsd:string">
+      <xsd:minLength value="0"/>
+ 
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="ButtonID">
+    <xsd:restriction base="xsd:string">
+      <xsd:minLength value="0"/>
+
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="CharacterSet">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="ascii"/>
+      <xsd:enumeration value="unicode"/>
+      <xsd:enumeration value="proprietary"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="DisplayID">
+    <xsd:restriction base="xsd:string">
+      <xsd:minLength value="0"/>
+
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="HookswitchID">
+    <xsd:restriction base="xsd:string">
+      <xsd:minLength value="0"/>
+
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="LampBrightness">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="unspecified"/>
+      <xsd:enumeration value="dim"/>
+      <xsd:enumeration value="bright"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="LampColor">
+    <xsd:annotation>
+      <xsd:documentation>named values are represented as integer</xsd:documentation>
+    </xsd:annotation>
+    <xsd:restriction base="xsd:short">
+      <xsd:minInclusive value="0"/>
+      <xsd:maxInclusive value="100"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="LampID">
+    <xsd:restriction base="xsd:string">
+      <xsd:minLength value="0"/>
+  
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="LampMode">
+    <xsd:annotation>
+      <xsd:documentation>named values are represented as integer</xsd:documentation>
+    </xsd:annotation>
+    <xsd:restriction base="xsd:short">
+      <xsd:minInclusive value="0"/>
+      <xsd:maxInclusive value="100"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:complexType name="MicrophoneGain">
+    <xsd:choice>
+      <xsd:element name="micGainAbs" type="csta:MicGainAbs"/>
+      <xsd:element name="micGainInc" type="csta:MicGainInc"/>
+    </xsd:choice>
+  </xsd:complexType>
+  <xsd:simpleType name="MicGainInc">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="increment"/>
+      <xsd:enumeration value="decrement"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="MicGainAbs">
+    <xsd:restriction base="xsd:short">
+      <xsd:minInclusive value="0"/>
+      <xsd:maxInclusive value="100"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="RingerID">
+    <xsd:restriction base="xsd:string">
+      <xsd:minLength value="0"/>
+   
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="RingMode">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="ringing"/>
+      <xsd:enumeration value="notRinging"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:complexType name="Volume">
+    <xsd:choice>
+      <xsd:element name="volAbs" type="csta:VolAbs"/>
+      <xsd:element name="volInc" type="csta:VolInc"/>
+    </xsd:choice>
+  </xsd:complexType>
+  <xsd:simpleType name="VolInc">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="increment"/>
+      <xsd:enumeration value="decrement"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="VolAbs">
+    <xsd:restriction base="xsd:short">
+      <xsd:minInclusive value="0"/>
+      <xsd:maxInclusive value="100"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+</xsd:schema>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>replacement for ASN.1 NULL type and helper type for representation of the ASN.1 BIT STRING type</xsd:documentation>
+  </xsd:annotation>
+  <xsd:complexType name="Empty"/>
+</xsd:schema>

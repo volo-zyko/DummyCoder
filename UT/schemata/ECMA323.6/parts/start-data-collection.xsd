@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-start-data-collection</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="device-identifiers.xsd"/>
+  <xsd:include schemaLocation="call-connection-identifiers.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:include schemaLocation="data-collection.xsd"/>
+  <xsd:element name="StartDataCollection">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="object" type="csta:CallObject"/>
+        <xsd:element name="dataCollType" type="csta:DataCollType" minOccurs="0"/>
+        <xsd:element name="digitsReportingCriteria" type="csta:DigitsReportingCriteria" minOccurs="0"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="StartDataCollectionResponse">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="csta:dcollCrossRefID"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:complexType name="CallObject">
+    <xsd:choice>
+      <xsd:element name="device" type="csta:DeviceID"/>
+      <xsd:element name="call" type="csta:ConnectionID"/>
+    </xsd:choice>
+  </xsd:complexType>
+  <xsd:simpleType name="DataCollType">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="digits"/>
+      <xsd:enumeration value="telTones"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:complexType name="DigitsReportingCriteria">
+    <xsd:sequence>
+      <xsd:element name="numChars" type="xsd:long" minOccurs="0"/>
+      <xsd:element name="flushChar" minOccurs="0">
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:string">
+            <xsd:length value="1"/>
+          </xsd:restriction>
+        </xsd:simpleType>
+      </xsd:element>
+      <xsd:element name="timeout" type="xsd:long" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+</xsd:schema>

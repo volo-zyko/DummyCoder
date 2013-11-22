@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSPY v5 U (http://www.xmlspy.com) by tom miller (self) -->
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xsd:annotation>
+		<xsd:documentation>CSTA-clear-connection</xsd:documentation>
+	</xsd:annotation>
+	<xsd:include schemaLocation="call-connection-identifiers.xsd"/>
+	<xsd:include schemaLocation="device-feature-types.xsd"/>
+	<xsd:include schemaLocation="extension-types.xsd"/>
+	<xsd:element name="ClearConnection">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="connectionToBeCleared" type="csta:ConnectionID"/>
+				<xsd:element ref="csta:correlatorData" minOccurs="0"/>
+				<xsd:element ref="csta:userData" minOccurs="0"/>
+				<xsd:element ref="csta:reason" minOccurs="0"/>
+				<xsd:element ref="csta:extensions" minOccurs="0"/>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+	<xsd:element name="ClearConnectionResponse">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element ref="csta:extensions" minOccurs="0"/>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>

@@ -239,16 +239,6 @@ def _dump_particle(particle, schema, xml_writer, names, in_group=False):
             if is_element_def:
                 xml_writer.add_attribute('form',
                     'qualified' if particle.qualified else 'unqualified')
-
-            if particle.term.constraint.value is None:
-                if particle.constraint.fixed:
-                    assert particle.constraint.value, \
-                        'Element has fixed value but the value itself is unknown'
-                    xml_writer.add_attribute('fixed',
-                                             particle.constraint.value)
-                elif particle.constraint.value is not None:
-                    xml_writer.add_attribute('default',
-                                             particle.constraint.value)
         elif checks.is_any(particle.term):
             _dump_any(particle.term, schema, xml_writer)
         else: # pragma: no cover
@@ -352,18 +342,18 @@ def _dump_element_attributes(element, is_element_definition,
             not checks.is_simple_urtype(element.type)):
             xml_writer.add_attribute('type',
                 _qname(element.type.name, element.type.schema, schema))
+
+        if element.constraint.fixed:
+            assert element.constraint.value, \
+                'Element has fixed value but the value itself is unknown'
+            xml_writer.add_attribute('fixed',
+                                     element.constraint.value)
+        elif element.constraint.value is not None:
+            xml_writer.add_attribute('default',
+                                     element.constraint.value)
     else:
         xml_writer.add_attribute('ref',
             _qname(element.name, element.schema, schema))
-
-    if element.constraint.fixed:
-        assert element.constraint.value, \
-            'Element has fixed value but the value itself is unknown'
-        xml_writer.add_attribute('fixed',
-                                 element.constraint.value)
-    elif element.constraint.value is not None:
-        xml_writer.add_attribute('default',
-                                 element.constraint.value)
 
 
 def _dump_any(elem, schema, xml_writer):

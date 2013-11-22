@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-reposition</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="call-connection-identifiers.xsd"/>
+  <xsd:include schemaLocation="device-feature-types.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:element name="Reposition">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="connection" type="csta:ConnectionID"/>
+        <xsd:element name="messageToReposition" type="csta:MessageID" minOccurs="0"/>
+        <xsd:element name="resource" type="csta:ResourceID" minOccurs="0"/>
+        <xsd:element name="periodOfReposition" type="csta:Period"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="RepositionResponse">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:complexType name="Period">
+    <xsd:choice>
+      <xsd:element name="absolutePosition">
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="startOfMessage"/>
+            <xsd:enumeration value="endOfMessage"/>
+          </xsd:restriction>
+        </xsd:simpleType>
+      </xsd:element>
+      <xsd:element name="relativePosition" type="xsd:long"/>
+    </xsd:choice>
+  </xsd:complexType>
+</xsd:schema>

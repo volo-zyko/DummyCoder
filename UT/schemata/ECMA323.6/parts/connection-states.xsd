@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-connection-states</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="call-connection-identifiers.xsd"/>
+  <xsd:include schemaLocation="device-identifiers.xsd"/>
+  <xsd:include schemaLocation="media-services.xsd"/>
+  <xsd:include schemaLocation="empty.xsd"/>
+  <xsd:complexType name="ConnectionList">
+    <xsd:sequence>
+      <xsd:element name="connectionListItem" type="csta:ConnectionListItem" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:simpleType name="LocalConnectionState">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="null"/>
+      <xsd:enumeration value="initiated"/>
+      <xsd:enumeration value="alerting"/>
+      <xsd:enumeration value="connected"/>
+      <xsd:enumeration value="hold"/>
+      <xsd:enumeration value="queued"/>
+      <xsd:enumeration value="fail"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:element name="localConnectionInfo" type="csta:LocalConnectionState"/>
+  <xsd:complexType name="ConnectionListItem">
+    <xsd:sequence>
+      <xsd:element name="newConnection" type="csta:ConnectionID" minOccurs="0"/>
+      <xsd:element name="oldConnection" type="csta:ConnectionID" minOccurs="0"/>
+      <xsd:element name="endpoint" minOccurs="0">
+        <xsd:complexType>
+          <xsd:choice>
+            <xsd:element name="deviceID" type="csta:DeviceID"/>
+            <xsd:element name="notKnown" type="csta:Empty"/>
+            <xsd:element name="restricted" type="csta:Empty"/>
+          </xsd:choice>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="associatedNID" minOccurs="0">
+        <xsd:complexType>
+          <xsd:choice>
+            <xsd:element name="deviceID" type="csta:DeviceID"/>
+            <xsd:element name="notKnown" type="csta:Empty"/>
+          </xsd:choice>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="resultingConnectionInfo" type="csta:ConnectionInformation" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+</xsd:schema>

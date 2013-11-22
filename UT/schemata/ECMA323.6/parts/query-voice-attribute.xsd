@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" 
+elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+  <xsd:annotation>
+    <xsd:documentation>CSTA-query-voice-attribute</xsd:documentation>
+  </xsd:annotation>
+  
+  <xsd:include schemaLocation="call-connection-identifiers.xsd"/>
+  <xsd:include schemaLocation="device-feature-types.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  
+  <xsd:element name="QueryVoiceAttribute">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="messageToQuery" type="csta:MessageID" minOccurs="0"/>
+        <xsd:element name="resource" type="csta:ResourceID" minOccurs="0"/>
+        <xsd:element name="attributeToQuery" type="csta:AttributeToQuery"/>
+        <xsd:element name="connection" type="csta:ConnectionID" minOccurs="0"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  
+  <xsd:element name="QueryVoiceAttributeResponse">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="attribute" type="csta:AttributeInfo"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  
+  <xsd:simpleType name="AttributeToQuery">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="encodingAlgorithm"/>
+      <xsd:enumeration value="samplingRate"/>
+      <xsd:enumeration value="duration"/>
+      <xsd:enumeration value="filename"/>
+      <xsd:enumeration value="currentPosition"/>
+      <xsd:enumeration value="currentSpeed"/>
+      <xsd:enumeration value="currentVolume"/>
+      <xsd:enumeration value="currentLevel"/>
+      <xsd:enumeration value="currentState"/>
+      <xsd:enumeration value="grammars"/>
+      <xsd:enumeration value="language"/>
+      <xsd:enumeration value="mode"/>
+      <xsd:enumeration value="retainAudio"/>
+      <xsd:enumeration value="silenceTimeout"/>
+      <xsd:enumeration value="maxTimeout"/>
+      <xsd:enumeration value="babbleTimeout"/>
+      <xsd:enumeration value="endSilence"/>
+      <xsd:enumeration value="rejectionThreshold"/>
+      <xsd:enumeration value="autoInterruptible"/>
+      <xsd:enumeration value="innerXml"/>
+      <xsd:enumeration value="interdigitTimeout"/>
+      <xsd:enumeration value="preflush"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  
+</xsd:schema>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xsd:annotation>
+		<xsd:documentation>CSTA-ringer-status-event</xsd:documentation>
+	</xsd:annotation>
+	<xsd:include schemaLocation="device-identifiers.xsd"/>
+	<xsd:include schemaLocation="extension-types.xsd"/>
+	<xsd:include schemaLocation="physical-device-features.xsd"/>
+	<xsd:include schemaLocation="status-reporting.xsd"/>
+	<xsd:element name="RingerStatusEvent">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element ref="csta:monitorCrossRefID"/>
+				<xsd:element name="device" type="csta:SubjectDeviceID"/>
+				<xsd:element name="ringer" type="csta:RingerID"/>
+				<xsd:element name="ringMode" type="csta:RingMode"/>
+				<xsd:element name="ringCount" minOccurs="0">
+					<xsd:simpleType>
+						<xsd:restriction base="xsd:integer">
+							<xsd:minInclusive value="0"/>
+							<xsd:maxInclusive value="1000"/>
+						</xsd:restriction>
+					</xsd:simpleType>
+				</xsd:element>
+				      <xsd:element name="ringDuration" type="xsd:integer" minOccurs="0"/>
+				<xsd:element name="ringPattern" type="xsd:long" minOccurs="0"/>
+				<xsd:element name="ringVolume" type="csta:Volume" minOccurs="0"/>
+				<xsd:element ref="csta:extensions" minOccurs="0"/>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSPY v5 rel. 4 U (http://www.xmlspy.com) by Thomas Miller (Siemens Enterprise Networks) -->
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-get-csta-features</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="status-reporting.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:include schemaLocation="capability-exchange.xsd"/>
+  <xsd:element name="GetCSTAFeatures">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="GetCSTAFeaturesResponse">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="supportedServices">
+          <xsd:complexType>
+            <xsd:sequence>
+              <xsd:element name="capExchangeServList" type="csta:CapExchangeServList" minOccurs="0"/>
+              <xsd:element name="systemStatServList" type="csta:SystemStatusServList" minOccurs="0"/>
+              <xsd:element name="monitoringServList" type="csta:MonitoringServList" minOccurs="0"/>
+              <xsd:element name="snapshotServList" type="csta:SnapshotServList" minOccurs="0"/>
+              <xsd:element name="callControlServList" type="csta:CallControlServList" minOccurs="0"/>
+              <xsd:element name="callAssociatedServList" type="csta:CallAssociatedServList" minOccurs="0"/>
+              <xsd:element name="mediaServList" type="csta:MediaServList" minOccurs="0"/>
+              <xsd:element name="routeingServList" type="csta:RouteingServList" minOccurs="0"/>
+              <xsd:element name="physDevServList" type="csta:PhysDevServList" minOccurs="0"/>
+              <xsd:element name="logicalServList" type="csta:LogicalServList" minOccurs="0"/>
+              <xsd:element name="iOServicesServList" type="csta:IOServicesServList" minOccurs="0"/>
+              <xsd:element name="dataCollectionServList" type="csta:DataCollectionServList" minOccurs="0"/>
+              <xsd:element name="voiceServList" type="csta:VoiceServList" minOccurs="0"/>
+              <xsd:element name="cDRServList" type="csta:CDRServList" minOccurs="0"/>
+              <xsd:element name="vendorSpecificServList" type="csta:VendorSpecificServList" minOccurs="0"/>
+              <xsd:element name="locationServicesServList" type="csta:LocationServicesServList" minOccurs="0"/>
+            </xsd:sequence>
+          </xsd:complexType>
+        </xsd:element>
+        <xsd:element name="supportedEvents" minOccurs="0">
+          <xsd:complexType>
+            <xsd:sequence>
+              <xsd:element name="callControlEvtsList" type="csta:CallControlEvtsList" minOccurs="0"/>
+              <xsd:element name="callAssociatedEvtsList" type="csta:CallAssociatedEvtsList" minOccurs="0"/>
+              <xsd:element name="mediaEvtsList" type="csta:MediaEvtsList" minOccurs="0"/>
+              <xsd:element name="physDevEvtsList" type="csta:PhysDevEvtsList" minOccurs="0"/>
+              <xsd:element name="logicalEvtsList" type="csta:LogicalEvtsList" minOccurs="0"/>
+              <xsd:element name="deviceMaintEvtsList" type="csta:DeviceMaintEvtsList" minOccurs="0"/>
+              <xsd:element name="voiceEvtsList" type="csta:VoiceEvtsList" minOccurs="0"/>
+              <xsd:element name="vendorSpecificEvtsList" type="csta:VendorSpecificEvtsList" minOccurs="0"/>
+            </xsd:sequence>
+          </xsd:complexType>
+        </xsd:element>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+</xsd:schema>

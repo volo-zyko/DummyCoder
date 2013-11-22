@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-route-reject</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="device-feature-types.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:element name="RouteReject">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="csta:crossRefIdentifier"/>
+        <xsd:element ref="csta:routeRegisterReqID" minOccurs="0"/>
+        <xsd:element name="rejectCause" type="csta:RejectCause" minOccurs="0"/>
+        <xsd:element ref="csta:correlatorData" minOccurs="0"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:simpleType name="RejectCause">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="busyOverflow"/>
+      <xsd:enumeration value="queueTimeOverflow"/>
+      <xsd:enumeration value="capacityOverflow"/>
+      <xsd:enumeration value="calendarOverflow"/>
+      <xsd:enumeration value="unknownOverflow"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:annotation>
+    <xsd:documentation>There is no positive response to this request.</xsd:documentation>
+  </xsd:annotation>
+</xsd:schema>

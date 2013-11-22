@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" 
+xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" 
+xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+  <xsd:annotation>
+    <xsd:documentation>CSTA-get-monitors</xsd:documentation>
+  </xsd:annotation>
+  
+  <xsd:include schemaLocation="status-reporting.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:include schemaLocation="capability-exchange.xsd"/>
+  
+  <xsd:element name="GetMonitors">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  
+  <xsd:element name="GetMonitorsResponse">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="crossRefIDorRegistrationData">
+          <xsd:complexType>
+            <xsd:choice>
+              <xsd:element name="serviceCrossRefID" type="csta:ServiceCrossRefID"/>
+              <xsd:element name="monitorList" type="csta:MonitorList"/>
+            </xsd:choice>
+          </xsd:complexType>
+        </xsd:element>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  
+</xsd:schema>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-record-event</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="event-cause.xsd"/>
+  <xsd:include schemaLocation="call-connection-identifiers.xsd"/>
+  <xsd:include schemaLocation="device-feature-types.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:include schemaLocation="call-control.xsd"/>
+  <xsd:include schemaLocation="status-reporting.xsd"/>
+  <xsd:element name="RecordEvent">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="csta:monitorCrossRefID"/>
+        <xsd:element name="connection" type="csta:ConnectionID"/>
+        <xsd:element name="message" type="csta:MessageID" minOccurs="0"/>
+        <xsd:element name="resource" type="csta:ResourceID" minOccurs="0"/>
+        <xsd:element name="length" type="xsd:long" minOccurs="0"/>
+        <xsd:element name="currentPosition" type="xsd:long" minOccurs="0"/>
+        <xsd:element ref="csta:cause" minOccurs="0"/>
+        <xsd:element ref="csta:servicesPermitted" minOccurs="0"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+</xsd:schema>

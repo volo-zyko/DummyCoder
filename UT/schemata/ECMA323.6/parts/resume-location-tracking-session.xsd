@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" 
+xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" 
+xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+  <xsd:annotation>
+    <xsd:documentation>CSTA-resume-location-tracking-session</xsd:documentation>
+  </xsd:annotation>
+  
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:include schemaLocation="device-feature-types.xsd"/>
+  
+  <xsd:element name="ResumeLocationTrackingSession">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="csta:locCrossRefId"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  
+  <xsd:element name="ResumeLocationTrackingSessionResponse">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+
+</xsd:schema>

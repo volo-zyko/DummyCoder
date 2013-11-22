@@ -1,0 +1,556 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-device-feature-types</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="call-connection-identifiers.xsd"/>
+  <xsd:include schemaLocation="device-identifiers.xsd"/>
+  <xsd:include schemaLocation="event-cause.xsd"/>
+  <xsd:simpleType name="AccountInfo">
+    <xsd:restriction base="xsd:hexBinary">
+      <xsd:minLength value="0"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:element name="accountCode" type="csta:AccountInfo"/>
+  <xsd:simpleType name="AgentID">
+    <xsd:restriction base="xsd:string">
+      <xsd:minLength value="0"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="AgentPassword">
+    <xsd:restriction base="xsd:hexBinary">
+      <xsd:minLength value="0"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="AgentState">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="agentNotReady"/>
+      <xsd:enumeration value="agentNull"/>
+      <xsd:enumeration value="agentReady"/>
+      <xsd:enumeration value="agentBusy"/>
+      <xsd:enumeration value="agentWorkingAfterCall"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="AuthCode">
+    <xsd:restriction base="xsd:hexBinary">
+      <xsd:minLength value="0"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:element name="authCode" type="csta:AuthCode"/>
+  <xsd:complexType name="CorrelatorData">
+    <xsd:choice>
+      <xsd:element name="string">
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:hexBinary">
+            <xsd:minLength value="0"/>
+          </xsd:restriction>
+        </xsd:simpleType>
+      </xsd:element>
+      <xsd:element name="private">
+        <xsd:annotation>
+          <xsd:documentation>private: the actual encoding has to be replaced here</xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:any namespace="##any" maxOccurs="unbounded"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+    </xsd:choice>
+  </xsd:complexType>
+  <xsd:element name="correlatorData" type="csta:CorrelatorData"/>
+  <xsd:complexType name="IOCrossRefID">
+    <xsd:choice>
+      <xsd:element name="switchProvided">
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:string">
+            <xsd:minLength value="0"/>
+          </xsd:restriction>
+        </xsd:simpleType>
+      </xsd:element>
+      <xsd:element name="computerProvided">
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:string">
+            <xsd:minLength value="0"/>
+          </xsd:restriction>
+        </xsd:simpleType>
+      </xsd:element>
+    </xsd:choice>
+  </xsd:complexType>
+  <xsd:simpleType name="IORegisterReqID">
+    <xsd:restriction base="xsd:string">
+      <xsd:minLength value="0"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="MessageID">
+    <xsd:restriction base="xsd:string"/>
+  </xsd:simpleType>
+  <xsd:simpleType name="ResourceID">
+    <xsd:restriction base="xsd:string"/>
+  </xsd:simpleType>
+  <xsd:simpleType name="ParticipationType">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="silent"/>
+      <xsd:enumeration value="active"/>
+      <xsd:enumeration value="none"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:element name="routeRegisterReqID" type="csta:RouteRegisterReqID"/>
+  <xsd:simpleType name="RouteRegisterReqID">
+    <xsd:restriction base="xsd:string">
+      <xsd:minLength value="0"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:element name="crossRefIdentifier" type="csta:RouteingCrossRefID"/>
+  <xsd:simpleType name="RouteingCrossRefID">
+    <xsd:restriction base="xsd:string">
+      <xsd:minLength value="0"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="SelectValue">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="normal"/>
+      <xsd:enumeration value="leastCost"/>
+      <xsd:enumeration value="emergency"/>
+      <xsd:enumeration value="aCD"/>
+      <xsd:enumeration value="userDefined"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:complexType name="RetryValue">
+    <xsd:choice>
+      <xsd:element name="noListAvailable" type="xsd:boolean"/>
+      <xsd:element name="noCountAvailable" type="xsd:boolean"/>
+      <xsd:element name="retryCount" type="xsd:long"/>
+    </xsd:choice>
+  </xsd:complexType>
+  <xsd:simpleType name="SysStatRegisterID">
+    <xsd:restriction base="xsd:string">
+      <xsd:minLength value="0"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:element name="sysStatRegisterID" type="csta:SysStatRegisterID"/>
+  <xsd:simpleType name="SystemStatusValue">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="disabled"/>
+      <xsd:enumeration value="partiallyDisabled"/>
+      <xsd:enumeration value="enabled"/>
+      <xsd:enumeration value="initializing"/>
+      <xsd:enumeration value="messagesLost"/>
+      <xsd:enumeration value="normal"/>
+      <xsd:enumeration value="overloadImminent"/>
+      <xsd:enumeration value="overloadReached"/>
+      <xsd:enumeration value="overloadRelieved"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:complexType name="CallOrigination">
+    <xsd:sequence>
+      <xsd:element name="internal" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="external" type="xsd:boolean" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="ForwardList">
+    <xsd:sequence>
+      <xsd:element name="forwardListItem" type="csta:ForwardListItem" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="ForwardListItem">
+    <xsd:sequence>
+      <xsd:element name="forwardingType" type="csta:ForwardingType" minOccurs="0"/>
+      <xsd:element name="forwardStatus" type="xsd:boolean"/>
+      <xsd:element name="forwardDN" type="csta:DeviceID" minOccurs="0"/>
+      <xsd:element name="forwardDefault" type="csta:ForwardDefault" minOccurs="0"/>
+      <xsd:element name="ringCount" minOccurs="0">
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:long">
+            <xsd:minInclusive value="1"/>
+            <xsd:maxInclusive value="100"/>
+          </xsd:restriction>
+        </xsd:simpleType>
+      </xsd:element>
+      <xsd:element name="ringDuration" type="xsd:integer" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:simpleType name="ForwardingType">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="forwardImmediate"/>
+      <xsd:enumeration value="forwardBusy"/>
+      <xsd:enumeration value="forwardNoAns"/>
+      <xsd:enumeration value="forwardDND"/>
+      <xsd:enumeration value="forwardBusyInt"/>
+      <xsd:enumeration value="forwardBusyExt"/>
+      <xsd:enumeration value="forwardNoAnsInt"/>
+      <xsd:enumeration value="forwardNoAnsExt"/>
+      <xsd:enumeration value="forwardImmInt"/>
+      <xsd:enumeration value="forwardImmExt"/>
+      <xsd:enumeration value="forwardDNDInt"/>
+      <xsd:enumeration value="forwardDNDExt"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="ForwardDefault">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="forwardingTypeAndForwardDN"/>
+      <xsd:enumeration value="forwardingType"/>
+      <xsd:enumeration value="forwardDN"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="PendingAgentState">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="agentNotReady"/>
+      <xsd:enumeration value="agentNull"/>
+      <xsd:enumeration value="agentReady"/>
+      <xsd:enumeration value="agentWorkingAfterCall"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="DataPathType">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="text"/>
+      <xsd:enumeration value="voice"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:complexType name="DisplayAttributeList">
+    <xsd:sequence>
+      <xsd:element name="physicalBaseRowNumber" type="xsd:long" minOccurs="0"/>
+      <xsd:element name="physicalBaseColumnNumber" type="xsd:long" minOccurs="0"/>
+      <xsd:element name="offset" type="xsd:long" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="TerminatingConditions">
+    <xsd:sequence>
+      <xsd:element name="durationExceeded" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="dTMFDigitDetected" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="endOfMessageDetected" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="speechDetected" type="xsd:boolean" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="AttributeInfo">
+    <xsd:choice>
+      <xsd:element name="encodingAlgorithm" type="csta:EncodingAlgorithm"/>
+      <xsd:element name="samplingRate" type="xsd:long"/>
+      <xsd:element name="duration" type="xsd:long"/>
+      <xsd:element name="filename" type="xsd:string"/>
+      <xsd:element name="currentPosition" type="xsd:long"/>
+      <xsd:element name="currentSpeed" type="xsd:long"/>
+      <xsd:element name="currentVolume">
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:long">
+            <xsd:minInclusive value="0"/>
+            <xsd:maxInclusive value="100"/>
+          </xsd:restriction>
+        </xsd:simpleType>
+      </xsd:element>
+      <xsd:element name="currentGain">
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:long">
+            <xsd:minInclusive value="0"/>
+            <xsd:maxInclusive value="100"/>
+          </xsd:restriction>
+        </xsd:simpleType>
+      </xsd:element>
+      <xsd:element name="currentState" type="csta:CurrentState"/>
+      <xsd:element name="grammars" maxOccurs="unbounded">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:any namespace="##any" maxOccurs="unbounded"/>
+          </xsd:sequence>
+          <xsd:attribute name="name" type="xsd:string"/>
+          <xsd:attribute name="src" type="xsd:anyURI"/>
+          <xsd:anyAttribute namespace="##any"/>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="language" type="xsd:language"/>
+      <xsd:element name="mode">
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="automatic"/>
+            <xsd:enumeration value="single"/>
+            <xsd:enumeration value="multiple"/>
+          </xsd:restriction>
+        </xsd:simpleType>
+      </xsd:element>
+      <xsd:element name="retainAudio" type="xsd:boolean"/>
+      <xsd:element name="silenceTimeout" type="xsd:float"/>
+      <xsd:element name="maxTimeout" type="xsd:float"/>
+      <xsd:element name="babbleTimeout" type="xsd:float"/>
+      <xsd:element name="endSilence" type="xsd:float"/>
+      <xsd:element name="rejectionThreshold">
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:float">
+            <xsd:maxInclusive value="1.0"/>
+            <xsd:minInclusive value="0.0"/>
+          </xsd:restriction>
+        </xsd:simpleType>
+      </xsd:element>
+      <xsd:element name="autoInterruptible" type="xsd:boolean"/>
+      <xsd:element name="innerXml">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:any/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="interdigitTimeout" type="xsd:float"/>
+      <xsd:element name="preflush" type="xsd:boolean"/>
+    </xsd:choice>
+  </xsd:complexType>
+  <xsd:simpleType name="EncodingAlgorithm">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="aDPCM6K"/>
+      <xsd:enumeration value="aDPCM8K"/>
+      <xsd:enumeration value="muLawPCM6K"/>
+      <xsd:enumeration value="aLawPCM6K"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:simpleType name="CurrentState">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="formed"/>
+      <xsd:enumeration value="dtmfDetected"/>
+      <xsd:enumeration value="play"/>
+      <xsd:enumeration value="playing"/>
+      <xsd:enumeration value="ready"/>
+      <xsd:enumeration value="record"/>
+      <xsd:enumeration value="review"/>
+      <xsd:enumeration value="speechDetected"/>
+      <xsd:enumeration value="started"/>
+      <xsd:enumeration value="stop"/>
+      <xsd:enumeration value="suspendPlay"/>
+      <xsd:enumeration value="suspendRecord"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:complexType name="ControlData">
+    <xsd:sequence>
+      <xsd:element name="gender">
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="male"/>
+            <xsd:enumeration value="female"/>
+          </xsd:restriction>
+        </xsd:simpleType>
+      </xsd:element>
+      <xsd:element name="language">
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:string"/>
+        </xsd:simpleType>
+      </xsd:element>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="UserData">
+    <xsd:choice>
+      <xsd:element name="string">
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:hexBinary">
+            <xsd:minLength value="0"/>
+          </xsd:restriction>
+        </xsd:simpleType>
+      </xsd:element>
+      <xsd:element name="private">
+        <xsd:annotation>
+          <xsd:documentation>private: the actual encoding has to be replaced here</xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:any namespace="##any" maxOccurs="unbounded"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+    </xsd:choice>
+  </xsd:complexType>
+  <xsd:element name="userData" type="csta:UserData"/>
+  <xsd:simpleType name="TelephonyTone">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="beep"/>
+      <xsd:enumeration value="billing"/>
+      <xsd:enumeration value="busy"/>
+      <xsd:enumeration value="carrier"/>
+      <xsd:enumeration value="confirmation"/>
+      <xsd:enumeration value="dial"/>
+      <xsd:enumeration value="faxCNG"/>
+      <xsd:enumeration value="hold"/>
+      <xsd:enumeration value="howler"/>
+      <xsd:enumeration value="intrusion"/>
+      <xsd:enumeration value="modemCNG"/>
+      <xsd:enumeration value="park"/>
+      <xsd:enumeration value="recordWarning"/>
+      <xsd:enumeration value="reorder"/>
+      <xsd:enumeration value="ringback"/>
+      <xsd:enumeration value="silence"/>
+      <xsd:enumeration value="sitVC"/>
+      <xsd:enumeration value="sitIC"/>
+      <xsd:enumeration value="sitRO"/>
+      <xsd:enumeration value="sitNC"/>
+      <xsd:enumeration value="switchSpec0"/>
+      <xsd:enumeration value="switchSpec1"/>
+      <xsd:enumeration value="switchSpec2"/>
+      <xsd:enumeration value="switchSpec3"/>
+      <xsd:enumeration value="switchSpec4"/>
+      <xsd:enumeration value="switchSpec5"/>
+      <xsd:enumeration value="switchSpec6"/>
+      <xsd:enumeration value="switchSpec7"/>
+      <xsd:enumeration value="switchSpec8"/>
+      <xsd:enumeration value="switchSpec9"/>
+      <xsd:enumeration value="switchSpec10"/>
+      <xsd:enumeration value="switchSpec11"/>
+      <xsd:enumeration value="switchSpec12"/>
+      <xsd:enumeration value="switchSpec13"/>
+      <xsd:enumeration value="switchSpec14"/>
+      <xsd:enumeration value="switchSpec15"/>
+      <xsd:enumeration value="switchSpec16"/>
+      <xsd:enumeration value="switchSpec17"/>
+      <xsd:enumeration value="switchSpec18"/>
+      <xsd:enumeration value="switchSpec19"/>
+      <xsd:enumeration value="switchSpec20"/>
+      <xsd:enumeration value="switchSpec21"/>
+      <xsd:enumeration value="switchSpec22"/>
+      <xsd:enumeration value="switchSpec23"/>
+      <xsd:enumeration value="switchSpec24"/>
+      <xsd:enumeration value="switchSpec25"/>
+      <xsd:enumeration value="switchSpec26"/>
+      <xsd:enumeration value="switchSpec27"/>
+      <xsd:enumeration value="switchSpec28"/>
+      <xsd:enumeration value="switchSpec29"/>
+      <xsd:enumeration value="switchSpec30"/>
+      <xsd:enumeration value="switchSpec31"/>
+      <xsd:enumeration value="switchSpec32"/>
+      <xsd:enumeration value="switchSpec33"/>
+      <xsd:enumeration value="switchSpec34"/>
+      <xsd:enumeration value="switchSpec35"/>
+      <xsd:enumeration value="switchSpec36"/>
+      <xsd:enumeration value="switchSpec37"/>
+      <xsd:enumeration value="switchSpec38"/>
+      <xsd:enumeration value="switchSpec39"/>
+      <xsd:enumeration value="switchSpec40"/>
+      <xsd:enumeration value="switchSpec41"/>
+      <xsd:enumeration value="switchSpec42"/>
+      <xsd:enumeration value="switchSpec43"/>
+      <xsd:enumeration value="switchSpec44"/>
+      <xsd:enumeration value="switchSpec45"/>
+      <xsd:enumeration value="switchSpec46"/>
+      <xsd:enumeration value="switchSpec47"/>
+      <xsd:enumeration value="switchSpec48"/>
+      <xsd:enumeration value="switchSpec49"/>
+      <xsd:enumeration value="switchSpec50"/>
+      <xsd:enumeration value="switchSpec51"/>
+      <xsd:enumeration value="switchSpec52"/>
+      <xsd:enumeration value="switchSpec53"/>
+      <xsd:enumeration value="switchSpec54"/>
+      <xsd:enumeration value="switchSpec55"/>
+      <xsd:enumeration value="switchSpec56"/>
+      <xsd:enumeration value="switchSpec57"/>
+      <xsd:enumeration value="switchSpec58"/>
+      <xsd:enumeration value="switchSpec59"/>
+      <xsd:enumeration value="switchSpec60"/>
+      <xsd:enumeration value="switchSpec61"/>
+      <xsd:enumeration value="switchSpec62"/>
+      <xsd:enumeration value="switchSpec63"/>
+      <xsd:enumeration value="switchSpec64"/>
+      <xsd:enumeration value="switchSpec65"/>
+      <xsd:enumeration value="switchSpec66"/>
+      <xsd:enumeration value="switchSpec67"/>
+      <xsd:enumeration value="switchSpec68"/>
+      <xsd:enumeration value="switchSpec69"/>
+      <xsd:enumeration value="switchSpec70"/>
+      <xsd:enumeration value="switchSpec71"/>
+      <xsd:enumeration value="switchSpec72"/>
+      <xsd:enumeration value="switchSpec73"/>
+      <xsd:enumeration value="switchSpec74"/>
+      <xsd:enumeration value="switchSpec75"/>
+      <xsd:enumeration value="switchSpec76"/>
+      <xsd:enumeration value="switchSpec77"/>
+      <xsd:enumeration value="switchSpec78"/>
+      <xsd:enumeration value="switchSpec79"/>
+      <xsd:enumeration value="switchSpec80"/>
+      <xsd:enumeration value="switchSpec81"/>
+      <xsd:enumeration value="switchSpec82"/>
+      <xsd:enumeration value="switchSpec83"/>
+      <xsd:enumeration value="switchSpec84"/>
+      <xsd:enumeration value="switchSpec85"/>
+      <xsd:enumeration value="switchSpec86"/>
+      <xsd:enumeration value="switchSpec87"/>
+      <xsd:enumeration value="switchSpec88"/>
+      <xsd:enumeration value="switchSpec89"/>
+      <xsd:enumeration value="switchSpec90"/>
+      <xsd:enumeration value="switchSpec91"/>
+      <xsd:enumeration value="switchSpec92"/>
+      <xsd:enumeration value="switchSpec93"/>
+      <xsd:enumeration value="switchSpec94"/>
+      <xsd:enumeration value="switchSpec95"/>
+      <xsd:enumeration value="switchSpec96"/>
+      <xsd:enumeration value="switchSpec97"/>
+      <xsd:enumeration value="switchSpec98"/>
+      <xsd:enumeration value="switchSpec99"/>
+      <xsd:enumeration value="switchSpec100"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:element name="subjectOfCall" type="xsd:string"/>
+  <xsd:complexType name="MessageInfo">
+    <xsd:sequence>
+      <xsd:element name="messageInfoItem" type="csta:MessageInfoItem" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:element name="messageInfo" type="csta:MessageInfo"/>
+  <xsd:complexType name="MessageInfoItem">
+    <xsd:sequence>
+      <xsd:element name="contentTypeAndSubtype" type="xsd:string" minOccurs="0"/>
+      <xsd:element name="contents" type="xsd:string"/>
+      <xsd:element name="contentsLength" type="xsd:nonNegativeInteger" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:element name="languagePreferences" type="xsd:string"/>
+  <xsd:complexType name="DeviceHistory">
+    <xsd:sequence>
+      <xsd:element name="DeviceHistoryListItem" type="csta:DeviceHistoryListItem" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:element name="deviceHistory" type="csta:DeviceHistory"/>
+  <xsd:complexType name="DeviceHistoryListItem">
+    <xsd:sequence>
+      <xsd:element name="oldDeviceID" type="csta:RedirectionDeviceID"/>
+      <xsd:element name="eventCause" type="csta:EventCause" minOccurs="0"/>
+      <xsd:element name="oldConnectionID" type="csta:ConnectionID" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  
+  <xsd:element name="reason" type="csta:EventCause"/>
+  
+  <xsd:element name="locCrossRefId" type="csta:LocCrossRefID"/>
+  
+  <xsd:simpleType name="LocCrossRefID">
+    <xsd:restriction base="xsd:string">
+      <xsd:minLength value="0"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  
+    <xsd:element name="locReason" type="csta:LocReason"/>  
+    
+  <xsd:simpleType name="LocReason">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="connectionToDeviceOrNetworkRestored"/>
+      <xsd:enumeration value="performanceConditionRelieved"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  
+  <xsd:complexType name="PresenceState">
+    <xsd:sequence>
+      <xsd:element name="available" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="away" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="busy" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="calling" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="dnd" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="meeting" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="offline" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="unknown" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="vacation" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="applicationSpec0" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="applicationSpec1" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="applicationSpec2" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="applicationSpec3" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="applicationSpec4" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="applicationSpec5" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="applicationSpec6" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="applicationSpec7" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="applicationSpec8" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="applicationSpec9" type="xsd:boolean" minOccurs="0"/>
+      <xsd:element name="applicationSpec10" type="xsd:boolean" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+
+</xsd:schema>

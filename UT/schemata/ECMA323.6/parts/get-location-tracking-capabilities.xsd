@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-get-location-tracking-capabilites</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="status-reporting.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:element name="GetLocationTrackingCapabilities">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="device" type="csta:DeviceID"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="GetLocationTrackingCapabilitiesResponse">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="collectionTypeDefault">
+          <xsd:simpleType>
+            <xsd:restriction base="xsd:string">
+              <xsd:enumeration value="periodic"/>
+              <xsd:enumeration value="updatesOnly"/>
+              <xsd:enumeration value="periodicWithUpdates"/>
+            </xsd:restriction>
+          </xsd:simpleType>
+        </xsd:element>
+        <xsd:element name="collectionTypePeriodic" type="xsd:boolean"/>
+        <xsd:element name="collectionTypeUpdatesOnly" type="xsd:boolean"/>
+        <xsd:element name="collectionTypePeriodicWithUpdates" type="xsd:boolean"/>
+        <xsd:element name="collectionIntervalDefault" type="xsd:integer"/>
+        <xsd:element name="collectionIntervalMin" type="xsd:integer"/>
+        <xsd:element name="collectionIntervalMax" type="xsd:integer"/>
+        <xsd:element name="maxCollectionsDefault" type="xsd:integer"/>
+        <xsd:element name="maxCollectionsMin" type="xsd:integer"/>
+        <xsd:element name="maxCollectionsMax" type="xsd:integer"/>
+        <xsd:element name="collectionfilterDefault">
+          <xsd:simpleType>
+            <xsd:restriction base="xsd:string">
+              <xsd:enumeration value="horizontalMovement"/>
+              <xsd:enumeration value="verticalMovement"/>
+              <xsd:enumeration value="civicAddressChange"/>
+              <xsd:enumeration value="none"/>
+            </xsd:restriction>
+          </xsd:simpleType>
+        </xsd:element>
+        <xsd:element name="collectionFilterHorizontal" type="xsd:boolean"/>
+        <xsd:element name="collectionFilterVertical" type="xsd:boolean"/>
+        <xsd:element name="collectionFilterCivicAddress" type="xsd:boolean"/>
+        <xsd:element name="reportingTypeDefault">
+          <xsd:simpleType>
+            <xsd:restriction base="xsd:string">
+              <xsd:enumeration value="immediate"/>
+              <xsd:enumeration value="periodic"/>
+              <xsd:enumeration value="count"/>
+            </xsd:restriction>
+          </xsd:simpleType>
+        </xsd:element>
+        <xsd:element name="reportingTypeImmediate" type="xsd:boolean"/>
+        <xsd:element name="reportingTypePeriodic" type="xsd:boolean"/>
+        <xsd:element name="reportingTypeCount" type="xsd:boolean"/>
+        <xsd:element name="reportingIntervalDefault" type="xsd:integer"/>
+        <xsd:element name="reportingIntervalMin" type="xsd:integer"/>
+        <xsd:element name="reportingIntervalMax" type="xsd:integer"/>
+        <xsd:element name="reportingCountDefault" type="xsd:integer"/>
+        <xsd:element name="reportingCountMin" type="xsd:integer"/>
+        <xsd:element name="reportingCountMax" type="xsd:integer"/>
+        <xsd:element name="supportsSuspendingTracking" type="xsd:boolean"/>
+        <xsd:element name="supportsResumingTracking" type="xsd:boolean"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+
+</xsd:schema>

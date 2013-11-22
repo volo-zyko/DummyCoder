@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-security</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="empty.xsd"/>
+  <xsd:complexType name="CSTASecurityData">
+    <xsd:sequence>
+      <xsd:element name="messageSequenceNumber" type="xsd:long" minOccurs="0"/>
+      <xsd:element name="timeStamp" type="csta:TimeInfo" minOccurs="0"/>
+      <xsd:element name="securityInfo" type="csta:SecurityInfo" minOccurs="0"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="SecurityInfo">
+    <xsd:choice>
+      <xsd:element name="string">
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:hexBinary"/>
+        </xsd:simpleType>
+      </xsd:element>
+      <xsd:element name="private">
+        <xsd:annotation>
+          <xsd:documentation>private: the actual encoding has to be replaced here</xsd:documentation>
+        </xsd:annotation>
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:any namespace="##any" maxOccurs="unbounded"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+    </xsd:choice>
+  </xsd:complexType>
+  <xsd:simpleType name="TimeInfo">
+    <xsd:restriction base="csta:GeneralizedTime"/>
+  </xsd:simpleType>
+  <xsd:simpleType name="GeneralizedTime">
+    <xsd:restriction base="xsd:string">
+      <xsd:pattern value="\d{14}[,\.]?\d*[+\-]\d{4}"/>
+      <xsd:pattern value="\d{14}[,\.]?\d*Z"/>
+      <xsd:pattern value="\d{14}[,\.]?\d*"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+</xsd:schema>

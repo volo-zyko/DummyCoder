@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-call-connection-identifiers</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="device-identifiers.xsd"/>
+  <xsd:complexType name="ConnectionID">
+    <xsd:choice>
+      <xsd:element name="deviceID" type="csta:LocalDeviceID"/>
+      <xsd:sequence>
+        <xsd:element name="callID" type="csta:CallID"/>
+        <xsd:element name="deviceID" type="csta:LocalDeviceID" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:choice>
+  </xsd:complexType>
+  <xsd:simpleType name="CallID">
+    <xsd:restriction base="xsd:string">
+      <xsd:minLength value="0"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+  <xsd:complexType name="LocalDeviceID">
+    <xsd:annotation>
+      <xsd:documentation>uses flattened structure - all types included here</xsd:documentation>
+    </xsd:annotation>
+    <xsd:simpleContent>
+      <xsd:extension base="csta:DeviceIDType">
+        <xsd:attribute name="typeOfNumber" default="dialingNumber">
+          <xsd:simpleType>
+            <xsd:restriction base="xsd:string">
+              <xsd:enumeration value="dialingNumber"/>
+              <xsd:enumeration value="deviceNumber"/>
+              <xsd:enumeration value="implicitPublic"/>
+              <xsd:enumeration value="explicitPublic:unknown"/>
+              <xsd:enumeration value="explicitPublic:international"/>
+              <xsd:enumeration value="explicitPublic:national"/>
+              <xsd:enumeration value="explicitPublic:networkspecific"/>
+              <xsd:enumeration value="explicitPublic:subscriber"/>
+              <xsd:enumeration value="explicitPublic:abbreviated"/>
+              <xsd:enumeration value="implicitPrivate"/>
+              <xsd:enumeration value="explicitPrivate:unknown"/>
+              <xsd:enumeration value="explicitPrivate:level3RegionalNumber"/>
+              <xsd:enumeration value="explicitPrivate:level2RegionalNumber"/>
+              <xsd:enumeration value="explicitPrivate:level1RegionalNumber"/>
+              <xsd:enumeration value="explicitPrivate:pTNSpecificNumber"/>
+              <xsd:enumeration value="explicitPrivate:localNumber"/>
+              <xsd:enumeration value="explicitPrivate:abbreviated"/>
+              <xsd:enumeration value="other"/>
+              <xsd:enumeration value="dynamic"/>
+            </xsd:restriction>
+          </xsd:simpleType>
+        </xsd:attribute>
+        <xsd:attribute name="mediaClass" type="csta:MediaClassAttribute" default="notKnown"/>
+        <xsd:attribute name="connectionRate" use="optional">
+          <xsd:simpleType>
+            <xsd:restriction base="xsd:long">
+              <xsd:minInclusive value="0"/>
+            </xsd:restriction>
+          </xsd:simpleType>
+        </xsd:attribute>
+        <xsd:attribute name="bitRate" default="constant">
+          <xsd:simpleType>
+            <xsd:restriction base="xsd:string">
+              <xsd:enumeration value="constant"/>
+              <xsd:enumeration value="variable"/>
+            </xsd:restriction>
+          </xsd:simpleType>
+        </xsd:attribute>
+        <xsd:attribute name="delayTolerance" type="xsd:long" use="optional"/>
+        <xsd:attribute name="switchingSubDomainCCIEType" use="optional">
+          <xsd:simpleType>
+            <xsd:restriction base="xsd:string">
+              <xsd:enumeration value="isdn"/>
+              <xsd:enumeration value="atm"/>
+              <xsd:enumeration value="isoEthernet"/>
+              <xsd:enumeration value="rsvp"/>
+              <xsd:enumeration value="other"/>
+            </xsd:restriction>
+          </xsd:simpleType>
+        </xsd:attribute>
+        <xsd:attribute name="switchingSubDomainInformationElements" use="optional">
+          <xsd:simpleType>
+            <xsd:restriction base="xsd:hexBinary"/>
+          </xsd:simpleType>
+        </xsd:attribute>
+        <xsd:attribute name="privateNumber" type="xsd:boolean" use="optional" default="false"/>
+        <xsd:attribute name="privateName" type="xsd:boolean" use="optional" default="false"/>
+      </xsd:extension>
+    </xsd:simpleContent>
+  </xsd:complexType>
+</xsd:schema>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSPY v5 U (http://www.xmlspy.com) by tom miller (self) -->
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-consultation-call</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="device-identifiers.xsd"/>
+  <xsd:include schemaLocation="call-connection-identifiers.xsd"/>
+  <xsd:include schemaLocation="device-feature-types.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:include schemaLocation="call-control.xsd"/>
+  <xsd:include schemaLocation="media-services.xsd"/>
+  <xsd:element name="ConsultationCall">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="existingCall" type="csta:ConnectionID"/>
+        <xsd:element name="consultedDevice" type="csta:DeviceID"/>
+        <xsd:element name="connectionReservation" type="xsd:boolean" minOccurs="0"/>
+        <xsd:element ref="csta:accountCode" minOccurs="0"/>
+        <xsd:element ref="csta:authCode" minOccurs="0"/>
+        <xsd:element ref="csta:correlatorData" minOccurs="0"/>
+        <xsd:element ref="csta:userData" minOccurs="0"/>
+        <xsd:element ref="csta:callCharacteristics" minOccurs="0"/>
+        <xsd:element ref="csta:mediaCallCharacteristics" minOccurs="0"/>
+        <xsd:element name="callingConnectionInfo" type="csta:ConnectionInformation" minOccurs="0"/>
+        <xsd:element ref="csta:consultOptions" minOccurs="0"/>
+        <xsd:element ref="csta:subjectOfCall" minOccurs="0"/>
+        <xsd:element ref="csta:languagePreferences" minOccurs="0"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="ConsultationCallResponse">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="initiatedCall" type="csta:ConnectionID"/>
+        <xsd:element ref="csta:mediaCallCharacteristics" minOccurs="0"/>
+        <xsd:element name="initiatedCallInfo" type="csta:ConnectionInformation" minOccurs="0"/>
+        <xsd:element ref="csta:callLinkageData" minOccurs="0"/>
+		<xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+</xsd:schema>

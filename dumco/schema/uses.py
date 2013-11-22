@@ -7,9 +7,8 @@ import namer
 
 
 class Particle(object):
-    def __init__(self, qualified, constraint, min_occurs, max_occurs, term):
+    def __init__(self, qualified, min_occurs, max_occurs, term):
         self.qualified = qualified
-        self.constraint = constraint
         assert min_occurs <= max_occurs
         self.min_occurs = min_occurs
         self.max_occurs = max_occurs

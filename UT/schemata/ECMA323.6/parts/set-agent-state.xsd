@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-set-agent-state</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="device-identifiers.xsd"/>
+  <xsd:include schemaLocation="device-feature-types.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:element name="SetAgentState">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="device" type="csta:DeviceID"/>
+        <xsd:element name="requestedAgentState" type="csta:ReqAgentState"/>
+        <xsd:element name="agentID" type="csta:AgentID" minOccurs="0"/>
+        <xsd:element name="password" type="csta:AgentPassword" minOccurs="0"/>
+        <xsd:element name="group" type="csta:DeviceID" minOccurs="0"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="SetAgentStateResponse">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="pendingAgentState" type="csta:PendingAgentState" minOccurs="0"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:simpleType name="ReqAgentState">
+    <xsd:restriction base="xsd:string">
+      <xsd:enumeration value="loggedOn"/>
+      <xsd:enumeration value="loggedOff"/>
+      <xsd:enumeration value="notReady"/>
+      <xsd:enumeration value="ready"/>
+      <xsd:enumeration value="workingAfterCall"/>
+    </xsd:restriction>
+  </xsd:simpleType>
+</xsd:schema>

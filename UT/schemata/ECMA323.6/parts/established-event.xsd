@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema targetNamespace="http://www.ecma-international.org/standards/ecma-323/csta/ed6" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://www.ecma-international.org/standards/ecma-323/csta/ed6" elementFormDefault="qualified" attributeFormDefault="unqualified">
+  <xsd:annotation>
+    <xsd:documentation>CSTA-established-event</xsd:documentation>
+  </xsd:annotation>
+  <xsd:include schemaLocation="event-cause.xsd"/>
+  <xsd:include schemaLocation="device-identifiers.xsd"/>
+  <xsd:include schemaLocation="call-connection-identifiers.xsd"/>
+  <xsd:include schemaLocation="connection-states.xsd"/>
+  <xsd:include schemaLocation="device-feature-types.xsd"/>
+  <xsd:include schemaLocation="extension-types.xsd"/>
+  <xsd:include schemaLocation="call-control.xsd"/>
+  <xsd:include schemaLocation="media-services.xsd"/>
+  <xsd:include schemaLocation="status-reporting.xsd"/>
+  <xsd:element name="EstablishedEvent">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element ref="csta:monitorCrossRefID"/>
+        <xsd:element name="establishedConnection" type="csta:ConnectionID"/>
+        <xsd:element name="answeringDevice" type="csta:SubjectDeviceID"/>
+        <xsd:element ref="csta:callingDevice"/>
+        <xsd:element ref="csta:calledDevice"/>
+        <xsd:element ref="csta:lastRedirectionDevice"/>
+        <xsd:element name="originatinNIDConnection" type="csta:ConnectionID" minOccurs="0"/>
+        <xsd:element ref="csta:localConnectionInfo" minOccurs="0"/>
+        <xsd:element ref="csta:correlatorData" minOccurs="0"/>
+        <xsd:element ref="csta:userData" minOccurs="0"/>
+        <xsd:element ref="csta:cause"/>
+        <xsd:element ref="csta:servicesPermitted" minOccurs="0"/>
+        <xsd:element ref="csta:networkCallingDevice" minOccurs="0"/>
+        <xsd:element ref="csta:networkCalledDevice" minOccurs="0"/>
+        <xsd:element ref="csta:associatedCallingDevice" minOccurs="0"/>
+        <xsd:element ref="csta:associatedCalledDevice" minOccurs="0"/>
+        <xsd:element ref="csta:mediaCallCharacteristics" minOccurs="0"/>
+        <xsd:element ref="csta:callCharacteristics" minOccurs="0"/>
+        <xsd:element name="establishedConnectionInfo" type="csta:ConnectionInformation" minOccurs="0"/>
+        <xsd:element ref="csta:callLinkageData" minOccurs="0"/>
+        <xsd:element ref="csta:subjectOfCall" minOccurs="0"/>
+        <xsd:element ref="csta:messageInfo" minOccurs="0"/>
+        <xsd:element ref="csta:languagePreferences" minOccurs="0"/>
+        <xsd:element ref="csta:deviceHistory" minOccurs="0"/>
+                <xsd:element name="locationInfoList" type="csta:LocationInfoList" minOccurs="0"/>
+        <xsd:element ref="csta:extensions" minOccurs="0"/>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+</xsd:schema>
