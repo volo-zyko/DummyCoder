@@ -1,203 +1,127 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
-import dumco.schema.all
-import dumco.schema.any
-import dumco.schema.attribute
 import dumco.schema.base
-import dumco.schema.choice
-import dumco.schema.complex_type
-import dumco.schema.element
-import dumco.schema.restriction
-import dumco.schema.schema
-import dumco.schema.sequence
-import dumco.schema.simple_type
 import dumco.schema.checks
+import dumco.schema.elements
+import dumco.schema.enums
 import dumco.schema.uses
+
+import prv.rng_grammar
+
+
+RNG_NAMESPACE = 'http://relaxng.org/ns/structure/1.0'
 
 
 class RelaxElementFactory(object):
-    def __init__(self, element_namer):
-        # Internals of this factory.
-        self.dispatcher_stack = []
-        self.dispatcher = {
-            'grammar': RelaxElementFactory._grammar,
-        }
-        self.namespaces = {'xml': dumco.schema.checks.XML_NAMESPACE}
-        self.all_named_ns = {dumco.schema.checks.XML_NAMESPACE: 'xml'}
-        self.parents = []
+    def __init__(self, element_namer, extension):
+        # Reset internals of this factory.
+        self.reset()
+
+        # All prefices encountered during schemata loading.
+        self.all_namespace_prefices = {dumco.schema.base.XML_NAMESPACE: 'xml'}
 
         # Part of the factorie's interface.
         self.namer = element_namer
-        self.extension = '.rng'
+        self.extension = extension
 
-        self.simple_types = {x: dumco.schema.base.XsdNativeType(x)
-                             for x in dumco.schema.base.NATIVE_XSD_TYPE_NAMES}
+    def reset(self):
+        # Internals of this factory.
+        self.dispatcher_stack = []
+        self.dispatcher = {
+            'grammar': prv.rng_grammar.rng_grammar,
+        }
+        self.element_stack = []
+        self.element = None
+        self.namespaces = {'xml': dumco.schema.base.XML_NAMESPACE}
+        self.parents = []
 
-        self.xml_attributes = {x: dumco.schema.base.XmlAttribute(x)
-                               for x in ['base', 'id', 'lang', 'space']}
+    def define_namespace(self, prefix, uri):
+        if uri is None:
+            # Remove namespace.
+            assert prefix in self.namespaces, \
+                'Closing non-existent namespace'
+            del self.namespaces[prefix]
+        else:
+            # Add namespace.
+            self.namespaces[prefix] = uri
 
-        self.complex_urtype = dumco.schema.complex_type.ComplexType.urtype(self)
-        self.simple_urtype = dumco.schema.simple_type.SimpleType.urtype(self)
+        if prefix is not None and not dumco.schema.checks.is_xsd_namespace(uri):
+            # This makes sure that prefix will be the same no matter what was
+            # the order of loading of schemata.
+            if prefix > self.all_namespace_prefices.get(uri, ''):
+                self.all_namespace_prefices[uri] = prefix
 
-    def open_namespace(self, prefix, uri):
-        self.namespaces[prefix] = uri
-
-        # if prefix is not None and not dumco.schema.checks.is_xsd_namespace(uri):
-        #     assert (not self.all_named_ns.has_key(uri) or
-        #             self.all_named_ns[uri] == prefix), \
-        #         'Namespace prefix {} is already defined as {}'.format(
-        #             prefix, self.all_named_ns[uri])
-        #     self.all_named_ns[uri] = prefix
-
-    def close_namespace(self, prefix):
-        assert self.namespaces.has_key(prefix), \
-            'Closing non-existent namespace'
-        del self.namespaces[prefix]
-
-    def new_element(self, name, attrs, parent_element,
-                    schema_path, all_schemata):
-        # # Here we don't support anything non-XSD.
-        # assert name[0] == dumco.schema.checks.XSD_NAMESPACE, \
-        #     'Uknown elment {}:{}'.format(name[0], name[1])
+    def new_element(self, name, attrs, schema_path, all_schemata):
+        # Here we don't support anything non-RelaxNG.
+        if name[0] != RNG_NAMESPACE:
+            return
 
         self.dispatcher_stack.append(self.dispatcher)
+        self.element_stack.append(self.element)
 
-        assert self.dispatcher.has_key(name[1]), \
+        assert self.dispatcher is None or name[1] in self.dispatcher, \
             '"{}" is not supported in {}'.format(
-                name[1], parent_element.__class__.__name__)
+                name[1], self.element.__class__.__name__)
 
-        (element, self.dispatcher) = self.dispatcher[name[1]](
-            self, attrs, parent_element, schema_path, all_schemata)
+        if self.dispatcher is not None:
+            (element, self.dispatcher) = self.dispatcher[name[1]](
+                attrs, self.element, self, schema_path, all_schemata)
 
-        try:
-            self.parents.append(element[1])
-            return element[0]
-        except TypeError:
-            self.parents.append(element)
-            return element
+            self.element = element
 
-    def finalize_element(self, element):
+    def finalize_current_element(self, name):
+        if name[0] != RNG_NAMESPACE:
+            return
+
+        self.element = self.element_stack.pop()
         self.dispatcher = self.dispatcher_stack.pop()
-        self.parents.pop()
 
-    def element_append_text(self, element, text):
-        element.append_doc(text)
+    def end_document(self):
+        # There might remain single xml namespace.
+        assert len(self.namespaces) == 1 or len(self.namespaces) == 0
+        assert len(self.dispatcher_stack) == 0
+        assert len(self.element_stack) == 0
+
+    def current_element_append_text(self, text):
+        if hasattr(self.element, 'schema_element'):
+            self.element.schema_element.append_doc(text)
 
     def finalize_documents(self, all_schemata):
-        for schema in all_schemata.itervalues():
-            schema.set_imports(all_schemata)
+        result = reduce(lambda acc, g: acc + g.schemata,
+                        all_schemata.itervalues(), [])
+        result.sort(key=lambda x: x.target_ns)
+        return result
 
-            if self.all_named_ns.has_key(schema.target_ns):
-                schema.set_namespace(self.all_named_ns[schema.target_ns],
-                                     schema.target_ns)
+        # sorted_all_schemata = sorted([schema for schema in
+        #                               all_schemata.itervalues()],
+        #                              key=lambda s: s.schema_element.target_ns)
 
-        for schema in all_schemata.itervalues():
-            schema.finalize(all_schemata, self)
+        # for schema in sorted_all_schemata:
+        #     schema.set_imports(all_schemata)
 
-        for schema in all_schemata.itervalues():
-            schema.cleanup()
+            # if self.all_named_ns.has_key(schema.target_ns):
+            #     schema.set_namespace(self.all_named_ns[schema.target_ns],
+            #                          schema.target_ns)
 
-    def get_attribute(self, attrs, localname, uri=None):
-        if not attrs.has_key((uri, localname)):
-            raise LookupError
-        return attrs.get((uri, localname))
+        # for schema in sorted_all_schemata:
+        #     schema.finalize(all_schemata, self)
 
-    def _noop_handler(self, attrs, parent_element,
-                      schema_path, all_schemata):
+        # for schema in sorted_all_schemata:
+        #     schema.cleanup()
+        # return [schema.schema_element
+        #         for schema in sorted_all_schemata
+        #         if not included_in_other_schema(schema)]
+
+    # def get_attribute(self, attrs, localname, uri=None):
+    #     if not attrs.has_key((uri, localname)):
+    #         raise LookupError
+    #     return attrs.get((uri, localname))
+
+    @staticmethod
+    def noop_handler(attrs, parent_element, factory, schema_path, all_schemata):
         return (parent_element, {
             # 'element': RelaxElementFactory._noop_handler,
             # 'empty': RelaxElementFactory._noop_handler,
             # 'optional': RelaxElementFactory._noop_handler,
             # 'ref': RelaxElementFactory._ref,
-        })
-
-    def _attribute(self, attrs, parent_element,
-                   schema_path, all_schemata):
-        return (parent_element, {
-            'data': RelaxElementFactory._noop_handler,
-        })
-
-    def _define(self, attrs, parent_element,
-                schema_path, all_schemata):
-        return (parent_element, {
-            'attribute': RelaxElementFactory._attribute,
-            'element': RelaxElementFactory._element,
-            'optional': RelaxElementFactory._optional,
-            'ref': RelaxElementFactory._ref,
-        })
-
-    def _choice(self, attrs, parent_element,
-                schema_path, all_schemata):
-        return (parent_element, {
-            'group': RelaxElementFactory._group,
-            'ref': RelaxElementFactory._ref,
-            'zeroOrMore': RelaxElementFactory._zeroOrMore,
-        })
-
-    def _element(self, attrs, parent_element,
-                 schema_path, all_schemata):
-        return (parent_element, {
-            'attribute': RelaxElementFactory._attribute,
-            'choice': RelaxElementFactory._choice,
-            'data': RelaxElementFactory._noop_handler,
-            'empty': RelaxElementFactory._noop_handler,
-            'oneOrMore': RelaxElementFactory._oneOrMore,
-            'optional': RelaxElementFactory._optional,
-            'ref': RelaxElementFactory._ref,
-            'zeroOrMore': RelaxElementFactory._zeroOrMore,
-        })
-
-    def _grammar(self, attrs, parent_element,
-                 schema_path, all_schemata):
-        schema = dumco.schema.schema.Schema(attrs, schema_path)
-        all_schemata[schema_path] = schema
-        for (prefix, uri) in self.namespaces.iteritems():
-            schema.set_namespace(prefix, uri)
-
-        return (schema, {
-            'define': RelaxElementFactory._define,
-            'include': RelaxElementFactory._noop_handler,
-            'start': RelaxElementFactory._start,
-        })
-
-    def _group(self, attrs, parent_element,
-               schema_path, all_schemata):
-        return (parent_element, {
-            'zeroOrMore': RelaxElementFactory._zeroOrMore,
-        })
-
-    def _oneOrMore(self, attrs, parent_element,
-                   schema_path, all_schemata):
-        return (parent_element, {
-            'choice': RelaxElementFactory._choice,
-            'element': RelaxElementFactory._element,
-            'ref': RelaxElementFactory._ref,
-        })
-
-    def _optional(self, attrs, parent_element,
-                  schema_path, all_schemata):
-        return (parent_element, {
-            'element': RelaxElementFactory._element,
-            'ref': RelaxElementFactory._ref,
-        })
-
-    def _ref(self, attrs, parent_element,
-             schema_path, all_schemata):
-        return (parent_element, {
-            # 'element': RelaxElementFactory._element,
-            # 'ref': RelaxElementFactory._ref,
-        })
-
-    def _start(self, attrs, parent_element,
-               schema_path, all_schemata):
-        return (parent_element, {
-            'element': RelaxElementFactory._element,
-        })
-
-    def _zeroOrMore(self, attrs, parent_element,
-                    schema_path, all_schemata):
-        return (parent_element, {
-            'choice': RelaxElementFactory._choice,
-            'element': RelaxElementFactory._element,
-            'ref': RelaxElementFactory._ref,
         })

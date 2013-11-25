@@ -123,12 +123,12 @@ class Restriction(base.SchemaBase):
 
 
 class Schema(base.SchemaBase):
-    def __init__(self, target_ns, schema_path):
+    def __init__(self, target_ns):
         super(Schema, self).__init__(None)
 
         self.target_ns = target_ns
-        self.path = schema_path
         self.prefix = None
+        self.filename = None
 
         # Containers for elements in the schema.
         self.attributes = []

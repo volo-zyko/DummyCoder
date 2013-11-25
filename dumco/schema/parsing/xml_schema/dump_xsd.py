@@ -398,8 +398,8 @@ def _dump_schema(schema, xml_writer):
                     continue
 
                 xml_writer.add_attribute('namespace', sub_schema.target_ns)
-                xml_writer.add_attribute('schemaLocation' ,
-                                         os.path.basename(sub_schema.path))
+                xml_writer.add_attribute('schemaLocation',
+                                         '{}.xsd'.format(sub_schema.filename))
 
         if schema.simple_types:
             xml_writer.add_comment('Simple Types')
@@ -477,8 +477,7 @@ def dump_xsd(schemata, output_dir):
         shutil.rmtree(output_dir)
 
     for schema in schemata:
-        file_path = os.path.join(output_dir, os.path.basename(schema.path))
-        file_path = '{}.xsd'.format(file_path.rpartition('.')[0])
+        file_path = os.path.join(output_dir, '{}.xsd'.format(schema.filename))
 
         xml_writer = _XmlWriter(file_path)
         xml_writer.attribute_groups = attribute_groups

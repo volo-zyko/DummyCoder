@@ -44,13 +44,18 @@ class XsdSchema(xsd_base.XsdBase):
     def __init__(self, attrs, schema_path):
         super(XsdSchema, self).__init__(attrs)
 
+        self.path = schema_path
+
         self.attributes_qualified = \
             self.attr('attributeFormDefault') == 'qualified'
         self.elements_qualified = \
             self.attr('elementFormDefault') == 'qualified'
 
         self.schema_element = dumco.schema.elements.Schema(
-            self.attr('targetNamespace'), schema_path)
+            self.attr('targetNamespace'))
+        assert schema_path.endswith('.xsd')
+        self.schema_element.filename = \
+            os.path.basename(schema_path).rpartition('.')[0]
 
         self.attributes = {}
         self.attribute_groups = {}

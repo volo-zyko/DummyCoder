@@ -24,7 +24,7 @@ class XsdElementFactory(object):
         self.namer = element_namer
         self.extension = '.xsd'
 
-    def reset(self, element_namer=None):
+    def reset(self):
         self.dispatcher_stack = []
         self.dispatcher = {
             'schema': prv.xsd_schema.xsd_schema,
@@ -107,7 +107,7 @@ class XsdElementFactory(object):
     def finalize_documents(self, all_schemata):
         def included_in_other_schema(schema):
             for included_paths in self.included_schema_paths.itervalues():
-                if schema.schema_element.path in included_paths:
+                if schema.path in included_paths:
                     return True
             return False
 
@@ -363,8 +363,7 @@ class XsdElementFactory(object):
             return (self.namespaces[splitted[0]], splitted[1])
 
     @staticmethod
-    def noop_handler(attrs, parent_element, factory,
-                     schema_path, all_schemata):
+    def noop_handler(attrs, parent_element, factory, schema_path, all_schemata):
         return (parent_element, None)
 
     @staticmethod
