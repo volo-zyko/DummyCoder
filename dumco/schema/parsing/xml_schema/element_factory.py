@@ -65,7 +65,7 @@ class XsdElementFactory(object):
 
         if self.dispatcher is not None:
             xsd_attrs = {}
-            for ((uri, n), value) in attrs.items():
+            for ((uri, name), value) in attrs.items():
                 # XML Schema attributes are always unqualified.
                 if uri is not None:
                     continue
@@ -73,19 +73,17 @@ class XsdElementFactory(object):
                 # This way we make sure that all XSD attributes with QName
                 # value and which we want to process will have correctly
                 # resolved namespace uri.
-                if (n == 'ref' or n == 'type' or n == 'base' or
-                    n == 'substitutionGroup' or n == 'itemType'):
-                    xsd_attrs[n] = self._parse_qname(value)
-                elif n == 'memberTypes':
-                    xsd_attrs[n] = [self._parse_qname(q)
+                if (name == 'ref' or name == 'type' or name == 'base' or
+                    name == 'substitutionGroup' or name == 'itemType'):
+                    xsd_attrs[name] = self._parse_qname(value)
+                elif name == 'memberTypes':
+                    xsd_attrs[name] = [self._parse_qname(q)
                         for q in value.split()]
                 else:
-                    xsd_attrs[n] = value
+                    xsd_attrs[name] = value
 
-            (element, self.dispatcher) = self.dispatcher[name[1]](
+            (self.element, self.dispatcher) = self.dispatcher[name[1]](
                 xsd_attrs, self.element, self, schema_path, all_schemata)
-
-            self.element = element
 
     def finalize_current_element(self, name):
         # Here we don't support anything non-XSD.

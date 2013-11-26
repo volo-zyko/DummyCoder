@@ -3,6 +3,7 @@
 import rng_anyName
 import rng_base
 import rng_choice
+import rng_name
 import rng_nsName
 
 
@@ -12,7 +13,7 @@ def rng_except(attrs, parent_element, factory, schema_path, all_schemata):
     return (excpt, {
         'anyName': rng_anyName.rng_anyName,
         'choice': rng_choice.rng_choice,
-        'name': factory.noot_handler,
+        'name': rng_name.rng_name,
         'nsName': rng_nsName.rng_nsName,
     })
 

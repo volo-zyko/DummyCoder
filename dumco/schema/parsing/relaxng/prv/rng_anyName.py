@@ -5,9 +5,9 @@ import rng_except
 
 
 def rng_anyName(attrs, parent_element, factory, schema_path, all_schemata):
-    anyName = RngAnyName(attrs, schema_path)
+    any_name = RngAnyName(attrs, schema_path)
 
-    return (anyName, {
+    return (any_name, {
         'except': rng_except.rng_except,
     })
 

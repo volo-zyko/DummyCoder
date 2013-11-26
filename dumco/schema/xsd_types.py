@@ -65,5 +65,3 @@ _NATIVE_XSD_TYPE_NAMES = [
 def xsd_builtin_types():
     return {x: base.NativeType(XSD_NAMESPACE, x)
             for x in _NATIVE_XSD_TYPE_NAMES}
-
-

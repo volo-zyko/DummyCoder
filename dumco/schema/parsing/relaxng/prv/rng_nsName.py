@@ -5,13 +5,15 @@ import rng_except
 
 
 def rng_nsName(attrs, parent_element, factory, schema_path, all_schemata):
-    nsName = RngNsName(attrs, schema_path)
+    ns_name = RngNsName(attrs, schema_path, factory)
 
-    return (nsName, {
+    return (ns_name, {
         'except': rng_except.rng_except,
     })
 
 
 class RngNsName(rng_base.RngBase):
-    def __init__(self, attrs, schema_path):
+    def __init__(self, attrs, schema_path, factory):
         super(RngNsName, self).__init__(attrs)
+
+        self.ns = factory.get_ns()
