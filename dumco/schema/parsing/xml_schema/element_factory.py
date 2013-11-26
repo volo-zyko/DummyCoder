@@ -5,6 +5,7 @@ import dumco.schema.checks
 import dumco.schema.elements
 import dumco.schema.enums
 import dumco.schema.uses
+import dumco.schema.xsd_types
 
 import prv.xsd_schema
 
@@ -331,7 +332,7 @@ class XsdElementFactory(object):
             if localname == 'anySimpleType':
                 return dumco.schema.elements.SimpleType.urtype()
             else:
-                return dumco.schema.base.xsd_builtin_types()[localname]
+                return dumco.schema.xsd_types.xsd_builtin_types()[localname]
 
         if uri is None or uri == schema.schema_element.target_ns:
             st = schema.simple_types[localname]
@@ -356,7 +357,7 @@ class XsdElementFactory(object):
         if len(splitted) == 1:
             if (None in self.namespaces and
                 dumco.schema.checks.is_xsd_namespace(self.namespaces[None])):
-                return (dumco.schema.base.XSD_NAMESPACE, qname)
+                return (dumco.schema.xsd_types.XSD_NAMESPACE, qname)
             else:
                 return (None, qname)
         else:

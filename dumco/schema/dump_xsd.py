@@ -8,14 +8,16 @@ import shutil
 import sys
 import xml.sax.saxutils
 
-import dumco.schema.base as base
-import dumco.schema.checks as checks
-import dumco.schema.elements as elements
+import base
+import checks
+import elements
+import xsd_types
 
 
-_XSD_NS = 'xsd'
-_XSD_URI = base.XSD_NAMESPACE
-_XML_NS = 'xml'
+_XSD_PREFIX = 'xsd'
+_XML_PREFIX = 'xml'
+_XSD_NAMESPACE = xsd_types.XSD_NAMESPACE
+_XML_XSD_URI = xsd_types.XML_XSD_URI
 
 
 class _XmlWriter(object):
@@ -24,7 +26,7 @@ class _XmlWriter(object):
     def __init__(self, filename):
         self.indentation = 0
         self.fhandle = None
-        self.namespaces = {_XML_NS: base.XML_NAMESPACE}
+        self.namespaces = {_XML_PREFIX: base.XML_NAMESPACE}
         self.complex_content = []
         self.prev_opened = False
 
@@ -50,37 +52,37 @@ class _XmlWriter(object):
     def _indent(self):
         self.fhandle.write(' ' * self.indentation * 2)
 
-    def open_tag(self, ns, uri, tag):
+    def open_tag(self, prefix, uri, tag):
         if self.prev_opened:
             self.fhandle.write('>\n')
             self.complex_content[-1:] = [True]
         self.complex_content.append(False)
         self.prev_opened = True
         self._indent()
-        self.fhandle.write('<{}:{}'.format(ns, tag))
-        self.define_namespace(ns, uri)
+        self.fhandle.write('<{}:{}'.format(prefix, tag))
+        self.define_namespace(prefix, uri)
         self.indentation += 1
 
-    def close_tag(self, ns, uri, tag):
+    def close_tag(self, prefix, uri, tag):
         self.indentation -= 1
         if self.complex_content[-1]:
             self._indent()
-            self.fhandle.write('</{}:{}>\n'.format(ns, tag))
+            self.fhandle.write('</{}:{}>\n'.format(prefix, tag))
         else:
             self.fhandle.write('/>\n')
         self.complex_content.pop()
         self.prev_opened = False
 
-    def define_namespace(self, ns, uri):
-        if not ns in self.namespaces:
-            self.namespaces[ns] = uri
-            real_ns = '' if ns is None else (':{}'.format(ns))
-            self.fhandle.write(' xmlns{}="{}"'.format(real_ns, uri))
+    def define_namespace(self, prefix, uri):
+        if not prefix in self.namespaces:
+            self.namespaces[prefix] = uri
+            real_prefix = '' if prefix is None else (':{}'.format(prefix))
+            self.fhandle.write(' xmlns{}="{}"'.format(real_prefix, uri))
 
-    def add_attribute(self, name, value, ns=''):
+    def add_attribute(self, name, value, prefix=''):
         esc_value = xml.sax.saxutils.quoteattr(str(value), self.ENTITIES)
-        if ns != '':
-            self.fhandle.write(' {}:{}={}'.format(ns, name, esc_value))
+        if prefix != '':
+            self.fhandle.write(' {}:{}={}'.format(prefix, name, esc_value))
         else:
             self.fhandle.write(' {}={}'.format(name, esc_value))
 
@@ -94,25 +96,23 @@ class _XmlWriter(object):
 
 
 class _TagGuard(object):
-    def __init__(self, tag, writer, ns=_XSD_NS, uri=_XSD_URI):
-        self.ns = ns
+    def __init__(self, tag, writer, prefix=_XSD_PREFIX, uri=_XSD_NAMESPACE):
+        self.prefix = prefix
         self.uri = uri
         self.tag = tag
         self.writer = writer
 
     def __enter__(self):
-        self.writer.open_tag(self.ns, self.uri, self.tag)
+        self.writer.open_tag(self.prefix, self.uri, self.tag)
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.writer.close_tag(self.ns, self.uri, self.tag)
+        self.writer.close_tag(self.prefix, self.uri, self.tag)
 
 
-def _qname(name, own_schema, other_schema, ns=_XSD_NS):
+def _qname(name, own_schema, other_schema, prefix=_XSD_PREFIX):
     if own_schema != other_schema:
-        prefix = ns
-        if own_schema is not None:
-            prefix = own_schema.prefix
-        return '{}:{}'.format(prefix, name)
+        return '{}:{}'.format(
+            own_schema.prefix if own_schema is not None else prefix, name)
     return name
 
 
@@ -282,7 +282,7 @@ def _dump_attribute_use(attr_use, schema, xml_writer):
     with _TagGuard('attribute', xml_writer):
         if checks.is_xml_attribute(attribute):
             xml_writer.add_attribute('ref', _qname(
-                attribute.name, attribute.schema, schema, ns=_XML_NS))
+                attribute.name, attribute.schema, schema, prefix=_XML_PREFIX))
         else:
             _dump_attribute_attributes(attribute, is_attribute_def,
                                        schema, xml_writer)
@@ -318,7 +318,7 @@ def _dump_attribute_attributes(attribute, is_attribute_definition,
                 _qname(attribute.type.name, attribute.type.schema, schema))
     else:
         xml_writer.add_attribute('ref',
-            _qname(attribute.name, attribute.schema, schema, ns=_XSD_NS))
+            _qname(attribute.name, attribute.schema, schema, prefix=_XSD_PREFIX))
 
     if attribute.constraint.fixed:
         assert attribute.constraint.value, \
@@ -394,7 +394,7 @@ def _dump_schema(schema, xml_writer):
             with _TagGuard('import', xml_writer):
                 if sub_schema is None:
                     xml_writer.add_attribute('namespace', base.XML_NAMESPACE)
-                    xml_writer.add_attribute('schemaLocation', base.XML_XSD_URI)
+                    xml_writer.add_attribute('schemaLocation', _XML_XSD_URI)
                     continue
 
                 xml_writer.add_attribute('namespace', sub_schema.target_ns)

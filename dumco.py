@@ -18,7 +18,7 @@ import dumco.schema.oxml_namer
 from dumco.schema.parsing.relaxng.element_factory import RelaxElementFactory
 from dumco.schema.parsing.xml_parser import XmlLoader
 from dumco.schema.parsing.xml_schema.element_factory import XsdElementFactory
-from dumco.schema.parsing.xml_schema.dump_xsd import dump_xsd
+from dumco.schema.dump_xsd import dump_xsd
 
 from dumco.utils.ns_converter import NamespaceConverter
 from dumco.utils.file_utils import PathNotExists

@@ -8,65 +8,8 @@ from dumco.utils.decorators import function_once
 
 # Constants.
 XML_NAMESPACE = 'http://www.w3.org/XML/1998/namespace'
-XML_XSD_URI = 'http://www.w3.org/2001/xml.xsd'
-XSD_NAMESPACE = 'http://www.w3.org/2001/XMLSchema'
 
 UNBOUNDED = sys.maxsize
-
-_NATIVE_XSD_TYPE_NAMES = [
-    # Base
-    'string',
-    'boolean',
-    'decimal',
-    'float',
-    'double',
-    'hexBinary',
-    'base64Binary',
-    'anyURI',
-    'QName',
-    'NOTATION',
-    # Time related
-    'duration',
-    'dateTime',
-    'time',
-    'date',
-    'gYearMonth',
-    'gYear',
-    'gMonthDay',
-    'gDay',
-    'gMonth',
-    # Derived
-    'normalizedString',
-    'token',
-    'language',
-    'NMTOKEN',
-    'NMTOKENS',
-    'Name',
-    'NCName',
-    'ID',
-    'IDREF',
-    'IDREFS',
-    'ENTITY',
-    'ENTITIES',
-    'integer',
-    'nonPositiveInteger',
-    'negativeInteger',
-    'long',
-    'int',
-    'short',
-    'byte',
-    'nonNegativeInteger',
-    'unsignedLong',
-    'unsignedInt',
-    'unsignedShort',
-    'unsignedByte',
-    'positiveInteger',
-]
-
-
-@function_once
-def xsd_builtin_types():
-    return {x: XsdNativeType(x) for x in _NATIVE_XSD_TYPE_NAMES}
 
 
 @function_once
@@ -98,10 +41,11 @@ class SchemaBase(object):
         self.__dict__[name] = value
 
 
-class XsdNativeType(SchemaBase):
-    def __init__(self, name):
-        super(XsdNativeType, self).__init__(None)
+class NativeType(SchemaBase):
+    def __init__(self, uri, name):
+        super(NativeType, self).__init__(None)
 
+        self.uri = uri
         self.name = name
 
 

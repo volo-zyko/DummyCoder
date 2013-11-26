@@ -9,6 +9,7 @@ from dumco.utils.decorators import method_once
 import dumco.schema.checks
 import dumco.schema.elements
 import dumco.schema.namer
+import dumco.schema.xsd_types
 
 import dumco.schema.parsing.xml_parser
 
@@ -135,7 +136,7 @@ class XsdSchema(xsd_base.XsdBase):
                 pass
 
         # Just ignore xml.xsd loading.
-        if location == dumco.schema.base.XML_XSD_URI:
+        if location == dumco.schema.xsd_types.XML_XSD_URI:
             location = None
 
         path = None

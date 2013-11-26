@@ -6,6 +6,7 @@ import dumco.schema.base
 import dumco.schema.checks
 import dumco.schema.elements
 import dumco.schema.uses
+import dumco.schema.xsd_types
 
 import xsd_all
 import xsd_any
@@ -96,7 +97,7 @@ class XsdComplexType(xsd_base.XsdBase):
                     dumco.schema.elements.Sequence(self.schema_element.schema))
 
             self.schema_element.text = dumco.schema.base.SchemaText(
-                dumco.schema.base.xsd_builtin_types()['string'])
+                dumco.schema.xsd_types.xsd_builtin_types()['string'])
 
         _assert_on_duplicate_attributes(attribute_uses, self)
 

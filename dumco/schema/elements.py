@@ -7,6 +7,7 @@ from dumco.utils.decorators import method_once, function_once
 import base
 import namer
 import uses
+import xsd_types
 
 
 class All(base.SchemaBase):
@@ -70,7 +71,7 @@ class ComplexType(base.SchemaBase):
 
         seqpart.term.particles.append(anypart)
         urtype.particle = seqpart
-        urtype.text = base.SchemaText(base.xsd_builtin_types()['string'])
+        urtype.text = base.SchemaText(xsd_types.xsd_builtin_types()['string'])
         urtype.attribute_uses.append(anyattr)
 
         return urtype

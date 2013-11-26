@@ -4,6 +4,7 @@ import base
 import elements
 import enums
 import uses
+import xsd_types
 
 
 def _attribute_count(schema_type):
@@ -14,7 +15,8 @@ def _attribute_count(schema_type):
 
 # General checks.
 def is_xsd_namespace(uri):
-    return uri == base.XSD_NAMESPACE
+    return (uri == xsd_types.XSD_NAMESPACE or
+            uri == xsd_types.XSD_DATATYPES_NAMESPACE)
 
 
 def is_xml_namespace(uri):
@@ -60,12 +62,12 @@ def is_list_type(schema_type):
     return (is_simple_type(schema_type) and schema_type.listitem is not None)
 
 
-def is_xsd_native_type(schema_type):
-    return isinstance(schema_type, base.XsdNativeType)
+def is_native_type(schema_type):
+    return isinstance(schema_type, base.NativeType)
 
 
 def is_primitive_type(schema_type):
-    return (is_xsd_native_type(schema_type) or is_simple_type(schema_type))
+    return (is_native_type(schema_type) or is_simple_type(schema_type))
 
 
 def is_restriction_type(schema_type):
@@ -88,6 +90,11 @@ def is_text_complex_type(schema_type):
 
 def is_union_type(schema_type):
     return (is_simple_type(schema_type) and schema_type.union)
+
+
+def is_xsd_native_type(schema_type):
+    return (isinstance(schema_type, base.NativeType) and
+            is_xsd_namespace(schema_type.uri))
 
 
 # Element checks.
