@@ -6,6 +6,8 @@ import dumco.cxx.base_gendriver
 
 import consumer
 import naming_manager
+import state_cpp
+import state_h
 
 
 class RFilterGenerationDriver(dumco.cxx.base_gendriver.GenerationDriver):
@@ -18,12 +20,20 @@ class RFilterGenerationDriver(dumco.cxx.base_gendriver.GenerationDriver):
         self.context_class_header = context_class_header
         self.nm = naming_manager.NamingManager(ns_converter)
         self.lm = _LocationManager(output_path, ns_converter, self.nm)
+        self.namespaces = {}
 
     def _generate_for_complex_type(self, ct):
+        self.namespaces[ct.schema.target_ns] = \
+            self.nsc.uri_to_namespaces(ct.schema.target_ns)
+
         consumer_coder = consumer.ConsumerCoder(
             self, ct, self.context_class, self.context_class_header)
+        state_h_coder = state_h.StateHeaderCoder(self, ct)
+        state_cpp_coder = state_cpp.StateCppCoder(self, ct)
 
         consumer_coder.generate_code()
+        state_h_coder.generate_code()
+        state_cpp_coder.generate_code()
 
 
 class _LocationManager(object):
@@ -46,9 +56,23 @@ class _LocationManager(object):
         return '{}_{}.h'.format(self._schema_file_prefix(ct.schema),
                                 self.naming.consumer_class(ct))
 
-    def consumer_full_path(self, ct):
-        return os.path.join(self.output_path, self._consumer_file_name(ct))
+    def consumer_header_path(self, ct):
+        return os.path.join(self.output_path, self._consumer_header_name(ct))
 
     def consumer_include_path(self, ct):
-        return '{0}/{1}'.format(self.opts.packageName,
-            self._consumer_file_name(ct))
+        return self._consumer_header_name(ct)
+
+    def _state_header_name(self, ct):
+        return '{}_{}.h'.format(self._schema_file_prefix(ct.schema),
+                                self.naming.state_class(ct))
+
+    def state_header_path(self, ct):
+        return os.path.join(self.output_path, self._state_header_name(ct))
+
+    def state_include_path(self, ct):
+        return self._state_header_name(ct)
+
+    def state_source_path(self, ct):
+        state_file = '{}_{}.cpp'.format(self._schema_file_prefix(ct.schema),
+                                        self.naming.state_class(ct))
+        return os.path.join(self.output_path, state_file)
