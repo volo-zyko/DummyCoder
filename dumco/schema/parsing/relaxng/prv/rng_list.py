@@ -15,7 +15,8 @@ import rng_value
 
 
 def rng_list(attrs, parent_element, factory, schema_path, all_schemata):
-    lst = RngList(attrs, schema_path)
+    lst = RngList(attrs, parent_element, schema_path)
+    parent_element.children.append(lst)
 
     return (lst, {
         'attribute': rng_attribute.rng_attribute,
@@ -40,5 +41,5 @@ def rng_list(attrs, parent_element, factory, schema_path, all_schemata):
 
 
 class RngList(rng_base.RngBase):
-    def __init__(self, attrs, schema_path):
-        super(RngList, self).__init__(attrs)
+    def __init__(self, attrs, parent_element, schema_path):
+        super(RngList, self).__init__(attrs, parent_element)

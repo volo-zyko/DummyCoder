@@ -16,7 +16,8 @@ import rng_value
 
 
 def rng_define(attrs, parent_element, factory, schema_path, all_schemata):
-    define = RngDefine(attrs, schema_path)
+    define = RngDefine(attrs, parent_element, schema_path, factory)
+    parent_element.children.append(define)
 
     return (define, {
         'attribute': rng_attribute.rng_attribute,
@@ -41,5 +42,11 @@ def rng_define(attrs, parent_element, factory, schema_path, all_schemata):
 
 
 class RngDefine(rng_base.RngBase):
-    def __init__(self, attrs, schema_path):
-        super(RngDefine, self).__init__(attrs)
+    def __init__(self, attrs, parent_element, schema_path, factory):
+        super(RngDefine, self).__init__(attrs, parent_element)
+
+        self.name = factory.get_attribute(attrs,  'name')
+
+    def _dump_internals(self, fhandle, indent): # pragma: no cover
+        fhandle.write(' name="{}"'.format(self.name))
+        return super(RngDefine, self)._dump_internals(fhandle, indent)

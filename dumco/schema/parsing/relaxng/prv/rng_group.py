@@ -15,7 +15,8 @@ import rng_value
 
 
 def rng_group(attrs, parent_element, factory, schema_path, all_schemata):
-    group = RngGroup(attrs, schema_path)
+    group = RngGroup(attrs, parent_element, schema_path)
+    parent_element.children.append(group)
 
     return (group, {
         'attribute': rng_attribute.rng_attribute,
@@ -40,5 +41,5 @@ def rng_group(attrs, parent_element, factory, schema_path, all_schemata):
 
 
 class RngGroup(rng_base.RngBase):
-    def __init__(self, attrs, schema_path):
-        super(RngGroup, self).__init__(attrs)
+    def __init__(self, attrs, parent_element, schema_path):
+        super(RngGroup, self).__init__(attrs, parent_element)

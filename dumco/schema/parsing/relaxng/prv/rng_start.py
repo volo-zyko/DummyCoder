@@ -16,7 +16,8 @@ import rng_value
 
 
 def rng_start(attrs, parent_element, factory, schema_path, all_schemata):
-    start = RngStart(attrs, schema_path)
+    start = RngStart(attrs, parent_element, schema_path)
+    parent_element.children.append(start)
 
     return (start, {
         'attribute': rng_attribute.rng_attribute,
@@ -41,5 +42,5 @@ def rng_start(attrs, parent_element, factory, schema_path, all_schemata):
 
 
 class RngStart(rng_base.RngBase):
-    def __init__(self, attrs, schema_path):
-        super(RngStart, self).__init__(attrs)
+    def __init__(self, attrs, parent_element, schema_path):
+        super(RngStart, self).__init__(attrs, parent_element)

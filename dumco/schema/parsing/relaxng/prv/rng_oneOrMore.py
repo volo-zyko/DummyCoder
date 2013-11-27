@@ -15,7 +15,8 @@ import rng_value
 
 
 def rng_oneOrMore(attrs, parent_element, factory, schema_path, all_schemata):
-    one = RngOneOrMore(attrs, schema_path)
+    one = RngOneOrMore(attrs, parent_element, schema_path)
+    parent_element.children.append(one)
 
     return (one, {
         'attribute': rng_attribute.rng_attribute,
@@ -40,5 +41,5 @@ def rng_oneOrMore(attrs, parent_element, factory, schema_path, all_schemata):
 
 
 class RngOneOrMore(rng_base.RngBase):
-    def __init__(self, attrs, schema_path):
-        super(RngOneOrMore, self).__init__(attrs)
+    def __init__(self, attrs, parent_element, schema_path):
+        super(RngOneOrMore, self).__init__(attrs, parent_element)

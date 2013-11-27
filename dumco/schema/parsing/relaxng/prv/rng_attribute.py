@@ -18,7 +18,8 @@ import rng_value
 
 
 def rng_attribute(attrs, parent_element, factory, schema_path, all_schemata):
-    attr = RngAttribute(attrs, schema_path)
+    attr = RngAttribute(attrs, parent_element, schema_path, factory)
+    parent_element.children.append(attr)
 
     return (attr, {
         'anyName': rng_anyName.rng_anyName,
@@ -45,5 +46,19 @@ def rng_attribute(attrs, parent_element, factory, schema_path, all_schemata):
 
 
 class RngAttribute(rng_base.RngBase):
-    def __init__(self, attrs, schema_path):
-        super(RngAttribute, self).__init__(attrs)
+    def __init__(self, attrs, parent_element, schema_path, factory):
+        super(RngAttribute, self).__init__(attrs, parent_element)
+
+        ns = ''
+        try:
+            ns = factory.get_attribute(attrs, 'ns')
+        except LookupError:
+            pass
+
+        try:
+            name = rng_name.RngName({}, parent_element, schema_path, factory)
+            name.text = factory.get_attribute(attrs, 'name')
+            name.ns = ns
+            self.children.append(name)
+        except LookupError:
+            pass

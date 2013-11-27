@@ -1,16 +1,19 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
 import itertools
+import StringIO
 
 import dumco.schema.base
 import dumco.schema.checks
 import dumco.schema.xsd_types
 
 import prv.rng_choice
+import prv.rng_define
 import prv.rng_empty
 import prv.rng_interleave
 import prv.rng_grammar
 import prv.rng_oneOrMore
+import prv.rng_start
 import prv.rng_text
 
 
@@ -109,6 +112,13 @@ class RelaxElementFactory(object):
             self.element.append_text(text)
 
     def finalize_documents(self, all_schemata):
+        stream = StringIO.StringIO()
+        stream.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+        for schema in all_schemata.itervalues():
+            schema.dump(stream, 0)
+        with open('dump.rng', 'w') as f:
+            f.write(stream.getvalue())
+
         result = reduce(lambda acc, g: acc + g.schemata,
                         all_schemata.itervalues(), [])
         result.sort(key=lambda x: x.target_ns)
@@ -160,6 +170,16 @@ class RelaxElementFactory(object):
         return (parent_element, {})
 
     @staticmethod
+    def rng_div(attrs, parent_element, factory,
+                schema_path, all_schemata):
+        return (parent_element, {
+            'define': prv.rng_define.rng_define,
+            'div': factory.rng_div,
+            # 'include': factory.noop_handler,
+            'start': prv.rng_start.rng_start,
+        })
+
+    @staticmethod
     def rng_mixed(attrs, parent_element, factory,
                   schema_path, all_schemata):
         assert attrs.getLength() == 0, 'Unexpected attributes in mixed'
@@ -167,7 +187,8 @@ class RelaxElementFactory(object):
         (interleave, dispatcher) = prv.rng_interleave.rng_interleave(
             {}, parent_element, factory, schema_path, all_schemata)
 
-        interleave.children.append(prv.rng_text.RngText({}, schema_path))
+        interleave.children.append(
+            prv.rng_text.RngText({}, interleave, schema_path))
 
         return (interleave, dispatcher)
 
@@ -179,7 +200,8 @@ class RelaxElementFactory(object):
         (choice, dispatcher) = prv.rng_choice.rng_choice(
             {}, parent_element, factory, schema_path, all_schemata)
 
-        choice.children.append(prv.rng_empty.RngEmpty({}, schema_path))
+        choice.children.append(
+            prv.rng_empty.RngEmpty({}, choice, schema_path))
 
         return (choice, dispatcher)
 
@@ -191,10 +213,17 @@ class RelaxElementFactory(object):
         (choice, _) = prv.rng_choice.rng_choice(
             {}, parent_element, factory, schema_path, all_schemata)
 
+        choice.children.append(
+            prv.rng_empty.RngEmpty({}, choice, schema_path))
+
         (one, dispatcher) = prv.rng_oneOrMore.rng_oneOrMore(
             {}, choice, factory, schema_path, all_schemata)
 
-        choice.children.append(choice)
-        choice.children.append(prv.rng_empty.RngEmpty({}, schema_path))
-
         return (one, dispatcher)
+
+    def parse_qname(self, qname):
+        splitted = qname.split(':')
+        if len(splitted) == 1:
+            return (None, qname)
+        else:
+            return (self.namespaces[splitted[0]], splitted[1])
