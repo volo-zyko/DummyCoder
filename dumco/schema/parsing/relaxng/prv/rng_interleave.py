@@ -14,8 +14,8 @@ import rng_text
 import rng_value
 
 
-def rng_interleave(attrs, parent_element, factory, schema_path, all_schemata):
-    interleave = RngInterleave(attrs, parent_element, schema_path)
+def rng_interleave(attrs, parent_element, factory, grammar_path, all_grammars):
+    interleave = RngInterleave(attrs, parent_element, grammar_path)
     parent_element.children.append(interleave)
 
     return (interleave, {
@@ -41,5 +41,5 @@ def rng_interleave(attrs, parent_element, factory, schema_path, all_schemata):
 
 
 class RngInterleave(rng_base.RngBase):
-    def __init__(self, attrs, parent_element, schema_path):
+    def __init__(self, attrs, parent_element, grammar_path):
         super(RngInterleave, self).__init__(attrs, parent_element)

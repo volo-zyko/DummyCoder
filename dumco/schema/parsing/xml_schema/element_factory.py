@@ -51,17 +51,17 @@ class XsdElementFactory(object):
             if prefix > self.all_namespace_prefices.get(uri, ''):
                 self.all_namespace_prefices[uri] = prefix
 
-    def new_element(self, name, attrs, schema_path, all_schemata):
+    def new_element(self, elem_name, attrs, schema_path, all_schemata):
         # Here we don't support anything non-XSD.
-        if not dumco.schema.checks.is_xsd_namespace(name[0]):
+        if not dumco.schema.checks.is_xsd_namespace(elem_name[0]):
             return
 
         self.dispatcher_stack.append(self.dispatcher)
         self.element_stack.append(self.element)
 
-        assert self.dispatcher is None or name[1] in self.dispatcher, \
+        assert self.dispatcher is None or elem_name[1] in self.dispatcher, \
             '"{}" is not supported in {}'.format(
-                name[1], self.element.__class__.__name__)
+                elem_name[1], self.element.__class__.__name__)
 
         if self.dispatcher is not None:
             xsd_attrs = {}
@@ -82,7 +82,7 @@ class XsdElementFactory(object):
                 else:
                     xsd_attrs[name] = value
 
-            (self.element, self.dispatcher) = self.dispatcher[name[1]](
+            (self.element, self.dispatcher) = self.dispatcher[elem_name[1]](
                 xsd_attrs, self.element, self, schema_path, all_schemata)
 
     def finalize_current_element(self, name):
@@ -110,8 +110,7 @@ class XsdElementFactory(object):
                     return True
             return False
 
-        sorted_all_schemata = sorted([schema for schema in
-                                      all_schemata.itervalues()],
+        sorted_all_schemata = sorted(all_schemata.values(),
                                      key=lambda s: s.schema_element.target_ns)
 
         # Set schema prefices and original imports which are necessary during

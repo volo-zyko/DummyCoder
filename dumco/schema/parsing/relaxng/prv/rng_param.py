@@ -3,18 +3,18 @@
 import rng_base
 
 
-def rng_param(attrs, parent_element, factory, schema_path, all_schemata):
-    param = RngParam(attrs, parent_element, schema_path, factory)
+def rng_param(attrs, parent_element, factory, grammar_path, all_grammars):
+    param = RngParam(attrs, parent_element, grammar_path, factory)
     parent_element.children.append(param)
 
     return (param, {})
 
 
 class RngParam(rng_base.RngBase):
-    def __init__(self, attrs, parent_element, schema_path, factory):
+    def __init__(self, attrs, parent_element, grammar_path, factory):
         super(RngParam, self).__init__(attrs, parent_element)
 
-        self.name = factory.get_attribute(attrs,  'name')
+        self.name = factory.get_attribute(attrs, 'name').strip()
 
     def append_text(self, text):
         self.text += text

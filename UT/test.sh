@@ -92,13 +92,18 @@ function single_run()
 
     case "$mode" in
         dumpxsd)
-            out="${out}${3}${4}"
+            syntax="$3"
+            namer="$4"
+
+            out="${out}-${syntax}-${namer}"
 
             cmd=("$run")
+            cmd+=('-s')
+            cmd+=("$syntax")
+            cmd+=('-n')
+            cmd+=("$namer")
             cmd+=('-i')
             cmd+=("$inp")
-            cmd+=("$3")
-            cmd+=("$4")
             cmd+=("$mode")
             cmd+=('-o')
             cmd+=("$out")
@@ -122,7 +127,7 @@ function single_run()
     echo "### ${cmd[@]}"
     $COVERAGE_APPEND_COMMAND "${cmd[@]}"
 
-    if [ "$mode" = dumpxsd ]; then
+    if [ "$mode" = dumpxsd -a "$syntax" != 'rng' ]; then
         again="$BASE_OUTPUT_DIR/again"
 
         test -d "$again" && rm -rf "$again"
@@ -170,21 +175,28 @@ $COVERAGE_ERASE_COMMAND
 $COVERAGE_BEGIN_COMMAND "$PWD/dumco.py" -h
 $COVERAGE_APPEND_COMMAND "$PWD/dumco.py" --version
 
-opts=('-n oxml')
+syntaxes=('rng')
 if [ -n "$COVERAGE_BEGIN_COMMAND" ]; then
-    opts+=('-n fb2')
+    syntaxes+=('xsd')
+fi
+namers=('oxml')
+if [ -n "$COVERAGE_BEGIN_COMMAND" ]; then
+    namers+=('fb2')
 fi
 
-for opt in "${opts[@]}"
+for syntax in "${syntaxes[@]}"
 do
-    echo '###'
-    echo "### Doing schema dump tests for '$opt'"
-    echo '###'
-    find "$PWD/UT/schemata" -mindepth 1 -maxdepth 1 -type d | while read dir
+    for namer in "${namers[@]}"
     do
-        if [ -n "$(find $dir -maxdepth 1 -name '*.xsd')" ]; then
-            single_run "$dir" dumpxsd $opt
-        fi
+        echo '###'
+        echo "### Doing schema dump tests for syntax='$syntax' with namer='$namer'"
+        echo '###'
+        find "$PWD/UT/schemata" -mindepth 1 -maxdepth 1 -type d | while read dir
+        do
+            if [ -n "$(find $dir -maxdepth 1 -name "*.$syntax")" ]; then
+                single_run "$dir" dumpxsd "$syntax" "$namer"
+            fi
+        done
     done
 done
 

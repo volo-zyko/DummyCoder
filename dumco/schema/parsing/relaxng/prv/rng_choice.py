@@ -17,8 +17,8 @@ import rng_text
 import rng_value
 
 
-def rng_choice(attrs, parent_element, factory, schema_path, all_schemata):
-    choice = RngChoice(attrs, parent_element, schema_path)
+def rng_choice(attrs, parent_element, factory, grammar_path, all_grammars):
+    choice = RngChoice(attrs, parent_element, grammar_path)
     parent_element.children.append(choice)
 
     return (choice, {
@@ -47,5 +47,5 @@ def rng_choice(attrs, parent_element, factory, schema_path, all_schemata):
 
 
 class RngChoice(rng_base.RngBase):
-    def __init__(self, attrs, parent_element, schema_path):
+    def __init__(self, attrs, parent_element, grammar_path):
         super(RngChoice, self).__init__(attrs, parent_element)

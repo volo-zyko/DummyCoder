@@ -23,6 +23,13 @@ class RngBase(object):
                 'Setting non-existent attribute'
         self.__dict__[name] = value
 
+    def finalize_children(self, factory):
+        pass
+
+    def finalize(self, grammar, all_schemata, factory):
+        for c in self.children:
+            c.finalize(grammar, all_schemata, factory)
+
     def dump(self, fhandle, indent): # pragma: no cover
         tag = self.__class__.__name__[3:]
         tag = tag[0].lower() + tag[1:]

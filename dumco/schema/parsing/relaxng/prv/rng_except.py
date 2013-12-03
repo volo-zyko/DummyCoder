@@ -7,8 +7,8 @@ import rng_name
 import rng_nsName
 
 
-def rng_except(attrs, parent_element, factory, schema_path, all_schemata):
-    excpt = RngExcept(attrs, parent_element, schema_path)
+def rng_except(attrs, parent_element, factory, grammar_path, all_grammars):
+    excpt = RngExcept(attrs, parent_element, grammar_path)
     parent_element.children.append(excpt)
 
     return (excpt, {
@@ -20,5 +20,5 @@ def rng_except(attrs, parent_element, factory, schema_path, all_schemata):
 
 
 class RngExcept(rng_base.RngBase):
-    def __init__(self, attrs, parent_element, schema_path):
+    def __init__(self, attrs, parent_element, grammar_path):
         super(RngExcept, self).__init__(attrs, parent_element)

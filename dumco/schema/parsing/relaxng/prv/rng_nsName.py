@@ -4,8 +4,8 @@ import rng_base
 import rng_except
 
 
-def rng_nsName(attrs, parent_element, factory, schema_path, all_schemata):
-    ns_name = RngNsName(attrs, parent_element, schema_path, factory)
+def rng_nsName(attrs, parent_element, factory, grammar_path, all_grammars):
+    ns_name = RngNsName(attrs, parent_element, grammar_path, factory)
     parent_element.children.append(ns_name)
 
     return (ns_name, {
@@ -14,7 +14,7 @@ def rng_nsName(attrs, parent_element, factory, schema_path, all_schemata):
 
 
 class RngNsName(rng_base.RngBase):
-    def __init__(self, attrs, parent_element, schema_path, factory):
+    def __init__(self, attrs, parent_element, grammar_path, factory):
         super(RngNsName, self).__init__(attrs, parent_element)
 
         self.ns = factory.get_ns()

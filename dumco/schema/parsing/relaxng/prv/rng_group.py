@@ -14,8 +14,8 @@ import rng_text
 import rng_value
 
 
-def rng_group(attrs, parent_element, factory, schema_path, all_schemata):
-    group = RngGroup(attrs, parent_element, schema_path)
+def rng_group(attrs, parent_element, factory, grammar_path, all_grammars):
+    group = RngGroup(attrs, parent_element, grammar_path)
     parent_element.children.append(group)
 
     return (group, {
@@ -41,5 +41,5 @@ def rng_group(attrs, parent_element, factory, schema_path, all_schemata):
 
 
 class RngGroup(rng_base.RngBase):
-    def __init__(self, attrs, parent_element, schema_path):
+    def __init__(self, attrs, parent_element, grammar_path):
         super(RngGroup, self).__init__(attrs, parent_element)

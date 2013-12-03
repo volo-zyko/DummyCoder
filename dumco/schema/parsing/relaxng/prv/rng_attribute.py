@@ -17,8 +17,8 @@ import rng_text
 import rng_value
 
 
-def rng_attribute(attrs, parent_element, factory, schema_path, all_schemata):
-    attr = RngAttribute(attrs, parent_element, schema_path, factory)
+def rng_attribute(attrs, parent_element, factory, grammar_path, all_grammars):
+    attr = RngAttribute(attrs, parent_element, grammar_path, factory)
     parent_element.children.append(attr)
 
     return (attr, {
@@ -46,19 +46,20 @@ def rng_attribute(attrs, parent_element, factory, schema_path, all_schemata):
 
 
 class RngAttribute(rng_base.RngBase):
-    def __init__(self, attrs, parent_element, schema_path, factory):
+    def __init__(self, attrs, parent_element, grammar_path, factory):
         super(RngAttribute, self).__init__(attrs, parent_element)
 
-        ns = ''
         try:
             ns = factory.get_attribute(attrs, 'ns')
         except LookupError:
-            pass
+            ns = ''
 
+        factory.ns_attribute_stack.append(ns)
         try:
-            name = rng_name.RngName({}, parent_element, schema_path, factory)
-            name.text = factory.get_attribute(attrs, 'name')
-            name.ns = ns
+            name = rng_name.RngName({}, parent_element,
+                factory.get_attribute(attrs, 'name').strip(), factory)
+
             self.children.append(name)
         except LookupError:
             pass
+        factory.ns_attribute_stack.pop()

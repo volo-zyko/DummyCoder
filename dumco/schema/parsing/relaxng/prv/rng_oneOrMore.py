@@ -14,8 +14,8 @@ import rng_text
 import rng_value
 
 
-def rng_oneOrMore(attrs, parent_element, factory, schema_path, all_schemata):
-    one = RngOneOrMore(attrs, parent_element, schema_path)
+def rng_oneOrMore(attrs, parent_element, factory, grammar_path, all_grammars):
+    one = RngOneOrMore(attrs, parent_element, grammar_path)
     parent_element.children.append(one)
 
     return (one, {
@@ -41,5 +41,5 @@ def rng_oneOrMore(attrs, parent_element, factory, schema_path, all_schemata):
 
 
 class RngOneOrMore(rng_base.RngBase):
-    def __init__(self, attrs, parent_element, schema_path):
+    def __init__(self, attrs, parent_element, grammar_path):
         super(RngOneOrMore, self).__init__(attrs, parent_element)

@@ -6,6 +6,7 @@ import rng_choice
 import rng_data
 import rng_element
 import rng_empty
+import rng_grammar
 import rng_group
 import rng_interleave
 import rng_list
@@ -15,9 +16,12 @@ import rng_text
 import rng_value
 
 
-def rng_start(attrs, parent_element, factory, schema_path, all_schemata):
-    start = RngStart(attrs, parent_element, schema_path)
-    parent_element.children.append(start)
+def rng_start(attrs, parent_element, factory, grammar_path, all_grammars):
+    assert isinstance(parent_element, rng_grammar.RngGrammar), \
+        'Start only expected to be in grammar'
+
+    start = RngStart(attrs, parent_element, grammar_path, factory)
+    start = parent_element.add_start(start, grammar_path)
 
     return (start, {
         'attribute': rng_attribute.rng_attribute,
@@ -42,5 +46,10 @@ def rng_start(attrs, parent_element, factory, schema_path, all_schemata):
 
 
 class RngStart(rng_base.RngBase):
-    def __init__(self, attrs, parent_element, schema_path):
+    def __init__(self, attrs, parent_element, grammar_path, factory):
         super(RngStart, self).__init__(attrs, parent_element)
+
+        try:
+            self.combine = factory.get_attribute(attrs, 'combine').strip()
+        except LookupError:
+            self.combine = ''

@@ -6,6 +6,7 @@ import rng_choice
 import rng_data
 import rng_element
 import rng_empty
+import rng_grammar
 import rng_group
 import rng_interleave
 import rng_list
@@ -15,9 +16,12 @@ import rng_text
 import rng_value
 
 
-def rng_define(attrs, parent_element, factory, schema_path, all_schemata):
-    define = RngDefine(attrs, parent_element, schema_path, factory)
-    parent_element.children.append(define)
+def rng_define(attrs, parent_element, factory, grammar_path, all_grammars):
+    assert isinstance(parent_element, rng_grammar.RngGrammar), \
+        'Define only expected to be in grammar'
+
+    define = RngDefine(attrs, parent_element, grammar_path, factory)
+    define = parent_element.add_define(define, grammar_path)
 
     return (define, {
         'attribute': rng_attribute.rng_attribute,
@@ -42,10 +46,21 @@ def rng_define(attrs, parent_element, factory, schema_path, all_schemata):
 
 
 class RngDefine(rng_base.RngBase):
-    def __init__(self, attrs, parent_element, schema_path, factory):
+    def __init__(self, attrs, parent_element, grammar_path, factory):
         super(RngDefine, self).__init__(attrs, parent_element)
 
-        self.name = factory.get_attribute(attrs,  'name')
+        self.finalized = False
+
+        self.name = factory.get_attribute(attrs, 'name').strip()
+        try:
+            self.combine = factory.get_attribute(attrs, 'combine').strip()
+        except LookupError:
+            self.combine = ''
+
+    def finalize(self, grammar, all_schemata, factory):
+        if not self.finalized:
+            self.finalized = True
+            super(RngDefine, self).finalize(grammar, all_schemata, factory)
 
     def _dump_internals(self, fhandle, indent): # pragma: no cover
         fhandle.write(' name="{}"'.format(self.name))

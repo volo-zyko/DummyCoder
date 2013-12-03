@@ -1,10 +1,12 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
 import itertools
+import os.path
 import StringIO
 
 import dumco.schema.base
 import dumco.schema.checks
+import dumco.schema.elements
 import dumco.schema.xsd_types
 
 import prv.rng_choice
@@ -61,7 +63,7 @@ class RelaxElementFactory(object):
             if prefix > self.all_namespace_prefices.get(uri, ''):
                 self.all_namespace_prefices[uri] = prefix
 
-    def new_element(self, name, attrs, schema_path, all_schemata):
+    def new_element(self, name, attrs, schema_path, all_grammars):
         self.element_stack.append(self.element)
 
         # Here we don't support anything non-RelaxNG.
@@ -88,14 +90,17 @@ class RelaxElementFactory(object):
 
         if self.dispatcher is not None:
             (self.element, self.dispatcher) = self.dispatcher[name[1]](
-                attrs, self.element, self, schema_path, all_schemata)
+                attrs, self.element, self, schema_path, all_grammars)
 
     def finalize_current_element(self, name):
-        self.element = self.element_stack.pop()
-
         # Here we don't support anything non-RelaxNG.
         if name[0] != RNG_NAMESPACE:
+            self.element = self.element_stack.pop()
             return
+        else:
+            self.element.finalize_children(self)
+
+            self.element = self.element_stack.pop()
 
         self.dispatcher = self.dispatcher_stack.pop()
         self.datatypes_stack.pop()
@@ -111,38 +116,32 @@ class RelaxElementFactory(object):
         if self.element is not None:
             self.element.append_text(text)
 
-    def finalize_documents(self, all_schemata):
-        stream = StringIO.StringIO()
-        stream.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-        for schema in all_schemata.itervalues():
-            schema.dump(stream, 0)
-        with open('dump.rng', 'w') as f:
-            f.write(stream.getvalue())
+    def finalize_documents(self, all_grammars):
+        all_schemata = []
+        for (uri, prefix) in self.all_namespace_prefices.iteritems():
+            schema = dumco.schema.elements.Schema(uri)
+            schema.set_prefix(self.all_namespace_prefices)
+            schema.filename = schema.prefix
 
-        result = reduce(lambda acc, g: acc + g.schemata,
-                        all_schemata.itervalues(), [])
-        result.sort(key=lambda x: x.target_ns)
-        return result
+            all_schemata.append(schema)
 
-        # sorted_all_schemata = sorted([schema for schema in
-        #                               all_schemata.itervalues()],
-        #                              key=lambda s: s.schema_element.target_ns)
+        sorted_all_grammars = sorted(all_grammars.values(),
+                                     key=lambda g: g.grammar_path)
 
-        # for schema in sorted_all_schemata:
-        #     schema.set_imports(all_schemata)
+        for grammar in sorted_all_grammars:
+            grammar.finalize(grammar, all_schemata, self)
 
-            # if self.all_named_ns.has_key(schema.target_ns):
-            #     schema.set_namespace(self.all_named_ns[schema.target_ns],
-            #                          schema.target_ns)
+        if True: # pragma: no cover
+            stream = StringIO.StringIO()
+            stream.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+            for grammar in all_grammars.itervalues():
+                grammar.dump(stream, 0)
+                with open(os.path.basename(grammar.grammar_path), 'w') as f:
+                    f.write(stream.getvalue())
 
-        # for schema in sorted_all_schemata:
-        #     schema.finalize(all_schemata, self)
-
-        # for schema in sorted_all_schemata:
-        #     schema.cleanup()
-        # return [schema.schema_element
-        #         for schema in sorted_all_schemata
-        #         if not included_in_other_schema(schema)]
+        all_schemata = filter(lambda s: not _is_schema_empty(s), all_schemata)
+        all_schemata.sort(key=lambda s: s.target_ns)
+        return all_schemata
 
     def get_datatypes_uri(self):
         found = itertools.dropwhile(lambda x: x is None,
@@ -166,12 +165,12 @@ class RelaxElementFactory(object):
 
     @staticmethod
     def noop_handler(attrs, parent_element, factory,
-                     schema_path, all_schemata):
+                     schema_path, all_grammars):
         return (parent_element, {})
 
     @staticmethod
     def rng_div(attrs, parent_element, factory,
-                schema_path, all_schemata):
+                schema_path, all_grammars):
         return (parent_element, {
             'define': prv.rng_define.rng_define,
             'div': factory.rng_div,
@@ -181,11 +180,11 @@ class RelaxElementFactory(object):
 
     @staticmethod
     def rng_mixed(attrs, parent_element, factory,
-                  schema_path, all_schemata):
+                  schema_path, all_grammars):
         assert attrs.getLength() == 0, 'Unexpected attributes in mixed'
 
         (interleave, dispatcher) = prv.rng_interleave.rng_interleave(
-            {}, parent_element, factory, schema_path, all_schemata)
+            {}, parent_element, factory, schema_path, all_grammars)
 
         interleave.children.append(
             prv.rng_text.RngText({}, interleave, schema_path))
@@ -194,11 +193,11 @@ class RelaxElementFactory(object):
 
     @staticmethod
     def rng_optional(attrs, parent_element, factory,
-                     schema_path, all_schemata):
+                     schema_path, all_grammars):
         assert attrs.getLength() == 0, 'Unexpected attributes in optional'
 
         (choice, dispatcher) = prv.rng_choice.rng_choice(
-            {}, parent_element, factory, schema_path, all_schemata)
+            {}, parent_element, factory, schema_path, all_grammars)
 
         choice.children.append(
             prv.rng_empty.RngEmpty({}, choice, schema_path))
@@ -207,17 +206,17 @@ class RelaxElementFactory(object):
 
     @staticmethod
     def rng_zeroOrMore(attrs, parent_element, factory,
-                       schema_path, all_schemata):
+                       schema_path, all_grammars):
         assert attrs.getLength() == 0, 'Unexpected attributes in zeroOrMore'
 
         (choice, _) = prv.rng_choice.rng_choice(
-            {}, parent_element, factory, schema_path, all_schemata)
+            {}, parent_element, factory, schema_path, all_grammars)
 
         choice.children.append(
             prv.rng_empty.RngEmpty({}, choice, schema_path))
 
         (one, dispatcher) = prv.rng_oneOrMore.rng_oneOrMore(
-            {}, choice, factory, schema_path, all_schemata)
+            {}, choice, factory, schema_path, all_grammars)
 
         return (one, dispatcher)
 
@@ -227,3 +226,7 @@ class RelaxElementFactory(object):
             return (None, qname)
         else:
             return (self.namespaces[splitted[0]], splitted[1])
+
+def _is_schema_empty(schema):
+    return (not schema.attributes and not schema.complex_types and
+            not schema.elements and not schema.simple_types)
