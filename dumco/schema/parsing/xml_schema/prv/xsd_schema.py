@@ -2,7 +2,6 @@
 
 import os.path
 import StringIO
-import xml.dom.minidom
 
 from dumco.utils.decorators import method_once
 
@@ -122,29 +121,13 @@ class XsdSchema(xsd_base.XsdBase):
         schema_element.attributes.sort(key=lambda a: a.name)
 
     @staticmethod
-    def _get_schema_location(attrs_or_node, factory, schema_path):
-        location = None
-
-        if isinstance(attrs_or_node, xml.dom.minidom.Element):
-            if attrs_or_node.hasAttribute('schemaLocation'):
-                location = attrs_or_node.getAttribute('schemaLocation')
-        else:
-            try:
-                location = factory.get_attribute(attrs_or_node,
-                                                 'schemaLocation')
-            except LookupError:
-                pass
-
-        # Just ignore xml.xsd loading.
-        if location == dumco.schema.xsd_types.XML_XSD_URI:
+    def _get_schema_location(attrs, factory, schema_path):
+        try:
+            location = factory.get_attribute(attrs, 'schemaLocation')
+        except LookupError:
             location = None
 
-        path = None
-        if location is not None:
-            path = os.path.realpath(
-                os.path.join(os.path.dirname(schema_path), location))
-
-        return path
+        return _location2path(location, schema_path)
 
     @staticmethod
     def xsd_import(attrs, parent_element, factory,
@@ -178,7 +161,8 @@ class XsdSchema(xsd_base.XsdBase):
                 'File {} does not exist'.format(new_schema_path)
 
             # Restart parsing with a new xsd.
-            xsd_root = _include_xsds(schema_path, schema_path, factory)
+            include_logic = _XsdIncludeLogic(schema_path, factory)
+            xsd_root = include_logic.include_xml(schema_path)
             all_schemata[schema_path] = None
             factory.reset()
 
@@ -190,53 +174,50 @@ class XsdSchema(xsd_base.XsdBase):
         })
 
 
-def _include_xsds(schema_path, curr_path, factory):
-    def is_schema_node(node, name):
+class _XsdIncludeLogic(dumco.schema.parsing.xml_parser.IncludeLogic):
+    def _is_xsd_node(self, node, name):
         return (node.nodeType == node.ELEMENT_NODE and
-            dumco.schema.checks.is_xsd_namespace(node.namespaceURI) and
-            node.localName == name)
+                dumco.schema.checks.is_xsd_namespace(node.namespaceURI) and
+                node.localName == name)
 
-    orig_dom = xml.dom.minidom.parse(curr_path)
-    orig_root = orig_dom.documentElement
+    def _is_root_node(self, node):
+        return self._is_xsd_node(node, 'schema')
 
-    assert is_schema_node(orig_root, 'schema'), 'Not a schema document'
+    def _is_include_node(self, node):
+        return self._is_xsd_node(node, 'include')
 
-    for n in list(orig_root.childNodes):
-        if not is_schema_node(n, 'include'):
-            continue
+    def _get_included_path(self, node, curr_path):
+        if node.hasAttribute('schemaLocation'):
+            location = node.getAttribute('schemaLocation')
 
-        n_path = XsdSchema._get_schema_location(n, factory, curr_path)
-        if n_path is None:
-            continue
+        return _location2path(location, curr_path)
 
-        orig_root.removeChild(n)
+    def _copy_included(self, including_dom, include_node,
+                       included_root, included_path):
+        including_root = including_dom.documentElement
 
-        included_paths = \
-            factory.included_schema_paths.setdefault(schema_path, set())
-        if n_path in factory.included_schema_paths or n_path in included_paths:
-            continue
-        included_paths.add(n_path)
+        for node in included_root.childNodes:
+            assert not self._is_include_node(node)
 
-        n_dom = _include_xsds(schema_path, n_path, factory)
-        n_root = n_dom.documentElement
+            new_node = including_dom.importNode(node, True)
 
-        # Copy components from included xsd to including xsd.
-        for m in n_root.childNodes:
-            assert not is_schema_node(m, 'include')
+            if self._is_xsd_node(node, 'import'):
+                node_path = self._get_included_path(node, included_path)
+                new_node.setAttribute('schemaLocation', node_path)
 
-            m_new = orig_dom.importNode(m, True)
+            including_root.insertBefore(new_node, include_node)
 
-            if is_schema_node(m, 'import'):
-                m_path = XsdSchema._get_schema_location(m, factory, n_path)
-                m_new.setAttribute('schemaLocation', m_path)
+        including_root.removeChild(include_node)
 
-            orig_root.appendChild(m_new)
 
-        # Copy namespace declarations.
-        for i in xrange(0, n_root.attributes.length):
-            a = n_root.attributes.item(i)
-            if (a.name.startswith('xmlns:') and
-                not orig_root.hasAttribute(a.name)):
-                orig_root.setAttribute(a.name, a.value)
+def _location2path(location, schema_path):
+    # Just ignore xml.xsd loading.
+    if location == dumco.schema.xsd_types.XML_XSD_URI:
+        location = None
 
-    return orig_dom
+    path = None
+    if location is not None:
+        path = os.path.realpath(
+            os.path.join(os.path.dirname(schema_path), location))
+
+    return path

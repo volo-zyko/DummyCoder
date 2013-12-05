@@ -1,9 +1,10 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
 from __future__ import print_function
-import collections
 
+import collections
 import os.path
+import xml.dom.minidom
 import xml.sax
 import xml.sax.handler
 
@@ -100,3 +101,68 @@ class XmlLoader(object):
 class ParseRestart(BaseException):
     def __init__(self, stream):
         self.stream = stream
+
+
+class IncludeLogic(object):
+    def __init__(self, root_path, element_factory):
+        self.root_path = root_path
+        self.element_factory = element_factory
+        self.element_factory_included_paths = \
+            element_factory.included_schema_paths.setdefault(root_path, set())
+
+    def _is_root_node(self, node): # pragma: no cover
+        return False
+
+    def _is_include_node(self, node): # pragma: no cover
+        return False
+
+    def _get_included_path(self, node, curr_path): # pragma: no cover
+        return None
+
+    def _copy_included(self, including_dom, include_node,
+                       included_root, included_path): # pragma: no cover
+        assert False
+
+    def include_xml(self, curr_path):
+        orig_dom = xml.dom.minidom.parse(curr_path)
+        orig_root = orig_dom.documentElement
+
+        assert self._is_root_node(orig_root), 'Root element is not recognized'
+
+        for node in list(orig_root.childNodes):
+            if not self._is_include_node(node):
+                continue
+
+            node_path = self._get_included_path(node, curr_path)
+            if node_path is None:
+                continue
+
+            assert os.path.isfile(node_path), \
+                'File {} does not exist'.format(node_path)
+
+            if (node_path in self.element_factory.included_schema_paths or
+                node_path in self.element_factory_included_paths):
+                orig_root.removeChild(node)
+                continue
+            self.element_factory_included_paths.add(node_path)
+
+            new_dom = self.include_xml(node_path)
+            new_root = new_dom.documentElement
+
+            # Copy namespace declarations.
+            for i in xrange(0, new_root.attributes.length):
+                a = new_root.attributes.item(i)
+                if not a.name.startswith('xmlns'):
+                    continue
+
+                orig_a = orig_root.getAttribute(a.name)
+                assert (orig_a == '' or orig_a == a.value), \
+                    '{} in included and including document are {} and ' \
+                    '{} correspondingly'.format(a.name, a.value, orig_a)
+
+                orig_root.setAttribute(a.name, a.value)
+
+            # Copy components from included to including.
+            self._copy_included(orig_dom, node, new_root, node_path)
+
+        return orig_dom

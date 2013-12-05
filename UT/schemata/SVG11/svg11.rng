@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+
+RELAX NG Schema on SVG 1.1
+
+See COPYING for the status of this software.
+Yutaka Furubayashi (Poka-Poka Dream Factory) <info@yupotan.sppd.ne.jp>
+
+-->
+
+<grammar xmlns="http://relaxng.org/ns/structure/1.0" ns="http://www.w3.org/2000/svg">
+
+<!-- datatypes -->
+
+<include href="parts/svg-datatypes.rng"/>
+
+<!-- attriutes -->
+
+<include href="parts/svg-default-attrib.rng"/>
+<include href="parts/svg-core-attrib.rng"/>
+<include href="parts/svg-viewport-attrib.rng"/>
+<include href="parts/svg-paint-attrib.rng"/>
+<include href="parts/svg-opacity-attrib.rng"/>
+<include href="parts/svg-graphics-attrib.rng"/>
+<include href="parts/svg-docevents-attrib.rng"/>
+<include href="parts/svg-graphevents-attrib.rng"/>
+<include href="parts/svg-animevents-attrib.rng"/>
+<include href="parts/svg-xlink-attrib.rng"/>
+<include href="parts/svg-extresources-attrib.rng"/>
+
+<!-- elements -->
+
+<include href="parts/svg-structure.rng"/>
+<include href="parts/svg-conditional.rng"/>
+<include href="parts/svg-image.rng"/>
+<include href="parts/svg-style.rng"/>
+<include href="parts/svg-shape.rng"/>
+<include href="parts/svg-text.rng"/>
+<include href="parts/svg-marker.rng"/>
+<include href="parts/svg-profile.rng"/>
+<include href="parts/svg-gradient.rng"/>
+<include href="parts/svg-pattern.rng"/>
+<include href="parts/svg-clip.rng"/>
+<include href="parts/svg-mask.rng"/>
+<include href="parts/svg-filter.rng"/>
+<include href="parts/svg-cursor.rng"/>
+<include href="parts/svg-hyperlink.rng"/>
+<include href="parts/svg-view.rng"/>
+<include href="parts/svg-script.rng"/>
+<include href="parts/svg-animation.rng"/>
+<include href="parts/svg-font.rng"/>
+<include href="parts/svg-extensibility.rng"/>
+
+</grammar>

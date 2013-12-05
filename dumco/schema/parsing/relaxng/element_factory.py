@@ -7,6 +7,7 @@ import StringIO
 import dumco.schema.base
 import dumco.schema.checks
 import dumco.schema.elements
+import dumco.schema.rng_types
 import dumco.schema.xsd_types
 
 import prv.rng_choice
@@ -26,6 +27,9 @@ class RelaxElementFactory(object):
     def __init__(self, element_namer, extension):
         # Reset internals of this factory.
         self.reset()
+
+        # These internals should not be reset.
+        self.included_schema_paths = {}
 
         # All prefices encountered during schemata loading.
         self.all_namespace_prefices = {dumco.schema.base.XML_NAMESPACE: 'xml'}
@@ -156,7 +160,7 @@ class RelaxElementFactory(object):
     def builtin_types(self, uri):
         if dumco.schema.checks.is_xsd_namespace(uri):
             return dumco.schema.xsd_types.xsd_builtin_types()
-        return {}
+        return dumco.schema.rng_types.rng_builtin_types()
 
     def get_attribute(self, attrs, localname, uri=None):
         if not attrs.has_key((uri, localname)):

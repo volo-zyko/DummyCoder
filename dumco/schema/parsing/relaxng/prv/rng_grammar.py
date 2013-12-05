@@ -1,5 +1,10 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
+import os.path
+import StringIO
+
+import dumco.schema.parsing.xml_parser
+
 import dumco.schema.parsing.relaxng.element_factory
 
 import rng_base
@@ -16,7 +21,7 @@ def rng_grammar(attrs, parent_element, factory, grammar_path, all_grammars):
     return (grammar, {
         'define': rng_define.rng_define,
         'div': factory.rng_div,
-        # 'include': factory.noop_handler,
+        'include': RngGrammar.rng_include,
         'start': rng_start.rng_start,
     })
 
@@ -95,6 +100,7 @@ class RngGrammar(rng_base.RngBase):
             self.defines[define.name] = define
 
             if define.combine == '':
+                self.defines_combined[define.name] = False
                 return define
             else:
                 self.defines_combined[define.name] = True
@@ -128,6 +134,18 @@ class RngGrammar(rng_base.RngBase):
 
             return combine
 
+    @staticmethod
+    def rng_include(attrs, parent_element, factory,
+                    grammar_path, all_grammars):
+        # Restart parsing with a new rng.
+        include_logic = _RngIncludeLogic(grammar_path, factory)
+        rng_root = include_logic.include_xml(grammar_path)
+        all_grammars[grammar_path] = None
+        factory.reset()
+
+        raise dumco.schema.parsing.xml_parser.ParseRestart(
+            StringIO.StringIO(rng_root.toxml('utf-8')))
+
     def _make_combine(self, parent, grammar_path):
         assert parent.combine == 'choice' or parent.combine == 'interleave', \
             'Combine can be either choice or interleave'
@@ -138,8 +156,7 @@ class RngGrammar(rng_base.RngBase):
             return rng_interleave.RngInterleave({}, parent, grammar_path)
 
     def _dump_internals(self, fhandle, indent): # pragma: no cover
-        fhandle.write(' xmlns="{}"'.format(
-            dumco.schema.parsing.relaxng.element_factory.RNG_NAMESPACE))
+        fhandle.write(' xmlns="{}"'.format(rng_namespace()))
         for (uri, prefix) in self.known_prefices.iteritems():
             fhandle.write(' xmlns:{}="{}"'.format(prefix, uri))
         fhandle.write('>\n')
@@ -151,3 +168,38 @@ class RngGrammar(rng_base.RngBase):
                 d.dump(fhandle, indent)
 
         return 3
+
+
+class _RngIncludeLogic(dumco.schema.parsing.xml_parser.IncludeLogic):
+    def _is_rng_node(self, node, name):
+        return (node.nodeType == node.ELEMENT_NODE and
+                rng_namespace() == node.namespaceURI and
+                node.localName == name)
+
+    def _is_root_node(self, node):
+        return self._is_rng_node(node, 'grammar')
+
+    def _is_include_node(self, node):
+        return self._is_rng_node(node, 'include')
+
+    def _get_included_path(self, node, curr_path):
+        assert node.hasAttribute('href'), 'Include without href attribute'
+
+        location = node.getAttribute('href')
+
+        return os.path.realpath(
+            os.path.join(os.path.dirname(curr_path), location))
+
+    def _copy_included(self, including_dom, include_node,
+                       included_root, included_path):
+        include_node.tagName = 'div'
+        include_node.removeAttribute('href')
+
+        new_node = including_dom.importNode(included_root, True)
+        new_node.tagName = 'div'
+
+        include_node.insertBefore(new_node, include_node.firstChild)
+
+
+def rng_namespace():
+    return dumco.schema.parsing.relaxng.element_factory.RNG_NAMESPACE
