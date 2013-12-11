@@ -52,20 +52,20 @@ class RelaxElementFactory(object):
         self.parents = []
 
     def define_namespace(self, prefix, uri):
+        # from pudb import set_trace; set_trace()
         if uri is None:
             # Remove namespace.
-            assert prefix in self.namespaces, \
-                'Closing non-existent namespace'
+            assert prefix in self.namespaces, 'Closing non-existent namespace'
             del self.namespaces[prefix]
         else:
             # Add namespace.
             self.namespaces[prefix] = uri
 
-        if prefix is not None and not dumco.schema.checks.is_xsd_namespace(uri):
-            # This makes sure that prefix will be the same no matter what was
-            # the order of loading of schemata.
-            if prefix > self.all_namespace_prefices.get(uri, ''):
-                self.all_namespace_prefices[uri] = prefix
+            if prefix is not None and uri != RNG_NAMESPACE:
+                # This makes sure that prefix will be the same no matter
+                # what was the order of loading of schemata.
+                if prefix > self.all_namespace_prefices.get(uri, ''):
+                    self.all_namespace_prefices[uri] = prefix
 
     def new_element(self, name, attrs, schema_path, all_grammars):
         self.element_stack.append(self.element)
@@ -97,14 +97,11 @@ class RelaxElementFactory(object):
                 attrs, self.element, self, schema_path, all_grammars)
 
     def finalize_current_element(self, name):
+        self.element = self.element_stack.pop()
+
         # Here we don't support anything non-RelaxNG.
         if name[0] != RNG_NAMESPACE:
-            self.element = self.element_stack.pop()
             return
-        else:
-            self.element.finalize_children(self)
-
-            self.element = self.element_stack.pop()
 
         self.dispatcher = self.dispatcher_stack.pop()
         self.datatypes_stack.pop()
@@ -135,12 +132,18 @@ class RelaxElementFactory(object):
         for grammar in sorted_all_grammars:
             grammar.finalize(grammar, all_schemata, self)
 
-        if True: # pragma: no cover
+        # We don't really need to dump rng but this is an additional check for
+        # validity of loaded grammars. Let's do it but make optional saving
+        # the dump to disk.
+        for grammar in all_grammars.itervalues():
             stream = StringIO.StringIO()
             stream.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-            for grammar in all_grammars.itervalues():
-                grammar.dump(stream, 0)
-                with open(os.path.basename(grammar.grammar_path), 'w') as f:
+            grammar.dump(stream, 0)
+
+            if True: # pragma: no cover
+                path = '{}{}'.format(
+                    id(grammar), os.path.basename(grammar.grammar_path))
+                with open(path, 'w') as f:
                     f.write(stream.getvalue())
 
         all_schemata = filter(lambda s: not _is_schema_empty(s), all_schemata)
@@ -190,8 +193,7 @@ class RelaxElementFactory(object):
         (interleave, dispatcher) = prv.rng_interleave.rng_interleave(
             {}, parent_element, factory, schema_path, all_grammars)
 
-        interleave.children.append(
-            prv.rng_text.RngText({}, interleave, schema_path))
+        interleave.children.append(prv.rng_text.RngText({}, interleave))
 
         return (interleave, dispatcher)
 
@@ -203,8 +205,7 @@ class RelaxElementFactory(object):
         (choice, dispatcher) = prv.rng_choice.rng_choice(
             {}, parent_element, factory, schema_path, all_grammars)
 
-        choice.children.append(
-            prv.rng_empty.RngEmpty({}, choice, schema_path))
+        choice.children.append(prv.rng_empty.RngEmpty({}, choice))
 
         return (choice, dispatcher)
 
@@ -216,8 +217,7 @@ class RelaxElementFactory(object):
         (choice, _) = prv.rng_choice.rng_choice(
             {}, parent_element, factory, schema_path, all_grammars)
 
-        choice.children.append(
-            prv.rng_empty.RngEmpty({}, choice, schema_path))
+        choice.children.append(prv.rng_empty.RngEmpty({}, choice))
 
         (one, dispatcher) = prv.rng_oneOrMore.rng_oneOrMore(
             {}, choice, factory, schema_path, all_grammars)

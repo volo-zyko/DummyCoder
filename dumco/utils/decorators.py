@@ -22,6 +22,8 @@ def method_once(func):
             self.__module__, id(self), id(func))
 
         if method_name not in decorated.run_map:
+            # Add a key to run_map and then calculate value for it.
+            decorated.run_map[method_name] = None
             decorated.run_map[method_name] = func(self, *args, **kwargs)
         return decorated.run_map[method_name]
 

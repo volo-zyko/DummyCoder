@@ -12,12 +12,15 @@ def rng_empty(attrs, parent_element, factory, grammar_path, all_grammars):
         isinstance(parent_element, rng_oneOrMore.RngOneOrMore)):
         return (parent_element, {})
 
-    empty = RngEmpty(attrs, parent_element, grammar_path)
+    empty = RngEmpty(attrs, parent_element)
     parent_element.children.append(empty)
 
     return (empty, {})
 
 
 class RngEmpty(rng_base.RngBase):
-    def __init__(self, attrs, parent_element, grammar_path):
+    def __init__(self, attrs, parent_element):
         super(RngEmpty, self).__init__(attrs, parent_element)
+
+    def _dump_internals(self, fhandle, indent):
+        return rng_base.RngBase._CLOSING_EMPTY_TAG

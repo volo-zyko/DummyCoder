@@ -3,13 +3,15 @@
 import os.path
 import StringIO
 
-import dumco.schema.parsing.xml_parser
+from dumco.utils.decorators import method_once
 
+import dumco.schema.parsing.xml_parser
 import dumco.schema.parsing.relaxng.element_factory
 
 import rng_base
 import rng_define
 import rng_choice
+import rng_element
 import rng_interleave
 import rng_start
 
@@ -37,18 +39,30 @@ class RngGrammar(rng_base.RngBase):
         self.start_combined = False
         self.defines = {}
         self.defines_combined = {}
-        self.defines_used = set()
 
+        self.elements = []
+
+    @method_once
     def finalize(self, grammar, all_schemata, factory):
-        for c in self.start.children:
-            c.finalize(grammar, all_schemata, factory)
+        # Collect children in defines without finalizing them. This
+        # prevents finalization loops.
+        for d in self.defines.itervalues():
+            d.prefinalize(grammar)
 
-    def get_define(self, name):
-        d = self.defines[name]
-        self.defines_used.add(d)
-        return d
+        # Finalize everything from grammar start. This also collects
+        # all elements in a grammar and assigns them new names.
+        self.start.finalize(grammar, all_schemata, factory)
 
-    def add_start(self, start, grammar_path):
+        self.elements.sort(key=lambda e: e.define_name)
+
+        # Finalize defines. However, this will ignore those defines that
+        # are not reachable from start and this is ok.
+        for d in self.defines.itervalues():
+            d.finalize(grammar, all_schemata, factory)
+
+        super(RngGrammar, self).finalize(grammar, all_schemata, factory)
+
+    def add_start(self, start):
         assert (self.start is None or start.combine == '' or
                 not self.start_combined), \
             'Multiple start elements in grammar without combine attribute'
@@ -61,7 +75,7 @@ class RngGrammar(rng_base.RngBase):
             else:
                 self.start_combined = True
 
-                combine = self._make_combine(start, grammar_path)
+                combine = _make_combine(start.combine, start)
 
                 self.start.children.append(combine)
                 return combine
@@ -71,10 +85,10 @@ class RngGrammar(rng_base.RngBase):
 
             combine = self.start.children[0]
 
-            if start.combine != '':
+            if not self.start_combined and start.combine != '':
                 self.start_combined = True
 
-                combine = self._make_combine(start, grammar_path)
+                combine = _make_combine(start.combine, self.start)
                 combine.children = self.start.children
 
                 self.start.children = [combine]
@@ -90,7 +104,10 @@ class RngGrammar(rng_base.RngBase):
 
             return combine
 
-    def add_define(self, define, grammar_path):
+    def get_define(self, name):
+        return self.defines[name]
+
+    def add_define(self, define):
         assert (define.name not in self.defines or define.combine == '' or
                 not self.defines_combined[define.name]), \
             'Multiple define elements in grammar with ' \
@@ -105,9 +122,9 @@ class RngGrammar(rng_base.RngBase):
             else:
                 self.defines_combined[define.name] = True
 
-                combine = self._make_combine(define, grammar_path)
+                combine = _make_combine(define.combine, define)
 
-                self.defines[define.name] = combine
+                self.defines[define.name].children.append(combine)
                 return combine
         else:
             assert len(self.defines[define.name].children) == 1, \
@@ -115,10 +132,11 @@ class RngGrammar(rng_base.RngBase):
 
             combine = self.defines[define.name].children[0]
 
-            if define.combine != '':
+            if not self.defines_combined[define.name] and define.combine != '':
                 self.defines_combined[define.name] = True
 
-                combine = self._make_combine(define, grammar_path)
+                combine = _make_combine(
+                    define.combine, self.defines[define.name])
                 combine.children = self.defines[define.name].children
 
                 self.defines[define.name].children = [combine]
@@ -146,34 +164,30 @@ class RngGrammar(rng_base.RngBase):
         raise dumco.schema.parsing.xml_parser.ParseRestart(
             StringIO.StringIO(rng_root.toxml('utf-8')))
 
-    def _make_combine(self, parent, grammar_path):
-        assert parent.combine == 'choice' or parent.combine == 'interleave', \
-            'Combine can be either choice or interleave'
-
-        if parent.combine == 'choice':
-            return rng_choice.RngChoice({}, parent, grammar_path)
-        elif parent.combine == 'interleave':
-            return rng_interleave.RngInterleave({}, parent, grammar_path)
-
-    def _dump_internals(self, fhandle, indent): # pragma: no cover
-        fhandle.write(' xmlns="{}"'.format(rng_namespace()))
+    def _dump_internals(self, fhandle, indent):
+        fhandle.write(' xmlns="{}"'.format(_rng_namespace()))
         for (uri, prefix) in self.known_prefices.iteritems():
             fhandle.write(' xmlns:{}="{}"'.format(prefix, uri))
         fhandle.write('>\n')
 
         self.start.dump(fhandle, indent)
 
-        for d in self.defines.itervalues():
-            if d in self.defines_used:
-                d.dump(fhandle, indent)
+        for e in self.elements:
+            assert isinstance(e, rng_element.RngElement), \
+                'Only elements should be defined in RNG dump'
 
-        return 3
+            fhandle.write(
+                '{}<define name="{}">\n'.format(' ' * indent, e.define_name))
+            e.dump(fhandle, indent + self._tab)
+            fhandle.write('{}</define>\n'.format(' ' * indent))
+
+        return rng_base.RngBase._CLOSING_TAG
 
 
 class _RngIncludeLogic(dumco.schema.parsing.xml_parser.IncludeLogic):
     def _is_rng_node(self, node, name):
         return (node.nodeType == node.ELEMENT_NODE and
-                rng_namespace() == node.namespaceURI and
+                _rng_namespace() == node.namespaceURI and
                 node.localName == name)
 
     def _is_root_node(self, node):
@@ -201,5 +215,15 @@ class _RngIncludeLogic(dumco.schema.parsing.xml_parser.IncludeLogic):
         include_node.insertBefore(new_node, include_node.firstChild)
 
 
-def rng_namespace():
+def _rng_namespace():
     return dumco.schema.parsing.relaxng.element_factory.RNG_NAMESPACE
+
+
+def _make_combine(combine_type, parent):
+    assert combine_type == 'choice' or combine_type == 'interleave', \
+        'Combine can be either choice or interleave'
+
+    if combine_type == 'choice':
+        return rng_choice.RngChoice({}, parent)
+    elif combine_type == 'interleave':
+        return rng_interleave.RngInterleave({}, parent)

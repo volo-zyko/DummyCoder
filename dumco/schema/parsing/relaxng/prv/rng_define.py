@@ -1,5 +1,7 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
+from dumco.utils.decorators import method_once
+
 import rng_attribute
 import rng_base
 import rng_choice
@@ -10,9 +12,11 @@ import rng_grammar
 import rng_group
 import rng_interleave
 import rng_list
+import rng_notAllowed
 import rng_oneOrMore
 import rng_ref
 import rng_text
+import rng_utils
 import rng_value
 
 
@@ -20,8 +24,8 @@ def rng_define(attrs, parent_element, factory, grammar_path, all_grammars):
     assert isinstance(parent_element, rng_grammar.RngGrammar), \
         'Define only expected to be in grammar'
 
-    define = RngDefine(attrs, parent_element, grammar_path, factory)
-    define = parent_element.add_define(define, grammar_path)
+    define = RngDefine(attrs, parent_element, factory)
+    define = parent_element.add_define(define)
 
     return (define, {
         'attribute': rng_attribute.rng_attribute,
@@ -34,7 +38,7 @@ def rng_define(attrs, parent_element, factory, grammar_path, all_grammars):
         'interleave': rng_interleave.rng_interleave,
         'list': rng_list.rng_list,
         'mixed': factory.rng_mixed,
-        'notAllowed': factory.noop_handler,
+        'notAllowed': rng_notAllowed.rng_notAllowed,
         'oneOrMore': rng_oneOrMore.rng_oneOrMore,
         'optional': factory.rng_optional,
         'parentRef': factory.noop_handler,
@@ -46,10 +50,8 @@ def rng_define(attrs, parent_element, factory, grammar_path, all_grammars):
 
 
 class RngDefine(rng_base.RngBase):
-    def __init__(self, attrs, parent_element, grammar_path, factory):
+    def __init__(self, attrs, parent_element, factory):
         super(RngDefine, self).__init__(attrs, parent_element)
-
-        self.finalized = False
 
         self.name = factory.get_attribute(attrs, 'name').strip()
         try:
@@ -57,11 +59,31 @@ class RngDefine(rng_base.RngBase):
         except LookupError:
             self.combine = ''
 
-    def finalize(self, grammar, all_schemata, factory):
-        if not self.finalized:
-            self.finalized = True
-            super(RngDefine, self).finalize(grammar, all_schemata, factory)
+        self.pattern = None
 
-    def _dump_internals(self, fhandle, indent): # pragma: no cover
-        fhandle.write(' name="{}"'.format(self.name))
-        return super(RngDefine, self)._dump_internals(fhandle, indent)
+    def prefinalize(self, grammar):
+        if self.pattern is not None:
+            return
+
+        if len(self.children) == 1:
+            self.pattern = self.children[0]
+            assert rng_utils.is_pattern(self.pattern), 'Wrong content of define'
+            if isinstance(self.pattern, rng_ref.RngRef):
+                self.pattern = self.pattern.get_element(grammar)
+        else:
+            patterns = []
+            for c in self.children:
+                assert rng_utils.is_pattern(c), 'Wrong content of define'
+
+                patterns.append(c)
+
+            assert patterns, 'Wrong pattern in define'
+            self.pattern = rng_group.RngGroup({}, self)
+            self.pattern.children = patterns
+
+    @method_once
+    def finalize(self, grammar, all_schemata, factory):
+        if self.pattern is not None:
+            self.pattern.finalize(grammar, all_schemata, factory)
+
+        super(RngDefine, self).finalize(grammar, all_schemata, factory)

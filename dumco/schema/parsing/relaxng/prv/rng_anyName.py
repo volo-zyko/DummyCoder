@@ -1,11 +1,13 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
+from dumco.utils.decorators import method_once
+
 import rng_base
 import rng_except
 
 
 def rng_anyName(attrs, parent_element, factory, grammar_path, all_grammars):
-    any_name = RngAnyName(attrs, parent_element, grammar_path)
+    any_name = RngAnyName(attrs, parent_element)
     parent_element.children.append(any_name)
 
     return (any_name, {
@@ -14,5 +16,27 @@ def rng_anyName(attrs, parent_element, factory, grammar_path, all_grammars):
 
 
 class RngAnyName(rng_base.RngBase):
-    def __init__(self, attrs, parent_element, grammar_path):
+    def __init__(self, attrs, parent_element):
         super(RngAnyName, self).__init__(attrs, parent_element)
+
+        self.except_name_class = None
+
+    @method_once
+    def finalize(self, grammar, all_schemata, factory):
+        for c in self.children:
+            assert (isinstance(c, rng_except.RngExcept) and
+                    self.except_name_class is None), \
+                'Wrong content of anyName element'
+
+            c.finalize(grammar, all_schemata, factory)
+            self.except_name_class = c
+
+        super(RngAnyName, self).finalize(grammar, all_schemata, factory)
+
+    def _dump_internals(self, fhandle, indent):
+        if self.except_name_class is None:
+            return rng_base.RngBase._CLOSING_EMPTY_TAG
+        else:
+            fhandle.write('>\n')
+            self.except_name_class.dump(fhandle, indent)
+            return rng_base.RngBase._CLOSING_TAG

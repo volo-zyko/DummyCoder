@@ -1,17 +1,24 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
+from dumco.utils.decorators import method_once
+
 import sys
 
 
 class RngBase(object):
+    _CLOSING_EMPTY_TAG = 1
+    _CLOSING_TAG_INLINE = 2
+    _CLOSING_TAG = 3
+
     def __init__(self, attrs, parent):
         self.attrs = attrs
         self.parent = parent
         self.children = []
         self.text = ''
+        self._tab = 2
 
     def attr(self, name):
-        return self.attrs.get(name, None)
+        return self.attrs.get((None, name), None)
 
     def append_text(self, text):
         self.text += text.strip()
@@ -23,40 +30,27 @@ class RngBase(object):
                 'Setting non-existent attribute'
         self.__dict__[name] = value
 
-    def finalize_children(self, factory):
-        pass
-
+    @method_once
     def finalize(self, grammar, all_schemata, factory):
-        for c in self.children:
-            c.finalize(grammar, all_schemata, factory)
+        del self.attrs
+        del self.children
+        del self.text
 
-    def dump(self, fhandle, indent): # pragma: no cover
+    def dump(self, fhandle, indent):
         tag = self.__class__.__name__[3:]
         tag = tag[0].lower() + tag[1:]
 
         fhandle.write('{}<{}'.format(' ' * indent, tag))
 
-        closing = self._dump_internals(fhandle, indent + 2)
+        closing = self._dump_internals(fhandle, indent + self._tab)
 
-        if closing == 1:
+        if closing == RngBase._CLOSING_EMPTY_TAG:
             fhandle.write('/>')
-        elif closing == 2:
+        elif closing == RngBase._CLOSING_TAG_INLINE:
             fhandle.write('</{}>'.format(tag))
-        elif closing == 3:
+        elif closing == RngBase._CLOSING_TAG:
             fhandle.write('{}</{}>'.format(' ' * indent, tag))
         fhandle.write('\n')
 
     def _dump_internals(self, fhandle, indent): # pragma: no cover
-        res = 1
-
-        if self.text:
-            res = 2
-            fhandle.write('>{}'.format(self.text))
-
-        if self.children:
-            res = 3
-            fhandle.write('>\n')
-            for c in self.children:
-                c.dump(fhandle, indent)
-
-        return res
+        assert False, '_dump_internals() should be overriden'

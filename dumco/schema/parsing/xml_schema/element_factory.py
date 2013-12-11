@@ -38,18 +38,18 @@ class XsdElementFactory(object):
     def define_namespace(self, prefix, uri):
         if uri is None:
             # Remove namespace.
-            assert prefix in self.namespaces, \
-                'Closing non-existent namespace'
+            assert prefix in self.namespaces, 'Closing non-existent namespace'
             del self.namespaces[prefix]
         else:
             # Add namespace.
             self.namespaces[prefix] = uri
 
-        if prefix is not None and not dumco.schema.checks.is_xsd_namespace(uri):
-            # This makes sure that prefix will be the same no matter what was
-            # the order of loading of schemata.
-            if prefix > self.all_namespace_prefices.get(uri, ''):
-                self.all_namespace_prefices[uri] = prefix
+            if (prefix is not None and
+                not dumco.schema.checks.is_xsd_namespace(uri)):
+                # This makes sure that prefix will be the same no matter
+                # what was the order of loading of schemata.
+                if prefix > self.all_namespace_prefices.get(uri, ''):
+                    self.all_namespace_prefices[uri] = prefix
 
     def new_element(self, elem_name, attrs, schema_path, all_schemata):
         # Here we don't support anything non-XSD.

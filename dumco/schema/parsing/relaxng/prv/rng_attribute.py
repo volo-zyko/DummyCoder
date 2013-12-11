@@ -1,5 +1,7 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
+from dumco.utils.decorators import method_once
+
 import rng_anyName
 import rng_base
 import rng_choice
@@ -10,15 +12,17 @@ import rng_group
 import rng_interleave
 import rng_list
 import rng_name
+import rng_notAllowed
 import rng_nsName
 import rng_oneOrMore
 import rng_ref
 import rng_text
+import rng_utils
 import rng_value
 
 
 def rng_attribute(attrs, parent_element, factory, grammar_path, all_grammars):
-    attr = RngAttribute(attrs, parent_element, grammar_path, factory)
+    attr = RngAttribute(attrs, parent_element, factory)
     parent_element.children.append(attr)
 
     return (attr, {
@@ -33,7 +37,7 @@ def rng_attribute(attrs, parent_element, factory, grammar_path, all_grammars):
         'list': rng_list.rng_list,
         'mixed': factory.rng_mixed,
         'name': rng_name.rng_name,
-        'notAllowed': factory.noop_handler,
+        'notAllowed': rng_notAllowed.rng_notAllowed,
         'nsName': rng_nsName.rng_nsName,
         'oneOrMore': rng_oneOrMore.rng_oneOrMore,
         'optional': factory.rng_optional,
@@ -46,7 +50,7 @@ def rng_attribute(attrs, parent_element, factory, grammar_path, all_grammars):
 
 
 class RngAttribute(rng_base.RngBase):
-    def __init__(self, attrs, parent_element, grammar_path, factory):
+    def __init__(self, attrs, parent_element, factory):
         super(RngAttribute, self).__init__(attrs, parent_element)
 
         try:
@@ -63,3 +67,35 @@ class RngAttribute(rng_base.RngBase):
         except LookupError:
             pass
         factory.ns_attribute_stack.pop()
+
+        self.name = None
+        self.pattern = None
+
+    @method_once
+    def finalize(self, grammar, all_schemata, factory):
+        assert rng_utils.is_name_class(self.children[0]), \
+            'Wrong name in attribute'
+        self.name = self.children[0]
+        self.name.finalize(grammar, all_schemata, factory)
+
+        for c in self.children[1:]:
+            assert rng_utils.is_pattern(c), 'Wrong content of attribute'
+
+            c.finalize(grammar, all_schemata, factory)
+
+            assert self.pattern is None, 'Wrong pattern in attribute'
+            if isinstance(c, rng_ref.RngRef):
+                self.pattern = c.get_element(grammar)
+            else:
+                self.pattern = c
+
+        if self.pattern is None:
+            self.pattern = rng_text.RngText({}, self)
+
+        super(RngAttribute, self).finalize(grammar, all_schemata, factory)
+
+    def _dump_internals(self, fhandle, indent):
+        fhandle.write('>\n')
+        self.name.dump(fhandle, indent)
+        self.pattern.dump(fhandle, indent)
+        return rng_base.RngBase._CLOSING_TAG

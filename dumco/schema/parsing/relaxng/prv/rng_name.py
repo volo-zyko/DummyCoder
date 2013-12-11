@@ -14,14 +14,19 @@ class RngName(rng_base.RngBase):
     def __init__(self, attrs, parent_element, text, factory):
         super(RngName, self).__init__(attrs, parent_element)
 
-        (self.ns, self.name) = factory.parse_qname(text)
-        self.ns = factory.get_ns() if self.ns is None else self.ns
+        (ns, self.name) = factory.parse_qname(text)
+        self.ns = factory.get_ns() if ns is None else ns
 
-    def finalize_children(self, factory):
-        if self.name == '':
-            (self.ns, self.name) = factory.parse_qname(self.text)
-            self.ns = factory.get_ns() if self.ns is None else self.ns
+        # Temporary for append_text().
+        self.factory = factory
 
-    def _dump_internals(self, fhandle, indent): # pragma: no cover
+    def append_text(self, text):
+        (ns, name) = self.factory.parse_qname(text.strip())
+        if name != '':
+            self.name = text if self.name is None else self.name + text
+        if ns is not None:
+            self.ns = ns
+
+    def _dump_internals(self, fhandle, indent):
         fhandle.write(' ns="{}">{}'.format(self.ns, self.name))
-        return 2
+        return rng_base.RngBase._CLOSING_TAG_INLINE

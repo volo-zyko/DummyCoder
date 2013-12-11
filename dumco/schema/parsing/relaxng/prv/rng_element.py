@@ -1,5 +1,7 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
+from dumco.utils.decorators import method_once
+
 import rng_anyName
 import rng_attribute
 import rng_base
@@ -10,15 +12,17 @@ import rng_group
 import rng_interleave
 import rng_list
 import rng_name
+import rng_notAllowed
 import rng_nsName
 import rng_oneOrMore
 import rng_ref
 import rng_text
+import rng_utils
 import rng_value
 
 
 def rng_element(attrs, parent_element, factory, grammar_path, all_grammars):
-    elem = RngElement(attrs, parent_element, grammar_path, factory)
+    elem = RngElement(attrs, parent_element, factory)
     parent_element.children.append(elem)
 
     return (elem, {
@@ -34,7 +38,7 @@ def rng_element(attrs, parent_element, factory, grammar_path, all_grammars):
         'list': rng_list.rng_list,
         'mixed': factory.rng_mixed,
         'name': rng_name.rng_name,
-        'notAllowed': factory.noop_handler,
+        'notAllowed': rng_notAllowed.rng_notAllowed,
         'nsName': rng_nsName.rng_nsName,
         'oneOrMore': rng_oneOrMore.rng_oneOrMore,
         'optional': factory.rng_optional,
@@ -47,7 +51,7 @@ def rng_element(attrs, parent_element, factory, grammar_path, all_grammars):
 
 
 class RngElement(rng_base.RngBase):
-    def __init__(self, attrs, parent_element, grammar_path, factory):
+    def __init__(self, attrs, parent_element, factory):
         super(RngElement, self).__init__(attrs, parent_element)
 
         try:
@@ -57,3 +61,40 @@ class RngElement(rng_base.RngBase):
             self.children.append(name)
         except LookupError:
             pass
+
+        self.name = None
+        self.pattern = None
+        self.define_name = None
+
+    @method_once
+    def finalize(self, grammar, all_schemata, factory):
+        assert rng_utils.is_name_class(self.children[0]), \
+            'Wrong name in element'
+        self.name = self.children[0]
+        self.name.finalize(grammar, all_schemata, factory)
+
+        patterns = []
+        for c in self.children[1:]:
+            assert rng_utils.is_pattern(c), 'Wrong content of element'
+
+            if isinstance(c, rng_ref.RngRef):
+                patterns.append(c.get_element(grammar))
+            else:
+                patterns.append(c)
+
+        assert patterns, 'Wrong pattern in element'
+        if len(patterns) == 1:
+            self.pattern = patterns[0]
+        else:
+            self.pattern = rng_group.RngGroup({}, self)
+            self.pattern.children = patterns
+
+        self.pattern.finalize(grammar, all_schemata, factory)
+
+        super(RngElement, self).finalize(grammar, all_schemata, factory)
+
+    def _dump_internals(self, fhandle, indent):
+        fhandle.write('>\n')
+        self.name.dump(fhandle, indent)
+        self.pattern.dump(fhandle, indent)
+        return rng_base.RngBase._CLOSING_TAG
