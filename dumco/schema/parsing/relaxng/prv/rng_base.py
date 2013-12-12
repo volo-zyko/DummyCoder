@@ -37,8 +37,7 @@ class RngBase(object):
         del self.text
 
     def dump(self, fhandle, indent):
-        tag = self.__class__.__name__[3:]
-        tag = tag[0].lower() + tag[1:]
+        tag = self._tag_name()
 
         fhandle.write('{}<{}'.format(' ' * indent, tag))
 
@@ -51,6 +50,10 @@ class RngBase(object):
         elif closing == RngBase._CLOSING_TAG:
             fhandle.write('{}</{}>'.format(' ' * indent, tag))
         fhandle.write('\n')
+
+    def _tag_name(self):
+        tag = self.__class__.__name__[3:]
+        return tag[0].lower() + tag[1:]
 
     def _dump_internals(self, fhandle, indent): # pragma: no cover
         assert False, '_dump_internals() should be overriden'

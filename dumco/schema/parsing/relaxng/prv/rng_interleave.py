@@ -55,21 +55,36 @@ class RngInterleave(rng_base.RngBase):
         for c in self.children:
             assert rng_utils.is_pattern(c), 'Wrong content of interleave'
 
+            if isinstance(c, rng_ref.RngRef):
+                c = c.get_element(grammar)
+
+            if isinstance(c, rng_empty.RngEmpty):
+                continue
+
             c.finalize(grammar, all_schemata, factory)
 
-            adding = c
-            if isinstance(c, rng_ref.RngRef):
-                adding = c.get_element(grammar)
+            if ((isinstance(c, rng_choice.RngChoicePattern) or
+                 isinstance(c, rng_group.RngGroup) or
+                 isinstance(c, RngInterleave) or
+                 isinstance(c, rng_oneOrMore.RngOneOrMore)) and
+                len(c.patterns) == 0):
+                continue
 
-            if isinstance(adding, rng_element.RngElement):
-                rng_utils.set_define_name_for_element(adding, grammar)
+            if ((isinstance(c, rng_choice.RngChoicePattern) or
+                 isinstance(c, rng_group.RngGroup) or
+                 isinstance(c, RngInterleave)) and
+                len(c.patterns) == 1):
+                c = c.patterns[0]
 
-            self.patterns.append(adding)
+            if isinstance(c, rng_element.RngElement):
+                rng_utils.set_define_name_for_element(c, grammar)
+
+            self.patterns.append(c)
 
         super(RngInterleave, self).finalize(grammar, all_schemata, factory)
 
     def _dump_internals(self, fhandle, indent):
-        assert self.patterns, 'Empty interleave element'
+        assert self.patterns, 'Empty interleave pattern'
 
         fhandle.write('>\n')
         for p in self.patterns:

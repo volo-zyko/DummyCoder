@@ -55,7 +55,7 @@ class XsdSchema(xsd_base.XsdBase):
             self.attr('targetNamespace'))
         assert schema_path.endswith('.xsd')
         self.schema_element.filename = \
-            os.path.basename(schema_path).rpartition('.')[0]
+            os.path.splitext(os.path.basename(schema_path))[0]
 
         self.attributes = {}
         self.attribute_groups = {}

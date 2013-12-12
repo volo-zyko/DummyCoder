@@ -25,7 +25,7 @@ class RngNsName(rng_base.RngBase):
     @method_once
     def finalize(self, grammar, all_schemata, factory):
         for c in self.children:
-            assert (isinstance(c, rng_except.RngExcept) and
+            assert (isinstance(c, rng_except.RngExceptName) and
                     self.except_name_class is None), \
                 'Wrong content of nsName element'
 

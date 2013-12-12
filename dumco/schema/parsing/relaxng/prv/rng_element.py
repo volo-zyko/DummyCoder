@@ -78,9 +78,9 @@ class RngElement(rng_base.RngBase):
             assert rng_utils.is_pattern(c), 'Wrong content of element'
 
             if isinstance(c, rng_ref.RngRef):
-                patterns.append(c.get_element(grammar))
-            else:
-                patterns.append(c)
+                c = c.get_element(grammar)
+
+            patterns.append(c)
 
         assert patterns, 'Wrong pattern in element'
         if len(patterns) == 1:

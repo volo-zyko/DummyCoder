@@ -55,21 +55,36 @@ class RngGroup(rng_base.RngBase):
         for c in self.children:
             assert rng_utils.is_pattern(c), 'Wrong content of group'
 
+            if isinstance(c, rng_ref.RngRef):
+                c = c.get_element(grammar)
+
+            if isinstance(c, rng_empty.RngEmpty):
+                continue
+
             c.finalize(grammar, all_schemata, factory)
 
-            adding = c
-            if isinstance(c, rng_ref.RngRef):
-                adding = c.get_element(grammar)
+            if ((isinstance(c, rng_choice.RngChoicePattern) or
+                 isinstance(c, RngGroup) or
+                 isinstance(c, rng_interleave.RngInterleave) or
+                 isinstance(c, rng_oneOrMore.RngOneOrMore)) and
+                len(c.patterns) == 0):
+                continue
 
-            if isinstance(adding, rng_element.RngElement):
-                rng_utils.set_define_name_for_element(adding, grammar)
+            if ((isinstance(c, rng_choice.RngChoicePattern) or
+                 isinstance(c, RngGroup) or
+                 isinstance(c, rng_interleave.RngInterleave)) and
+                len(c.patterns) == 1):
+                c = c.patterns[0]
 
-            self.patterns.append(adding)
+            if isinstance(c, rng_element.RngElement):
+                rng_utils.set_define_name_for_element(c, grammar)
+
+            self.patterns.append(c)
 
         super(RngGroup, self).finalize(grammar, all_schemata, factory)
 
     def _dump_internals(self, fhandle, indent):
-        assert self.patterns, 'Empty group element'
+        assert self.patterns, 'Empty group pattern'
 
         fhandle.write('>\n')
         for p in self.patterns:

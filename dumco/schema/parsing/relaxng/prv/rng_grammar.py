@@ -41,6 +41,7 @@ class RngGrammar(rng_base.RngBase):
         self.defines_combined = {}
 
         self.elements = []
+        self.element_counter = 1
 
     @method_once
     def finalize(self, grammar, all_schemata, factory):
@@ -97,7 +98,8 @@ class RngGrammar(rng_base.RngBase):
                 'There is more than one start element without combine attribute'
             assert (start.combine == '' or
                     (start.combine == 'choice' and
-                     isinstance(combine, rng_choice.RngChoice)) or
+                     isinstance(combine, rng_choice.RngChoicePattern))
+                    or
                     (start.combine == 'interleave' and
                      isinstance(combine, rng_interleave.RngInterleave))), \
                 'Different combine method in start is encountered'
@@ -145,7 +147,8 @@ class RngGrammar(rng_base.RngBase):
                 'There is more than one define element without combine attribute'
             assert (define.combine == '' or
                     (define.combine == 'choice' and
-                     isinstance(combine, rng_choice.RngChoice)) or
+                     isinstance(combine, rng_choice.RngChoicePattern))
+                    or
                     (define.combine == 'interleave' and
                      isinstance(combine, rng_interleave.RngInterleave))), \
                 'Different combine method in define is encountered'
@@ -166,7 +169,7 @@ class RngGrammar(rng_base.RngBase):
 
     def _dump_internals(self, fhandle, indent):
         fhandle.write(' xmlns="{}"'.format(_rng_namespace()))
-        for (uri, prefix) in self.known_prefices.iteritems():
+        for (uri, prefix) in sorted(self.known_prefices.iteritems()):
             fhandle.write(' xmlns:{}="{}"'.format(prefix, uri))
         fhandle.write('>\n')
 
@@ -224,6 +227,6 @@ def _make_combine(combine_type, parent):
         'Combine can be either choice or interleave'
 
     if combine_type == 'choice':
-        return rng_choice.RngChoice({}, parent)
+        return rng_choice.RngChoicePattern({}, parent)
     elif combine_type == 'interleave':
         return rng_interleave.RngInterleave({}, parent)

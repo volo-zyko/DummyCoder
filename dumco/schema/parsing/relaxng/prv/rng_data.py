@@ -31,13 +31,13 @@ class RngData(rng_base.RngBase):
     def finalize(self, grammar, all_schemata, factory):
         for c in self.children:
             assert (isinstance(c, rng_param.RngParam) or
-                    isinstance(c, rng_except.RngExcept)), \
+                    isinstance(c, rng_except.RngExceptPattern)), \
                 'Wrong content of data element'
 
             c.finalize(grammar, all_schemata, factory)
             if isinstance(c, rng_param.RngParam):
                 self.params.append(c)
-            elif isinstance(c, rng_except.RngExcept):
+            elif isinstance(c, rng_except.RngExceptPattern):
                 assert self.except_pattern is None, \
                     'More than one except element in data element'
                 self.except_pattern = c

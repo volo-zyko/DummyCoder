@@ -135,14 +135,14 @@ class RelaxElementFactory(object):
         # We don't really need to dump rng but this is an additional check for
         # validity of loaded grammars. Let's do it but make optional saving
         # the dump to disk.
-        for grammar in all_grammars.itervalues():
+        for (c, grammar) in enumerate(all_grammars.itervalues(), start=1):
             stream = StringIO.StringIO()
             stream.write('<?xml version="1.0" encoding="UTF-8"?>\n')
             grammar.dump(stream, 0)
 
             if True: # pragma: no cover
-                path = '{}{}'.format(
-                    id(grammar), os.path.basename(grammar.grammar_path))
+                base = os.path.splitext(os.path.basename(grammar.grammar_path))
+                path = '{}_{}.rng'.format(base[0], c)
                 with open(path, 'w') as f:
                     f.write(stream.getvalue())
 

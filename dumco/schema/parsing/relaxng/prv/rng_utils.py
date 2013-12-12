@@ -19,15 +19,17 @@ import rng_value
 
 
 def is_name_class(value):
+    if isinstance(value, rng_choice.RngChoiceName):
+        return all(map(lambda p: is_name_class(p), value.name_classes))
+
     return (isinstance(value, rng_name.RngName) or
             isinstance(value, rng_anyName.RngAnyName) or
-            isinstance(value, rng_nsName.RngNsName) or
-            isinstance(value, rng_choice.RngChoice))
+            isinstance(value, rng_nsName.RngNsName))
 
 
 def is_pattern(value):
     return (isinstance(value, rng_attribute.RngAttribute) or
-            isinstance(value, rng_choice.RngChoice) or
+            isinstance(value, rng_choice.RngChoicePattern) or
             isinstance(value, rng_data.RngData) or
             isinstance(value, rng_element.RngElement) or
             isinstance(value, rng_empty.RngEmpty) or
@@ -46,12 +48,20 @@ def set_define_name_for_element(element, grammar):
         assert is_name_class(element.name), 'Element has bad name'
 
         if isinstance(element.name, rng_name.RngName):
-            name = '{}-element'.format(element.name.name)
+            if element.name.ns in grammar.known_prefices:
+                prefix = grammar.known_prefices[element.name.ns]
+                name = '{}-{}-element'.format(prefix, element.name.name)
+            else:
+                name = '{}-element'.format(element.name.name)
         elif (isinstance(element.name, rng_anyName.RngAnyName) or
               isinstance(element.name, rng_nsName.RngNsName)):
-            name = 'any' #.format(element.name.name)
-        elif isinstance(element.name, rng_choice.RngChoice):
-            name = 'choice' #.format(element.name.name)
+            name = 'any'
+        elif isinstance(element.name, rng_choice.RngChoiceName):
+            name = 'choice'
+
+        if [e for e in grammar.elements if e.define_name == name]:
+            name = '{}{}'.format(name, grammar.element_counter)
+            grammar.element_counter += 1
 
         element.define_name = name
         grammar.elements.append(element)
