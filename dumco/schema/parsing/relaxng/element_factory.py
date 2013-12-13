@@ -140,7 +140,7 @@ class RelaxElementFactory(object):
             stream.write('<?xml version="1.0" encoding="UTF-8"?>\n')
             grammar.dump(stream, 0)
 
-            if True: # pragma: no cover
+            if False: # pragma: no cover
                 base = os.path.splitext(os.path.basename(grammar.grammar_path))
                 path = '{}_{}.rng'.format(base[0], c)
                 with open(path, 'w') as f:
@@ -181,7 +181,7 @@ class RelaxElementFactory(object):
         return (parent_element, {
             'define': prv.rng_define.rng_define,
             'div': factory.rng_div,
-            # 'include': factory.noop_handler,
+            'include': prv.rng_grammar.RngGrammar.rng_include,
             'start': prv.rng_start.rng_start,
         })
 

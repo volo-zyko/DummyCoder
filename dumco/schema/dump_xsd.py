@@ -5,8 +5,8 @@ import collections
 
 import os.path
 import shutil
-import sys
-import xml.sax.saxutils
+
+import dumco.utils.string_utils
 
 import base
 import checks
@@ -21,8 +21,6 @@ _XML_XSD_URI = xsd_types.XML_XSD_URI
 
 
 class _XmlWriter(object):
-    ENTITIES = {chr(x): '&#{};'.format(x) for x in xrange(127, 256)}
-
     def __init__(self, filename):
         self.indentation = 0
         self.fhandle = None
@@ -46,7 +44,6 @@ class _XmlWriter(object):
         assert len(self.complex_content) == 0
 
         self.fhandle.flush()
-        name = self.fhandle.name
         self.fhandle.close()
 
     def _indent(self):
@@ -80,7 +77,7 @@ class _XmlWriter(object):
             self.fhandle.write(' xmlns{}="{}"'.format(real_prefix, uri))
 
     def add_attribute(self, name, value, prefix=''):
-        esc_value = xml.sax.saxutils.quoteattr(str(value), self.ENTITIES)
+        esc_value = dumco.utils.string_utils.quote_xml_string(value)
         if prefix != '':
             self.fhandle.write(' {}:{}={}'.format(prefix, name, esc_value))
         else:

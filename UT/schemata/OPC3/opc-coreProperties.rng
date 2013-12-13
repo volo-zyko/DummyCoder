@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<grammar xmlns:dc="http://purl.org/dc/elements/1.1/" ns="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:dcterms="http://purl.org/dc/terms/" xmlns="http://relaxng.org/ns/structure/1.0" datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
+  <include href="../xml.rng"/>
+  <start>
+    <ref name="coreProperties"/>
+  </start>
+  <define name="coreProperties">
+    <element name="coreProperties">
+      <ref name="CT_CoreProperties"/>
+    </element>
+  </define>
+  <define name="CT_CoreProperties">
+    <interleave>
+      <optional>
+        <element name="category">
+          <data type="string"/>
+        </element>
+      </optional>
+      <optional>
+        <element name="contentStatus">
+          <data type="string"/>
+        </element>
+      </optional>
+      <optional>
+        <element name="dcterms:created">
+          <attribute name="xsi:type">
+            <value type="QName">dcterms:W3CDTF</value>
+          </attribute>
+          <optional>
+            <ref name="xml_lang"/>
+          </optional>
+          <ref name="W3CDTF"/>
+        </element>
+      </optional>
+      <optional>
+        <element name="dc:creator">
+          <ref name="SimpleLiteral"/>
+        </element>
+      </optional>
+      <optional>
+        <element name="dc:description">
+          <ref name="SimpleLiteral"/>
+        </element>
+      </optional>
+      <optional>
+        <element name="dc:identifier">
+          <ref name="SimpleLiteral"/>
+        </element>
+      </optional>
+      <optional>
+        <element name="keywords">
+          <ref name="CT_Keywords"/>
+        </element>
+      </optional>
+      <optional>
+        <element name="dc:language">
+          <ref name="SimpleLiteral"/>
+        </element>
+      </optional>
+      <optional>
+        <element name="lastModifiedBy">
+          <data type="string"/>
+        </element>
+      </optional>
+      <optional>
+        <element name="lastPrinted">
+          <data type="dateTime"/>
+        </element>
+      </optional>
+      <optional>
+        <element name="dcterms:modified">
+          <attribute name="xsi:type">
+            <value type="QName">dcterms:W3CDTF</value>
+          </attribute>
+          <optional>
+            <ref name="xml_lang"/>
+          </optional>
+          <ref name="W3CDTF"/>
+        </element>
+      </optional>
+      <optional>
+        <element name="revision">
+          <data type="string"/>
+        </element>
+      </optional>
+      <optional>
+        <element name="dc:subject">
+          <ref name="SimpleLiteral"/>
+        </element>
+      </optional>
+      <optional>
+        <element name="dc:title">
+          <ref name="SimpleLiteral"/>
+        </element>
+      </optional>
+      <optional>
+        <element name="version">
+          <data type="string"/>
+        </element>
+      </optional>
+    </interleave>
+  </define>
+  <define name="CT_Keywords">
+    <mixed>
+      <optional>
+        <ref name="xml_lang"/>
+      </optional>
+      <zeroOrMore>
+        <element name="value">
+          <ref name="CT_Keyword"/>
+        </element>
+      </zeroOrMore>
+    </mixed>
+  </define>
+  <define name="CT_Keyword">
+    <data type="string"/>
+    <optional>
+      <ref name="xml_lang"/>
+    </optional>
+  </define>
+  <define name="SimpleLiteral">
+    <optional>
+      <ref name="xml_lang"/>
+    </optional>
+    <data type="string"/>
+  </define>
+  <define name="W3CDTF">
+    <choice>
+      <data type="gYear"/>
+      <data type="gYearMonth"/>
+      <data type="date"/>
+      <data type="dateTime"/>
+    </choice>
+  </define>
+</grammar>

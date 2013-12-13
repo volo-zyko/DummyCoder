@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<grammar ns="http://schemas.openxmlformats.org/package/2006/relationships" xmlns="http://relaxng.org/ns/structure/1.0" datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
+  <start>
+    <ref name="Relationships"/>
+  </start>
+  <define name="Relationships">
+    <element name="Relationships">
+      <ref name="CT_Relationships"/>
+    </element>
+  </define>
+  <define name="Relationship">
+    <element name="Relationship">
+      <ref name="CT_Relationship"/>
+    </element>
+  </define>
+  <define name="CT_Relationships">
+    <zeroOrMore>
+      <ref name="Relationship"/>
+    </zeroOrMore>
+  </define>
+  <define name="CT_Relationship">
+    <data type="string"/>
+    <optional>
+      <attribute name="TargetMode">
+        <ref name="ST_TargetMode"/>
+      </attribute>
+    </optional>
+    <attribute name="Target">
+      <data type="anyURI"/>
+    </attribute>
+    <attribute name="Type">
+      <data type="anyURI"/>
+    </attribute>
+    <attribute name="Id">
+      <data type="ID"/>
+    </attribute>
+  </define>
+  <define name="ST_TargetMode">
+    <choice>
+      <value type="string" datatypeLibrary="">External</value>
+      <value type="string" datatypeLibrary="">Internal</value>
+    </choice>
+  </define>
+</grammar>

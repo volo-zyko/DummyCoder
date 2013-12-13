@@ -61,6 +61,7 @@ class RngDefine(rng_base.RngBase):
 
         self.pattern = None
 
+    @method_once
     def prefinalize(self, grammar):
         if self.pattern is not None:
             return
@@ -80,10 +81,3 @@ class RngDefine(rng_base.RngBase):
             assert patterns, 'Wrong pattern in define'
             self.pattern = rng_group.RngGroup({}, self)
             self.pattern.children = patterns
-
-    @method_once
-    def finalize(self, grammar, all_schemata, factory):
-        if self.pattern is not None:
-            self.pattern.finalize(grammar, all_schemata, factory)
-
-        super(RngDefine, self).finalize(grammar, all_schemata, factory)

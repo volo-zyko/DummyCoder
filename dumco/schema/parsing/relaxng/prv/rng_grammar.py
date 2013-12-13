@@ -5,6 +5,7 @@ import StringIO
 
 from dumco.utils.decorators import method_once
 
+import dumco.schema.checks
 import dumco.schema.parsing.xml_parser
 import dumco.schema.parsing.relaxng.element_factory
 
@@ -56,10 +57,11 @@ class RngGrammar(rng_base.RngBase):
 
         self.elements.sort(key=lambda e: e.define_name)
 
-        # Finalize defines. However, this will ignore those defines that
-        # are not reachable from start and this is ok.
-        for d in self.defines.itervalues():
-            d.finalize(grammar, all_schemata, factory)
+        # Finish finalization of elements. Elements are not finalized when
+        # start is finalized because this might create infinite finalization
+        # loops.
+        for e in self.elements:
+            e.finalize(grammar, all_schemata, factory)
 
         super(RngGrammar, self).finalize(grammar, all_schemata, factory)
 
@@ -170,7 +172,8 @@ class RngGrammar(rng_base.RngBase):
     def _dump_internals(self, fhandle, indent):
         fhandle.write(' xmlns="{}"'.format(_rng_namespace()))
         for (uri, prefix) in sorted(self.known_prefices.iteritems()):
-            fhandle.write(' xmlns:{}="{}"'.format(prefix, uri))
+            if not dumco.schema.checks.is_xml_namespace(uri):
+                fhandle.write(' xmlns:{}="{}"'.format(prefix, uri))
         fhandle.write('>\n')
 
         self.start.dump(fhandle, indent)

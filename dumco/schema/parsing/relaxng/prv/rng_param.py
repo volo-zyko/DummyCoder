@@ -1,5 +1,7 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
+import dumco.utils.string_utils
+
 import rng_base
 
 
@@ -21,5 +23,6 @@ class RngParam(rng_base.RngBase):
         self.value = text if self.value is None else self.value + text
 
     def _dump_internals(self, fhandle, indent):
-        fhandle.write(' name="{}">{}'.format(self.name, self.value))
+        fhandle.write(' name="{}">{}'.format(
+            self.name, dumco.utils.string_utils.quote_xml_string(self.value)))
         return rng_base.RngBase._CLOSING_TAG_INLINE

@@ -35,9 +35,10 @@ class RngNsName(rng_base.RngBase):
         super(RngNsName, self).finalize(grammar, all_schemata, factory)
 
     def _dump_internals(self, fhandle, indent):
+        fhandle.write(' ns="{}"'.format(self.ns))
         if self.except_name_class is None:
             return rng_base.RngBase._CLOSING_EMPTY_TAG
         else:
-            fhandle.write(' ns="{}">\n'.format(self.ns))
+            fhandle.write('>\n')
             self.except_name_class.dump(fhandle, indent)
             return rng_base.RngBase._CLOSING_TAG

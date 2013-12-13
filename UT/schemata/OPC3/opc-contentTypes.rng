@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<grammar ns="http://schemas.openxmlformats.org/package/2006/content-types" xmlns="http://relaxng.org/ns/structure/1.0" datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
+  <start>
+    <ref name="Types"/>
+  </start>
+  <define name="Types">
+    <element name="Types">
+      <ref name="CT_Types"/>
+    </element>
+  </define>
+  <define name="Default">
+    <element name="Default">
+      <ref name="CT_Default"/>
+    </element>
+  </define>
+  <define name="Override">
+    <element name="Override">
+      <ref name="CT_Override"/>
+    </element>
+  </define>
+  <define name="CT_Types">
+    <zeroOrMore>
+      <choice>
+        <ref name="Default"/>
+        <ref name="Override"/>
+      </choice>
+    </zeroOrMore>
+  </define>
+  <define name="CT_Default">
+    <attribute name="Extension">
+      <ref name="ST_Extension"/>
+    </attribute>
+    <attribute name="ContentType">
+      <ref name="ST_ContentType"/>
+    </attribute>
+  </define>
+  <define name="CT_Override">
+    <attribute name="ContentType">
+      <ref name="ST_ContentType"/>
+    </attribute>
+    <attribute name="PartName">
+      <data type="anyURI"/>
+    </attribute>
+  </define>
+  <define name="ST_ContentType">
+    <data type="string">
+      <param name="pattern">(((([\p{IsBasicLatin}-[\p{Cc}&#127;\(\)&lt;&gt;@,;:\\"/\[\]\?=\{\}\s\t]])+))/((([\p{IsBasicLatin}-[\p{Cc}&#127;\(\)&lt;&gt;@,;:\\"/\[\]\?=\{\}\s\t]])+))((\s+)*;(\s+)*(((([\p{IsBasicLatin}-[\p{Cc}&#127;\(\)&lt;&gt;@,;:\\"/\[\]\?=\{\}\s\t]])+))=((([\p{IsBasicLatin}-[\p{Cc}&#127;\(\)&lt;&gt;@,;:\\"/\[\]\?=\{\}\s\t]])+)|("(([\p{IsLatin-1Supplement}\p{IsBasicLatin}-[\p{Cc}&#127;"\n\r]]|(\s+))|(\\[\p{IsBasicLatin}]))*"))))*)</param>
+    </data>
+  </define>
+  <define name="ST_Extension">
+    <data type="string">
+      <param name="pattern">([!$&amp;'\(\)\*\+,:=]|(%[0-9a-fA-F][0-9a-fA-F])|[:@]|[a-zA-Z0-9\-_~])+</param>
+    </data>
+  </define>
+</grammar>

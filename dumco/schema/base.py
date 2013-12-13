@@ -36,7 +36,8 @@ class SchemaBase(object):
     def __setattr__(self, name, value):
         if name not in self.__dict__:
             tb = sys._current_frames().values()[0]
-            assert tb.f_back.f_code.co_name == '__init__', \
+            assert (tb.f_back.f_code.co_name == '__init__' or
+                    tb.f_back.f_code.co_filename.endswith('decorators.py')), \
                 'Setting non-existent attribute'
         self.__dict__[name] = value
 

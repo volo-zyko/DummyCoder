@@ -23,7 +23,7 @@ class RngName(rng_base.RngBase):
     def append_text(self, text):
         (ns, name) = self.factory.parse_qname(text.strip())
         if name != '':
-            self.name = text if self.name is None else self.name + text
+            self.name = name if self.name is None else self.name + name
         if ns is not None:
             self.ns = ns
 

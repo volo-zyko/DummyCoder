@@ -67,11 +67,15 @@ class RngElement(rng_base.RngBase):
         self.define_name = None
 
     @method_once
-    def finalize(self, grammar, all_schemata, factory):
+    def finalize_name(self, grammar, all_schemata, factory):
         assert rng_utils.is_name_class(self.children[0]), \
             'Wrong name in element'
         self.name = self.children[0]
         self.name.finalize(grammar, all_schemata, factory)
+
+    @method_once
+    def finalize(self, grammar, all_schemata, factory):
+        self.finalize_name(grammar, all_schemata, factory)
 
         patterns = []
         for c in self.children[1:]:

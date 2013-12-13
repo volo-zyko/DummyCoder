@@ -1,6 +1,7 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
 import collections
+from functools import partial
 
 
 def function_once(func):
@@ -16,16 +17,22 @@ def function_once(func):
     return decorated
 
 
-def method_once(func):
-    def decorated(self, *args, **kwargs):
-        method_name = '{}.0x{:x}.0x{:x}'.format(
-            self.__module__, id(self), id(func))
+class method_once(object):
+    def __init__(self, func):
+        self.func = func
 
-        if method_name not in decorated.run_map:
-            # Add a key to run_map and then calculate value for it.
-            decorated.run_map[method_name] = None
-            decorated.run_map[method_name] = func(self, *args, **kwargs)
-        return decorated.run_map[method_name]
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self.func
+        return partial(self, obj)
 
-    decorated.run_map = {}
-    return decorated
+    def __call__(self, obj, *args, **kwargs):
+        if not hasattr(obj, '_cache'):
+            obj._cache = {}
+        cache = obj._cache
+
+        key = hash((obj, self.func))
+        if key not in cache:
+            cache[key] = self.func(obj, *args, **kwargs)
+
+        return cache[key]

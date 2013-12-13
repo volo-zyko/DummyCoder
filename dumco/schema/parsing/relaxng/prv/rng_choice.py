@@ -82,6 +82,12 @@ class RngChoicePattern(rng_base.RngBase):
                 has_empty = True
                 continue
 
+            if isinstance(c, rng_element.RngElement):
+                c.finalize_name(grammar, all_schemata, factory)
+                rng_utils.set_define_name_for_element(c, grammar)
+                self.patterns.append(c)
+                continue
+
             c.finalize(grammar, all_schemata, factory)
 
             if ((isinstance(c, RngChoicePattern) or
@@ -96,9 +102,6 @@ class RngChoicePattern(rng_base.RngBase):
                  isinstance(c, rng_interleave.RngInterleave)) and
                 len(c.patterns) == 1):
                 c = c.patterns[0]
-
-            if isinstance(c, rng_element.RngElement):
-                rng_utils.set_define_name_for_element(c, grammar)
 
             self.patterns.append(c)
 

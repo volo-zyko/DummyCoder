@@ -1,6 +1,7 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
 import string
+import xml.sax.saxutils
 
 import dumco.schema.checks
 
@@ -29,6 +30,11 @@ def cxx_norm_name(name):
         else:
             res.append('_{:02x}_'.format(c))
     return ''.join('_' + res if not res or res[0] in string.digits else res)
+
+
+_ENTITIES = {chr(x): '&#{};'.format(x) for x in xrange(127, 256)}
+def quote_xml_string(value):
+    return xml.sax.saxutils.quoteattr(str(value), _ENTITIES)
 
 
 upper_first_letter = lambda name: name[:1].upper() + name[1:]
