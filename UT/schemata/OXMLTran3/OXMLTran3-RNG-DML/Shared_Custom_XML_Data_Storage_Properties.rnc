@@ -1,0 +1,3 @@
+include "../OXMLTran3/common/shared-customXmlDataProperties.rnc"
+include "../OXMLTran3/common/shared-commonSimpleTypes.rnc"
+start = ds_datastoreItem

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<grammar ns="http://schemas.openxmlformats.org/drawingml/2006/compatibility" xmlns="http://relaxng.org/ns/structure/1.0">
+  <define name="dcmpt_CT_Compat">
+    <attribute name="spid">
+      <ref name="a_ST_ShapeID"/>
+    </attribute>
+  </define>
+  <define name="dcmpt_legacyDrawing">
+    <element name="legacyDrawing">
+      <ref name="dcmpt_CT_Compat"/>
+    </element>
+  </define>
+</grammar>

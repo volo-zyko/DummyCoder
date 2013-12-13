@@ -1,0 +1,4 @@
+include "../OXMLTran3/common/shared-documentPropertiesCustom.rnc"
+include "../OXMLTran3/common/shared-documentPropertiesVariantTypes.rnc"
+include "../OXMLTran3/common/shared-commonSimpleTypes.rnc"
+start = shdCstm_Properties

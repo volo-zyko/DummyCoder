@@ -1,0 +1,12 @@
+include "../OXMLTran3/common/pml.rnc"
+include "../OXMLTran3/common/shared-relationshipReference.rnc"
+include "../OXMLTran3/common/dml-main.rnc"
+include "../OXMLTran3/common/dml-diagram.rnc"
+include "../OXMLTran3/common/shared-commonSimpleTypes.rnc"
+include "../OXMLTran3/common/dml-lockedCanvas.rnc"
+include "../OXMLTran3/common/any.rnc"
+include "../OXMLTran3/common/dml-chart.rnc"
+include "../OXMLTran3/common/dml-chartDrawing.rnc"
+include "../OXMLTran3/common/dml-picture.rnc"
+include "../OXMLTran3/common/dml-compatibility.rnc"
+start = p_notes
