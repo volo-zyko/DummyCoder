@@ -1,0 +1,13 @@
+include "../common/sml.rnc"
+include "../common/shared-relationshipReference.rnc"
+include "../common/any.rnc"
+include "../common/shared-commonSimpleTypes.rnc"
+include "../common/dml-spreadsheetDrawing.rnc"
+include "../common/dml-main.rnc"
+include "../common/dml-diagram.rnc"
+include "../common/dml-lockedCanvas.rnc"
+include "../common/dml-chart.rnc"
+include "../common/dml-chartDrawing.rnc"
+include "../common/dml-picture.rnc"
+include "../common/dml-compatibility.rnc"
+start = sml_volTypes

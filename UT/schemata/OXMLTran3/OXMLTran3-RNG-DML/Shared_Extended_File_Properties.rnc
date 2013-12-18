@@ -1,4 +1,0 @@
-include "../OXMLTran3/common/shared-documentPropertiesExtended.rnc"
-include "../OXMLTran3/common/shared-documentPropertiesVariantTypes.rnc"
-include "../OXMLTran3/common/shared-commonSimpleTypes.rnc"
-start = shdDcEP_Properties

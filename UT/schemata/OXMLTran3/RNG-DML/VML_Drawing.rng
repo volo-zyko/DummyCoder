@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<grammar xmlns="http://relaxng.org/ns/structure/1.0">
+  <include href="../common/wml.rng"/>
+  <include href="../common/shared-relationshipReference.rng"/>
+  <include href="../common/dml-wordprocessingDrawing.rng"/>
+  <include href="../common/dml-main.rng"/>
+  <include href="../common/dml-diagram.rng"/>
+  <include href="../common/shared-commonSimpleTypes.rng"/>
+  <include href="../common/dml-lockedCanvas.rng"/>
+  <include href="../common/any.rng"/>
+  <include href="../common/dml-chart.rng"/>
+  <include href="../common/dml-chartDrawing.rng"/>
+  <include href="../common/dml-picture.rng"/>
+  <include href="../common/dml-compatibility.rng"/>
+  <include href="../common/vml-presentationDrawing.rng"/>
+  <include href="../../xml.rng"/>
+  <include href="../common/shared-customXmlSchemaProperties.rng"/>
+  <include href="../common/vml-officeDrawing.rng"/>
+  <include href="../common/vml-main.rng"/>
+  <include href="../common/vml-spreadsheetDrawing.rng"/>
+  <include href="../common/vml-wordprocessingDrawing.rng"/>
+  <include href="../common/shared-math.rng"/>
+  <start>
+    <element name="xml">
+      <zeroOrMore>
+        <choice>
+          <ref name="vml-main"/>
+          <ref name="vml-officeDrawing"/>
+          <ref name="vml-spreadsheetDrawing"/>
+          <ref name="vml-presentationDrawing"/>
+        </choice>
+      </zeroOrMore>
+    </element>
+  </start>
+  <define name="vml-main">
+    <choice>
+      <ref name="v_shape"/>
+      <ref name="v_shapetype"/>
+      <ref name="v_group"/>
+      <ref name="v_background"/>
+      <ref name="v_fill"/>
+      <ref name="v_formulas"/>
+      <ref name="v_handles"/>
+      <ref name="v_imagedata"/>
+      <ref name="v_path"/>
+      <ref name="v_textbox"/>
+      <ref name="v_shadow"/>
+      <ref name="v_stroke"/>
+      <ref name="v_textpath"/>
+      <ref name="v_arc"/>
+      <ref name="v_curve"/>
+      <ref name="v_image"/>
+      <ref name="v_line"/>
+      <ref name="v_oval"/>
+      <ref name="v_polyline"/>
+      <ref name="v_rect"/>
+      <ref name="v_roundrect"/>
+    </choice>
+  </define>
+  <define name="vml-officeDrawing">
+    <choice>
+      <ref name="o_shapedefaults"/>
+      <ref name="o_shapelayout"/>
+      <ref name="o_signatureline"/>
+      <ref name="o_ink"/>
+      <ref name="o_diagram"/>
+      <ref name="o_equationxml"/>
+      <ref name="o_skew"/>
+      <ref name="o_extrusion"/>
+      <ref name="o_callout"/>
+      <ref name="o_lock"/>
+      <ref name="o_OLEObject"/>
+      <ref name="o_complex"/>
+      <ref name="o_left"/>
+      <ref name="o_top"/>
+      <ref name="o_right"/>
+      <ref name="o_bottom"/>
+      <ref name="o_column"/>
+      <ref name="o_clippath"/>
+      <ref name="o_fill"/>
+    </choice>
+  </define>
+  <define name="vml-wordprocessingDrawing">
+    <choice>
+      <ref name="w10_bordertop"/>
+      <ref name="w10_borderleft"/>
+      <ref name="w10_borderright"/>
+      <ref name="w10_borderbottom"/>
+      <ref name="w10_wrap"/>
+      <ref name="w10_anchorlock"/>
+    </choice>
+  </define>
+  <define name="vml-spreadsheetDrawing">
+    <ref name="x_ClientData"/>
+  </define>
+  <define name="vml-presentationDrawing">
+    <choice>
+      <ref name="pvml_iscomment"/>
+      <ref name="pvml_textdata"/>
+    </choice>
+  </define>
+</grammar>

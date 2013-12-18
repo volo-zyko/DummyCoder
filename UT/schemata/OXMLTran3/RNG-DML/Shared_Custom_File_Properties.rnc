@@ -1,0 +1,4 @@
+include "../common/shared-documentPropertiesCustom.rnc"
+include "../common/shared-documentPropertiesVariantTypes.rnc"
+include "../common/shared-commonSimpleTypes.rnc"
+start = shdCstm_Properties

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<grammar xmlns="http://relaxng.org/ns/structure/1.0">
+  <include href="../common/wml.rng"/>
+  <include href="../common/shared-relationshipReference.rng"/>
+  <include href="../common/dml-wordprocessingDrawing.rng"/>
+  <include href="../common/dml-main.rng"/>
+  <include href="../common/dml-diagram.rng"/>
+  <include href="../common/shared-commonSimpleTypes.rng"/>
+  <include href="../common/dml-lockedCanvas.rng"/>
+  <include href="../common/any.rng"/>
+  <include href="../common/dml-chart.rng"/>
+  <include href="../common/dml-chartDrawing.rng"/>
+  <include href="../common/dml-picture.rng"/>
+  <include href="../common/dml-compatibility.rng"/>
+  <include href="../common/vml-presentationDrawing.rng"/>
+  <include href="../../xml.rng"/>
+  <include href="../common/shared-customXmlSchemaProperties.rng"/>
+  <include href="../common/vml-officeDrawing.rng"/>
+  <include href="../common/vml-main.rng"/>
+  <include href="../common/vml-spreadsheetDrawing.rng"/>
+  <include href="../common/vml-wordprocessingDrawing.rng"/>
+  <include href="../common/shared-math.rng"/>
+  <start>
+    <ref name="w_endnotes"/>
+  </start>
+</grammar>

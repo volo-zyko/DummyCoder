@@ -1,0 +1,4 @@
+include "../common/shared-documentPropertiesExtended.rnc"
+include "../common/shared-documentPropertiesVariantTypes.rnc"
+include "../common/shared-commonSimpleTypes.rnc"
+start = shdDcEP_Properties

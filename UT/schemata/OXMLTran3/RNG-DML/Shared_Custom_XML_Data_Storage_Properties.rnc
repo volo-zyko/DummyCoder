@@ -1,0 +1,3 @@
+include "../common/shared-customXmlDataProperties.rnc"
+include "../common/shared-commonSimpleTypes.rnc"
+start = ds_datastoreItem

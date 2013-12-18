@@ -1,3 +1,0 @@
-include "../OXMLTran3/common/shared-bibliography.rnc"
-include "../OXMLTran3/common/shared-commonSimpleTypes.rnc"
-start = shrdBib_Sources

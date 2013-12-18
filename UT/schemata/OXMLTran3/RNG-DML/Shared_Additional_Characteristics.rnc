@@ -1,0 +1,2 @@
+include "../common/shared-additionalCharacteristics.rnc"
+start = shrdChr_additionalCharacteristics

@@ -1,0 +1,78 @@
+include "../common/wml.rnc"
+include "../common/shared-relationshipReference.rnc"
+include "../common/dml-wordprocessingDrawing.rnc"
+include "../common/dml-main.rnc"
+include "../common/dml-diagram.rnc"
+include "../common/shared-commonSimpleTypes.rnc"
+include "../common/dml-lockedCanvas.rnc"
+include "../common/any.rnc"
+include "../common/dml-chart.rnc"
+include "../common/dml-chartDrawing.rnc"
+include "../common/dml-picture.rnc"
+include "../common/dml-compatibility.rnc"
+include "../common/vml-presentationDrawing.rnc"
+include "../../xml.rnc"
+include "../common/shared-customXmlSchemaProperties.rnc"
+include "../common/vml-officeDrawing.rnc"
+include "../common/vml-main.rnc"
+include "../common/vml-spreadsheetDrawing.rnc"
+include "../common/vml-wordprocessingDrawing.rnc"
+include "../common/shared-math.rnc"
+start = element xml {(vml-main | vml-officeDrawing | vml-spreadsheetDrawing | vml-presentationDrawing)* }
+
+vml-main =
+ v_shape
+ | v_shapetype
+ | v_group
+ | v_background
+ | v_fill
+ | v_formulas
+ | v_handles
+ | v_imagedata
+ | v_path
+ | v_textbox
+ | v_shadow
+ | v_stroke
+ | v_textpath
+ | v_arc
+ | v_curve
+ | v_image
+ | v_line
+ | v_oval
+ | v_polyline
+ | v_rect
+ | v_roundrect
+
+vml-officeDrawing = 
+  o_shapedefaults
+  | o_shapelayout
+  | o_signatureline
+  | o_ink
+  | o_diagram
+  | o_equationxml
+  | o_skew
+  | o_extrusion
+  | o_callout
+  | o_lock
+  | o_OLEObject
+  | o_complex
+  | o_left
+  | o_top
+  | o_right
+  | o_bottom
+  | o_column
+  | o_clippath
+  | o_fill
+
+vml-wordprocessingDrawing =
+  w10_bordertop
+  | w10_borderleft
+  | w10_borderright
+  | w10_borderbottom
+  | w10_wrap
+  | w10_anchorlock
+
+vml-spreadsheetDrawing = x_ClientData
+
+vml-presentationDrawing = pvml_iscomment | pvml_textdata
+
