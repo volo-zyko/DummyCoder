@@ -31,10 +31,11 @@ class XsdElement(xsd_base.XsdBase):
     def __init__(self, attrs, parent_schema, factory):
         super(XsdElement, self).__init__(attrs)
 
-        self.qualified = (self.attr('form') == 'qualified' or
-            (self.attr('form') != 'unqualified') and
+        self.qualified = (
+            self.attr('form') == 'qualified' or
+            (self.attr('form') != 'unqualified' and
              parent_schema is not None and
-             parent_schema.elements_qualified)
+             parent_schema.elements_qualified))
         self.abstract = (self.attr('abstract') == 'true' or
                          self.attr('abstract') == '1')
 

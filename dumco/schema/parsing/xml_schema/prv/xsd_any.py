@@ -17,7 +17,8 @@ def xsd_any(attrs, parent_element, factory, schema_path, all_schemata):
     })
 
 
-def xsd_anyAttribute(attrs, parent_element, factory, schema_path, all_schemata):
+def xsd_anyAttribute(attrs, parent_element, factory,
+                     schema_path, all_schemata):
     new_element = XsdAny(attrs, all_schemata[schema_path], factory, True)
     parent_element.children.append(new_element)
 
@@ -30,37 +31,40 @@ class XsdAny(xsd_base.XsdBase):
     def __init__(self, attrs, parent_schema, factory, is_attribute):
         super(XsdAny, self).__init__(attrs)
 
-        namespace = dumco.schema.elements.Any.ANY
+        constraints = []
+        Any = dumco.schema.elements.Any
 
         if self.attr('namespace') is not None:
             value = self.attr('namespace').strip()
             if value == '##any':
-                namespace = dumco.schema.elements.Any.ANY
+                constraints = []
             elif value == '##other':
-                namespace = dumco.schema.elements.Any.OTHER
+                if parent_schema.schema_element.target_ns is not None:
+                    constraints = Any.Not(
+                        Any.Name(parent_schema.schema_element.target_ns, None))
             else:
                 def fold_namespaces(accum, u):
                     if u == '##targetNamespace':
                         if parent_schema.schema_element.target_ns is None:
                             return accum
-                        return accum + [parent_schema.schema_element.target_ns]
+                        return accum + Any.Name(
+                            parent_schema.schema_element.target_ns, None)
                     elif u == '##local':
                         return accum
-                    return accum + [u]
+                    return accum + [Any.Name(u, None)]
 
-                namespace = reduce(fold_namespaces, value.split(), [])
+                constraints = reduce(fold_namespaces, value.split(), [])
 
         if is_attribute:
             self.schema_element = dumco.schema.uses.AttributeUse(
                 None, None, None,
-                dumco.schema.elements.Any(namespace,
-                                          parent_schema.schema_element))
+                Any(constraints, parent_schema.schema_element))
         else:
-            self.schema_element = dumco.schema.uses.Particle(None,
+            self.schema_element = dumco.schema.uses.Particle(
+                None,
                 factory.particle_min_occurs(attrs),
                 factory.particle_max_occurs(attrs),
-                dumco.schema.elements.Any(namespace,
-                                          parent_schema.schema_element))
+                Any(constraints, parent_schema.schema_element))
 
     @method_once
     def finalize(self, factory):

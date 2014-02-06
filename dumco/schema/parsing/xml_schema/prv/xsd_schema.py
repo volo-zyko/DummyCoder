@@ -22,6 +22,12 @@ import xsd_simple_type
 
 
 def xsd_schema(attrs, parent_element, factory, schema_path, all_schemata):
+    if dumco.schema.checks.is_xml_namespace(attrs.get('targetNamespace', None)):
+        del all_schemata[schema_path]
+        factory.reset()
+
+        raise dumco.schema.parsing.xml_parser.SkipParse()
+
     schema = XsdSchema(attrs, schema_path)
     all_schemata[schema_path] = schema
 

@@ -7,7 +7,8 @@ import xsd_base
 import xsd_attribute
 
 
-def xsd_attributeGroup(attrs, parent_element, factory, schema_path, all_schemata):
+def xsd_attributeGroup(attrs, parent_element, factory,
+                       schema_path, all_schemata):
     new_element = XsdAttributeGroup(attrs, all_schemata[schema_path])
     parent_element.children.append(new_element)
 

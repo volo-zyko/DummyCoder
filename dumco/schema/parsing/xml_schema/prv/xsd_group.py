@@ -33,22 +33,22 @@ class XsdGroup(xsd_base.XsdBase):
         self.schema = parent_schema
         self.min_occurs = factory.particle_min_occurs(attrs)
         self.max_occurs = factory.particle_max_occurs(attrs)
-        self.term = None
 
     @method_once
     def finalize(self, factory):
+        term = None
         if self.attr('ref') is not None:
             particle = factory.resolve_group(self.attr('ref'), self.schema)
 
-            self.term = particle.term
+            term = particle.term
         else:
             for c in self.children:
                 assert ((isinstance(c, xsd_all.XsdAll) or
                          isinstance(c, xsd_choice.XsdChoice) or
                          isinstance(c, xsd_sequence.XsdSequence)) and
-                        self.term is None), 'Wrong content of Group'
+                        term is None), 'Wrong content of Group'
 
-                self.term = c.finalize(factory).term
+                term = c.finalize(factory).term
 
         return dumco.schema.uses.Particle(
-            None, self.min_occurs, self.max_occurs, self.term)
+            None, self.min_occurs, self.max_occurs, term)

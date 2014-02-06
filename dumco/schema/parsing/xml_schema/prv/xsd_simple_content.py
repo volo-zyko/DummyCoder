@@ -29,9 +29,10 @@ class XsdSimpleContent(xsd_base.XsdBase):
     @method_once
     def finalize(self, factory):
         for c in self.children:
-            assert ((isinstance(c, xsd_extension_sc.XsdSimpleExtension) or
-                     isinstance(c, xsd_restriction_sc.XsdSimpleRestriction)) and
-                    self.content_type is None), 'Wrong content of SimpleContent'
+            assert (
+                (isinstance(c, xsd_extension_sc.XsdSimpleExtension) or
+                 isinstance(c, xsd_restriction_sc.XsdSimpleRestriction)) and
+                self.content_type is None), 'Wrong content of SimpleContent'
 
             c.finalize(factory)
 

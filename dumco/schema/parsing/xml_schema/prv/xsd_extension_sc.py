@@ -51,11 +51,11 @@ class XsdSimpleExtension(xsd_base.XsdBase):
                                     self.schema, finalize=True)
 
         if dumco.schema.checks.is_complex_type(base):
-            self.attr_uses.extend(base.attribute_uses)
+            self.attr_uses.extend(map(lambda (_, x): x, base.attribute_uses()))
 
-            assert dumco.schema.checks.is_primitive_type(base.text.type), \
+            self.base = base.text().component.type
+            assert dumco.schema.checks.is_primitive_type(self.base), \
                 'Simple Extension must extend only Simple Content'
-            self.base = base.text.type
         else:
             self.base = base
 

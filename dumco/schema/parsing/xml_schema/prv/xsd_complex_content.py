@@ -23,10 +23,10 @@ class XsdComplexContent(xsd_base.XsdBase):
     def __init__(self, attrs):
         super(XsdComplexContent, self).__init__(attrs)
 
-        self.mixed = (None if self.attr('mixed') is None
-                           else (self.attr('mixed') == 'true' or
-                                 self.attr('mixed') == '1'))
-        self.particle = None
+        self.mixed = (
+            None if self.attr('mixed') is None
+            else (self.attr('mixed') == 'true' or self.attr('mixed') == '1'))
+        self.part = None
         self.attr_uses = []
 
     @method_once
@@ -35,11 +35,11 @@ class XsdComplexContent(xsd_base.XsdBase):
             assert (
                 (isinstance(c, xsd_extension_cc.XsdComplexExtension) or
                  isinstance(c, xsd_restriction_cc.XsdComplexRestriction)) and
-                self.particle is None), 'Wrong content of ComplexContent'
+                self.part is None), 'Wrong content of ComplexContent'
 
             c.finalize(factory)
 
-            self.particle = c.particle
+            self.part = c.part
             self.attr_uses = c.attr_uses
 
         return self

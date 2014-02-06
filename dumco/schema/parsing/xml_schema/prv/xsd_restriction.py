@@ -163,7 +163,7 @@ class XsdRestriction(xsd_base.XsdBase):
         elif value == 'collapse':
             parent_element.schema_element.white_space = \
                 dumco.schema.elements.Restriction.WS_COLLAPSE
-        else: # pragma: no cover
+        else:  # pragma: no cover
             assert False
 
         return (parent_element, {

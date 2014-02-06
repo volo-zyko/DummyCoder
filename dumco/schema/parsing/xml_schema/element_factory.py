@@ -11,17 +11,18 @@ import prv.xsd_schema
 
 
 class XsdElementFactory(object):
-    def __init__(self, element_namer):
+    def __init__(self, arguments, element_namer):
         # Reset internals of this factory.
         self.reset()
 
         # These internals should not be reset.
         self.included_schema_paths = {}
 
-        # All prefices encountered during schemata loading.
-        self.all_namespace_prefices = {dumco.schema.base.XML_NAMESPACE: 'xml'}
+        # All prefixes encountered during schemata loading.
+        self.all_namespace_prefixes = {dumco.schema.base.XML_NAMESPACE: 'xml'}
 
-        # Set part of the factorie's interface.
+        # This is part of the factory's interface.
+        self.arguments = arguments
         self.namer = element_namer
         self.extension = '.xsd'
 
@@ -45,11 +46,11 @@ class XsdElementFactory(object):
             self.namespaces[prefix] = uri
 
             if (prefix is not None and
-                not dumco.schema.checks.is_xsd_namespace(uri)):
+                    not dumco.schema.checks.is_xsd_namespace(uri)):
                 # This makes sure that prefix will be the same no matter
                 # what was the order of loading of schemata.
-                if prefix > self.all_namespace_prefices.get(uri, ''):
-                    self.all_namespace_prefices[uri] = prefix
+                if prefix > self.all_namespace_prefixes.get(uri, ''):
+                    self.all_namespace_prefixes[uri] = prefix
 
     def new_element(self, elem_name, attrs, schema_path, all_schemata):
         # Here we don't support anything non-XSD.
@@ -74,11 +75,11 @@ class XsdElementFactory(object):
                 # value and which we want to process will have correctly
                 # resolved namespace uri.
                 if (name == 'ref' or name == 'type' or name == 'base' or
-                    name == 'substitutionGroup' or name == 'itemType'):
+                        name == 'substitutionGroup' or name == 'itemType'):
                     xsd_attrs[name] = self._parse_qname(value)
                 elif name == 'memberTypes':
-                    xsd_attrs[name] = [self._parse_qname(q)
-                        for q in value.split()]
+                    xsd_attrs[name] = [
+                        self._parse_qname(q) for q in value.split()]
                 else:
                     xsd_attrs[name] = value
 
@@ -113,12 +114,12 @@ class XsdElementFactory(object):
         sorted_all_schemata = sorted(all_schemata.values(),
                                      key=lambda s: s.schema_element.target_ns)
 
-        # Set schema prefices and original imports which are necessary during
+        # Set schema prefixes and original imports which are necessary during
         # per-schema finalization.
         for schema in sorted_all_schemata:
             schema.set_imports(all_schemata, self)
 
-            schema.schema_element.set_prefix(self.all_namespace_prefices)
+            schema.schema_element.set_prefix(self.all_namespace_prefixes)
 
         # Finalize each schema except for those included schemata.
         for schema in sorted_all_schemata:
@@ -139,14 +140,16 @@ class XsdElementFactory(object):
                 if not included_in_other_schema(schema)]
 
     def _post_finalize(self, xsd_schema, substituted):
-        enums = dumco.schema.enums
         checks = dumco.schema.checks
 
         def enum_schema_content_with_fixes(schema):
             def enum_with_substitute(particle):
-                for (_, p) in enums.enum_term_particles(particle.term):
+                for (_, p) in particle.term.traverse_with_parents():
+                    if not checks.is_particle(p):
+                        continue
+
                     if (p.term in self.substitution_groups and
-                        p.term not in substituted):
+                            p.term not in substituted):
                         substituted.add(p.term)
                         p.term = self.substitution_groups[p.term]
                         for t in enum_with_substitute(p):
@@ -168,14 +171,14 @@ class XsdElementFactory(object):
 
             for ct in schema.schema_element.complex_types:
                 if (ct.mixed or checks.has_complex_content(ct)):
-                    for t in enum_with_substitute(ct.particle):
+                    for t in enum_with_substitute(ct.structure):
                         yield t
 
-                for (_, u) in enums.enum_attribute_uses(ct):
+                for (_, u) in ct.attribute_uses():
                     yield u.attribute
 
                 if checks.has_simple_content(ct):
-                    yield ct.text.type
+                    yield ct.text().component.type
 
             for st in schema.schema_element.simple_types:
                 yield st
@@ -186,20 +189,15 @@ class XsdElementFactory(object):
             for attr in schema.schema_element.attributes:
                 yield attr
 
-        def add_import_if_differ(own_schema, other_schema, component=None):
-            if other_schema is None:
-                if checks.is_xml_attribute(component):
-                    own_schema.add_import(None)
-                    return True
-            elif other_schema != own_schema:
+        def add_import_if_differ(own_schema, other_schema):
+            if other_schema != own_schema:
                 own_schema.add_import(other_schema)
                 return True
             return False
 
         # Traverse all schema components and add imports if necessary.
         for c in enum_schema_content_with_fixes(xsd_schema):
-            if add_import_if_differ(xsd_schema.schema_element,
-                                    c.schema, component=c):
+            if add_import_if_differ(xsd_schema.schema_element, c.schema):
                 continue
 
             if (checks.is_element(c) or checks.is_attribute(c)):
@@ -225,11 +223,11 @@ class XsdElementFactory(object):
                 dumco.schema.elements.Choice(head.schema)
         substitution_group = self.substitution_groups[head]
 
-        if not xsd_head.abstract and len(substitution_group.particles) == 0:
-            substitution_group.particles.append(dumco.schema.uses.Particle(
+        if not xsd_head.abstract and len(substitution_group.members) == 0:
+            substitution_group.members.append(dumco.schema.uses.Particle(
                 xsd_head.qualified, 1, 1, head))
 
-        substitution_group.particles.append(dumco.schema.uses.Particle(
+        substitution_group.members.append(dumco.schema.uses.Particle(
             xsd_element.qualified, 1, 1, xsd_element.schema_element.term))
 
     def add_to_parent_schema(self, element, attrs, schema,
@@ -287,7 +285,7 @@ class XsdElementFactory(object):
                 return (attr.finalize(self).attribute if finalize
                         else attr.schema_element.attribute)
             except KeyError:
-                return dumco.schema.base.xml_attributes()[localname]
+                return dumco.schema.elements.xml_attributes()[localname]
 
     def resolve_attribute_group(self, (uri, localname), schema):
         if uri is None or uri == schema.schema_element.target_ns:
@@ -298,7 +296,7 @@ class XsdElementFactory(object):
 
     def resolve_complex_type(self, (uri, localname), schema, finalize=False):
         if (dumco.schema.checks.is_xsd_namespace(uri) and
-            localname == 'anyType'):
+                localname == 'anyType'):
             return dumco.schema.elements.ComplexType.urtype()
 
         if uri is None or uri == schema.schema_element.target_ns:
@@ -350,10 +348,12 @@ class XsdElementFactory(object):
         return attrs.get(localname)
 
     def _parse_qname(self, qname):
+        checks = dumco.schema.checks
+
         splitted = qname.split(':')
         if len(splitted) == 1:
             if (None in self.namespaces and
-                dumco.schema.checks.is_xsd_namespace(self.namespaces[None])):
+                    checks.is_xsd_namespace(self.namespaces[None])):
                 return (dumco.schema.xsd_types.XSD_NAMESPACE, qname)
             else:
                 return (None, qname)
@@ -361,7 +361,8 @@ class XsdElementFactory(object):
             return (self.namespaces[splitted[0]], splitted[1])
 
     @staticmethod
-    def noop_handler(attrs, parent_element, factory, schema_path, all_schemata):
+    def noop_handler(attrs, parent_element, factory,
+                     schema_path, all_schemata):
         return (parent_element, None)
 
     @staticmethod

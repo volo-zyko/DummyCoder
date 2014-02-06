@@ -26,10 +26,11 @@ class XsdAttribute(xsd_base.XsdBase):
     def __init__(self, attrs, parent_schema, factory):
         super(XsdAttribute, self).__init__(attrs)
 
-        self.qualified = (self.attr('form') == 'qualified' or
-            (self.attr('form') != 'unqualified') and
+        self.qualified = (
+            self.attr('form') == 'qualified' or
+            (self.attr('form') != 'unqualified' and
              parent_schema is not None and
-             parent_schema.attributes_qualified)
+             parent_schema.attributes_qualified))
 
         attribute = dumco.schema.elements.Attribute(
             self.attr('name'), self.attr('default'), self.attr('fixed'),

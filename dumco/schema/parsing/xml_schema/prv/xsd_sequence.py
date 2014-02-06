@@ -30,7 +30,8 @@ class XsdSequence(xsd_base.XsdBase):
     def __init__(self, attrs, parent_schema, factory):
         super(XsdSequence, self).__init__(attrs)
 
-        self.schema_element = dumco.schema.uses.Particle(None,
+        self.schema_element = dumco.schema.uses.Particle(
+            None,
             factory.particle_min_occurs(attrs),
             factory.particle_max_occurs(attrs),
             dumco.schema.elements.Sequence(parent_schema.schema_element))
@@ -45,6 +46,6 @@ class XsdSequence(xsd_base.XsdBase):
                     isinstance(c, XsdSequence)), \
                 'Wrong content of Sequence'
 
-            self.schema_element.term.particles.append(c.finalize(factory))
+            self.schema_element.term.members.append(c.finalize(factory))
 
         return self.schema_element

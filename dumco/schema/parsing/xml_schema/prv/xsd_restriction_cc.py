@@ -34,7 +34,7 @@ class XsdComplexRestriction(xsd_base.XsdBase):
         super(XsdComplexRestriction, self).__init__(attrs)
 
         self.schema = parent_schema
-        self.particle = None
+        self.part = None
         self.attr_uses = []
 
     @method_once
@@ -43,11 +43,11 @@ class XsdComplexRestriction(xsd_base.XsdBase):
         prohibited_attr_uses = []
         for c in self.children:
             if (isinstance(c, xsd_all.XsdAll) or
-                isinstance(c, xsd_choice.XsdChoice) or
-                isinstance(c, xsd_sequence.XsdSequence) or
-                isinstance(c, xsd_group.XsdGroup)):
-                assert self.particle is None, 'Content model overriden'
-                self.particle = c.finalize(factory)
+                    isinstance(c, xsd_choice.XsdChoice) or
+                    isinstance(c, xsd_sequence.XsdSequence) or
+                    isinstance(c, xsd_group.XsdGroup)):
+                assert self.part is None, 'Content model overridden'
+                self.part = c.finalize(factory)
             elif isinstance(c, xsd_attribute_group.XsdAttributeGroup):
                 self.attr_uses.extend(c.finalize(factory).attr_uses)
             elif isinstance(c, xsd_attribute.XsdAttribute):
@@ -57,7 +57,7 @@ class XsdComplexRestriction(xsd_base.XsdBase):
                     redefined_attr_uses.append(c.finalize(factory))
             elif isinstance(c, xsd_any.XsdAny):
                 self.attr_uses.append(c.finalize(factory))
-            else: # pragma: no cover
+            else:  # pragma: no cover
                 assert False, 'Wrong content of complex Restriction'
 
         base = factory.resolve_complex_type(self.attr('base'),

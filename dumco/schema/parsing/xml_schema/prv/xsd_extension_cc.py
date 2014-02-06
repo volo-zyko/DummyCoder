@@ -2,6 +2,7 @@
 
 from dumco.utils.decorators import method_once
 
+import dumco.schema.checks
 import dumco.schema.elements
 import dumco.schema.enums
 import dumco.schema.uses
@@ -38,18 +39,18 @@ class XsdComplexExtension(xsd_base.XsdBase):
         super(XsdComplexExtension, self).__init__(attrs)
 
         self.schema = parent_schema
-        self.particle = None
+        self.part = None
         self.attr_uses = []
 
     @method_once
     def finalize(self, factory):
         for c in self.children:
             if (isinstance(c, xsd_all.XsdAll) or
-                isinstance(c, xsd_choice.XsdChoice) or
-                isinstance(c, xsd_sequence.XsdSequence) or
-                isinstance(c, xsd_group.XsdGroup)):
-                assert self.particle is None, 'Content model overriden'
-                self.particle = c.finalize(factory)
+                    isinstance(c, xsd_choice.XsdChoice) or
+                    isinstance(c, xsd_sequence.XsdSequence) or
+                    isinstance(c, xsd_group.XsdGroup)):
+                assert self.part is None, 'Content model overridden'
+                self.part = c.finalize(factory)
             elif isinstance(c, xsd_attribute_group.XsdAttributeGroup):
                 self.attr_uses.extend(c.finalize(factory).attr_uses)
             elif isinstance(c, xsd_attribute.XsdAttribute):
@@ -57,32 +58,47 @@ class XsdComplexExtension(xsd_base.XsdBase):
                     self.attr_uses.append(c.finalize(factory))
             elif isinstance(c, xsd_any.XsdAny):
                 self.attr_uses.append(c.finalize(factory))
-            else: # pragma: no cover
+            else:  # pragma: no cover
                 assert False, 'Wrong content of complex Extension'
 
         base = factory.resolve_complex_type(self.attr('base'),
                                             self.schema, finalize=True)
 
-        self.particle = self._merge_content(base)
-        self.attr_uses.extend(base.attribute_uses)
+        self.part = self._merge_content(base)
+        self.attr_uses.extend(map(lambda (_, x): x, base.attribute_uses()))
 
         return self
 
     def _merge_content(self, base):
-        if self.particle is None:
-            return base.particle
-        elif base.particle is None:
-            return self.particle
+        base_part = _root_particle(base)
 
-        new_element = dumco.schema.elements.Sequence(self.schema.schema_element)
+        if self.part is None:
+            return base_part
+        elif base_part is None:
+            return self.part
+
+        new_elem = dumco.schema.elements.Sequence(self.schema.schema_element)
         copy_base = dumco.schema.uses.Particle(None,
-                                               base.particle.min_occurs,
-                                               base.particle.max_occurs,
-                                               base.particle.term)
+                                               base_part.min_occurs,
+                                               base_part.max_occurs,
+                                               base_part.term)
         copy_self = dumco.schema.uses.Particle(None,
-                                               self.particle.min_occurs,
-                                               self.particle.max_occurs,
-                                               self.particle.term)
-        new_element.particles.extend([copy_base, copy_self])
+                                               self.part.min_occurs,
+                                               self.part.max_occurs,
+                                               self.part.term)
+        new_elem.members.extend([copy_base, copy_self])
 
-        return dumco.schema.uses.Particle(None, 1, 1, new_element)
+        return dumco.schema.uses.Particle(None, 1, 1, new_elem)
+
+
+def _root_particle(ct):
+    if ct.structure is None or len(ct.structure.term.members) == 0:
+        return None
+
+    if (dumco.schema.checks.is_attribute_use(ct.structure.term.members[0]) or
+            dumco.schema.checks.is_text(ct.structure.term.members[-1])):
+        roots = filter(lambda x: dumco.schema.checks.is_particle(x),
+                       ct.structure.term.members)
+        return roots[0] if len(roots) == 1 else None
+
+    return ct.structure

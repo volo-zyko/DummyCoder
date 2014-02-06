@@ -23,7 +23,8 @@ class XsdAll(xsd_base.XsdBase):
     def __init__(self, attrs, parent_schema, factory):
         super(XsdAll, self).__init__(attrs)
 
-        self.schema_element = dumco.schema.uses.Particle(None,
+        self.schema_element = dumco.schema.uses.Particle(
+            None,
             factory.particle_min_occurs(attrs),
             factory.particle_max_occurs(attrs),
             dumco.schema.elements.All(parent_schema.schema_element))
@@ -34,6 +35,6 @@ class XsdAll(xsd_base.XsdBase):
             assert isinstance(c, xsd_element.XsdElement), \
                 'Only Element is allowed in All'
 
-            self.schema_element.term.particles.append(c.finalize(factory))
+            self.schema_element.term.members.append(c.finalize(factory))
 
         return self.schema_element

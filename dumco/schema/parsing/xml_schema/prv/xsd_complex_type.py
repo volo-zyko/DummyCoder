@@ -2,7 +2,6 @@
 
 from dumco.utils.decorators import method_once
 
-import dumco.schema.base
 import dumco.schema.checks
 import dumco.schema.elements
 import dumco.schema.uses
@@ -53,67 +52,75 @@ class XsdComplexType(xsd_base.XsdBase):
 
     @method_once
     def finalize(self, factory):
-        attribute_uses = self.schema_element.attribute_uses
+        attr_uses = []
+        particle = None
+        text = None
 
         mixed = self.attr('mixed') == 'true' or self.attr('mixed') == '1'
 
         for c in self.children:
             if isinstance(c, xsd_simple_content.XsdSimpleContent):
-                assert self.schema_element.particle is None, \
-                    'Content model overriden'
+                assert particle is None, 'Content model overridden'
                 c.finalize(factory)
-                self.schema_element.text = \
-                    dumco.schema.base.SchemaText(c.content_type)
-                attribute_uses.extend(c.attr_uses)
+                text = dumco.schema.elements.SchemaText(c.content_type)
+                attr_uses.extend(c.attr_uses)
             elif isinstance(c, xsd_complex_content.XsdComplexContent):
-                assert self.schema_element.particle is None, \
-                    'Content model overriden'
+                assert particle is None, 'Content model overridden'
                 c.finalize(factory)
-                self.schema_element.particle = c.particle
-                attribute_uses.extend(c.attr_uses)
+                particle = c.part
+                attr_uses.extend(c.attr_uses)
                 if c.mixed is not None:
                     mixed = c.mixed
             elif (isinstance(c, xsd_all.XsdAll) or
                   isinstance(c, xsd_choice.XsdChoice) or
                   isinstance(c, xsd_sequence.XsdSequence) or
                   isinstance(c, xsd_group.XsdGroup)):
-                assert self.schema_element.particle is None, \
-                    'Content model overriden'
-                self.schema_element.particle = c.finalize(factory)
+                assert particle is None, 'Content model overridden'
+                particle = c.finalize(factory)
             elif isinstance(c, xsd_attribute_group.XsdAttributeGroup):
-                attribute_uses.extend(c.finalize(factory).attr_uses)
+                attr_uses.extend(c.finalize(factory).attr_uses)
             elif isinstance(c, xsd_attribute.XsdAttribute):
                 if not c.prohibited:
-                    attribute_uses.append(c.finalize(factory))
+                    attr_uses.append(c.finalize(factory))
             elif isinstance(c, xsd_any.XsdAny):
-                attribute_uses.append(c.finalize(factory))
-            else: # pragma: no cover
+                attr_uses.append(c.finalize(factory))
+            else:  # pragma: no cover
                 assert False, 'Wrong content of ComplexType'
 
         if mixed:
-            if self.schema_element.particle is None:
-                self.schema_element.particle = dumco.schema.uses.Particle(
+            if particle is None:
+                particle = dumco.schema.uses.Particle(
                     None, 1, 1,
                     dumco.schema.elements.Sequence(self.schema_element.schema))
 
-            self.schema_element.text = dumco.schema.base.SchemaText(
+            text = dumco.schema.elements.SchemaText(
                 dumco.schema.xsd_types.xsd_builtin_types()['string'])
 
-        _assert_on_duplicate_attributes(attribute_uses, self)
+        _assert_on_duplicate_attributes(attr_uses, self)
 
         def attr_key(use):
-            checks = dumco.schema.checks
             if dumco.schema.checks.is_any(use.attribute):
                 return (0, '')
             elif use.attribute.schema is None:
                 return (-2, use.attribute.name)
-            elif checks.is_xml_namespace(use.attribute.schema.target_ns):
-                return (-3, use.attribute.name)
             elif use.attribute.schema != self.schema_element.schema:
                 num = sum([ord(c) for c in use.attribute.schema.prefix])
-                return (-4 - num, use.attribute.name)
+                return (-3 - num, use.attribute.name)
             return (-1, use.attribute.name)
-        attribute_uses.sort(key=attr_key)
+        attr_uses.sort(key=attr_key)
+
+        if attr_uses or text is not None:
+            root = dumco.schema.uses.Particle(
+                None, 1, 1,
+                dumco.schema.elements.Sequence(self.schema_element.schema))
+            root.term.members.extend(attr_uses)
+            if particle is not None:
+                root.term.members.append(particle)
+            if text is not None:
+                root.term.members.append(text)
+            self.schema_element.structure = root
+        else:
+            self.schema_element.structure = particle
 
         return self.schema_element
 
@@ -130,6 +137,7 @@ def _assert_on_duplicate_attributes(attr_uses, ct):
 
         assert name not in attrset, \
             'Duplicate attribute {} in CT {} in {}.xsd'.format(
-                a.attribute.name, ct.name, ct.schema_element.schema.filename)
+                a.attribute.name, ct.schema_element.name,
+                ct.schema_element.schema.filename)
 
         attrset[name] = a
