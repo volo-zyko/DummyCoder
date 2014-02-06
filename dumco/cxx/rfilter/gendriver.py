@@ -42,15 +42,15 @@ class _LocationManager(object):
         self.ns_converter = ns_converter
         self.naming = naming
 
-        self.file_prefices = {}
+        self.file_prefixes = {}
 
     def _schema_file_prefix(self, schema):
-        if schema.target_ns not in self.file_prefices:
+        if schema.target_ns not in self.file_prefixes:
             namespaces = self.ns_converter.uri_to_namespaces(schema.target_ns)
 
-            self.file_prefices[schema.target_ns] = '_'.join(namespaces[1:])
+            self.file_prefixes[schema.target_ns] = '_'.join(namespaces[1:])
 
-        return self.file_prefices[schema.target_ns]
+        return self.file_prefixes[schema.target_ns]
 
     def _consumer_header_name(self, ct):
         return '{}_{}.h'.format(self._schema_file_prefix(ct.schema),

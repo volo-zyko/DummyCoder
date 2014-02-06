@@ -2,14 +2,13 @@
 
 import base
 import elements
-import enums
 import uses
 import xsd_types
 
 
 def _attribute_count(schema_type):
     if is_complex_type(schema_type):
-        return len(list(enums.enum_attribute_uses(schema_type)))
+        return len(list(schema_type.attribute_uses()))
     return 0
 
 
@@ -25,18 +24,39 @@ def is_xml_namespace(uri):
 
 # Type checks.
 def has_complex_content(schema_type):
-    return (is_complex_type(schema_type) and
-            schema_type.particle is not None and schema_type.text is None)
+    if not is_complex_type(schema_type):
+        return False
+
+    has_particles = False
+    for _ in schema_type.particles(flatten=True):
+        has_particles = True
+        break
+
+    return (has_particles and schema_type.text().component is None)
 
 
 def has_empty_content(schema_type):
-    return (is_complex_type(schema_type) and
-            schema_type.particle is None and schema_type.text is None)
+    if not is_complex_type(schema_type):
+        return False
+
+    has_particles = False
+    for _ in schema_type.particles(flatten=True):
+        has_particles = True
+        break
+
+    return (not has_particles and schema_type.text().component is None)
 
 
 def has_simple_content(schema_type):
-    return (is_complex_type(schema_type) and
-            schema_type.particle is None and schema_type.text is not None)
+    if not is_complex_type(schema_type):
+        return False
+
+    has_particles = False
+    for _ in schema_type.particles(flatten=True):
+        has_particles = True
+        break
+
+    return (not has_particles and schema_type.text().component is not None)
 
 
 def is_attributed_complex_type(schema_type):
@@ -71,7 +91,8 @@ def is_primitive_type(schema_type):
 
 
 def is_restriction_type(schema_type):
-    return (is_simple_type(schema_type) and schema_type.restriction is not None)
+    return (is_simple_type(schema_type) and
+            schema_type.restriction is not None)
 
 
 def is_simple_type(schema_type):
@@ -114,17 +135,12 @@ def is_attribute_use(attr):
     return isinstance(attr, uses.AttributeUse)
 
 
-def is_base(schema):
-    return isinstance(schema, base.SchemaBase)
-
-
 def is_choice(choice):
     return isinstance(choice, elements.Choice)
 
 
 def is_compositor(compositor):
-    return (is_sequence(compositor) or is_choice(compositor) or
-            is_all(compositor))
+    return isinstance(compositor, base.Compositor)
 
 
 def is_element(element):
@@ -143,10 +159,13 @@ def is_schema(schema):
     return isinstance(schema, elements.Schema)
 
 
+def is_terminal(term):
+    return is_element(term) or is_any(term)
+
+
 def is_text(text):
-    return isinstance(text, base.SchemaText)
+    return isinstance(text, elements.SchemaText)
 
 
 def is_xml_attribute(attr):
-    return (isinstance(attr, base.XmlAttribute) or
-            (is_attribute(attr) and is_xml_namespace(attr.schema.target_ns)))
+    return is_attribute(attr) and attr.schema is None

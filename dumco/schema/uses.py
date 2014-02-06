@@ -8,8 +8,9 @@ import namer
 
 class Particle(object):
     def __init__(self, qualified, min_occurs, max_occurs, term):
-        self.qualified = qualified
         assert min_occurs <= max_occurs
+
+        self.qualified = qualified
         self.min_occurs = min_occurs
         self.max_occurs = max_occurs
         self.term = term
@@ -25,7 +26,10 @@ class Particle(object):
         assert checks.is_compositor(self.term), \
             'Trying to name non-compositor'
 
-        for p in self.term.particles:
+        for p in self.term.members:
+            if not checks.is_particle(p):
+                continue
+
             if checks.is_compositor(p.term):
                 p.nameit(parents + [self], factory, names)
                 assert p.name is not None, 'Name cannot be None'

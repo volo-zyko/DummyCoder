@@ -7,6 +7,10 @@ import stat
 
 def enumerate_files(start_path, file_ending,
                     exclude_writable=False, max_depth=None):
+    if os.path.isfile(start_path):
+        yield start_path
+        return
+
     depth = 0
     for (root, dirs, files) in os.walk(start_path):
         depth = depth + 1

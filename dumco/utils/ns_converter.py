@@ -40,8 +40,8 @@ class NamespaceConverter(object):
 
             result = self.common_namespaces + \
                 filter(lambda n: n is not None,
-                    map(lambda n: self._normalize(n),
-                        self._PATHSEP_MATCHER.split(uri[len(base):])))
+                       map(lambda n: self._normalize(n),
+                           self._PATHSEP_MATCHER.split(uri[len(base):])))
             return result
 
         assert hasattr(self.ns_mapping, uri), \

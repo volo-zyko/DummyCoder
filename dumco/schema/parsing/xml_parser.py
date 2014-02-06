@@ -69,9 +69,11 @@ class XmlLoader(object):
         print('Loading XML files from {}...'.format(
             os.path.realpath(xml_path)))
 
-        documents = {os.path.realpath(filepath): None
-            for filepath in enumerate_files(
-                xml_path, self.element_factory.extension, max_depth=dir_depth)}
+        documents = {
+            os.path.realpath(filepath): None
+            for filepath in enumerate_files(xml_path,
+                                            self.element_factory.extension,
+                                            max_depth=dir_depth)}
 
         while any(map(lambda s: s is None, documents.itervalues())):
             for (filepath, document) in documents.items():
@@ -96,11 +98,8 @@ class XmlLoader(object):
         except ParseRestart as e:
             XmlLoader._load_document(filepath, e.stream,
                                      documents, element_factory)
-
-
-class ParseRestart(BaseException):
-    def __init__(self, stream):
-        self.stream = stream
+        except SkipParse:
+            pass
 
 
 class IncludeLogic(object):
@@ -110,17 +109,17 @@ class IncludeLogic(object):
         self.element_factory_included_paths = \
             element_factory.included_schema_paths.setdefault(root_path, set())
 
-    def _is_root_node(self, node): # pragma: no cover
+    def _is_root_node(self, node):  # pragma: no cover
         return False
 
-    def _is_include_node(self, node): # pragma: no cover
+    def _is_include_node(self, node):  # pragma: no cover
         return False
 
-    def _get_included_path(self, node, curr_path): # pragma: no cover
+    def _get_included_path(self, node, curr_path):  # pragma: no cover
         return None
 
     def _copy_included(self, including_dom, include_node,
-                       included_root, included_path): # pragma: no cover
+                       included_root, included_path):  # pragma: no cover
         assert False
 
     def include_xml(self, curr_path):
@@ -141,7 +140,7 @@ class IncludeLogic(object):
                 'File {} does not exist'.format(node_path)
 
             if (node_path in self.element_factory.included_schema_paths or
-                node_path in self.element_factory_included_paths):
+                    node_path in self.element_factory_included_paths):
                 orig_root.removeChild(node)
                 continue
             self.element_factory_included_paths.add(node_path)
@@ -166,3 +165,12 @@ class IncludeLogic(object):
             self._copy_included(orig_dom, node, new_root, node_path)
 
         return orig_dom
+
+
+class ParseRestart(BaseException):
+    def __init__(self, stream):
+        self.stream = stream
+
+
+class SkipParse(BaseException):
+    pass

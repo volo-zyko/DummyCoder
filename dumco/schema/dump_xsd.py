@@ -77,7 +77,7 @@ class _XmlWriter(object):
             self.fhandle.write(' xmlns{}="{}"'.format(real_prefix, uri))
 
     def add_attribute(self, name, value, prefix=''):
-        esc_value = dumco.utils.string_utils.quote_xml_string(value)
+        esc_value = dumco.utils.string_utils.quote_xml_attribute(value)
         if prefix != '':
             self.fhandle.write(' {}:{}={}'.format(prefix, name, esc_value))
         else:
@@ -117,11 +117,29 @@ def _max_occurs(value):
     return ('unbounded' if value == base.UNBOUNDED else value)
 
 
+def _root_particle(ct):
+    if ct.structure is None:
+        return None
+
+    if len(ct.structure.term.members) == 1:
+        return ct.structure
+
+    roots = filter(lambda x: checks.is_particle(x), ct.structure.term.members)
+    if (len(roots) == 1 and
+            ct.structure.min_occurs == 1 and
+            ct.structure.max_occurs == 1 and
+            checks.is_particle(roots[0]) and
+            checks.is_compositor(roots[0].term)):
+        return roots[0]
+
+    return ct.structure
+
+
 def _dump_restriction(restriction, schema, xml_writer):
     with _TagGuard('restriction', xml_writer):
-        xml_writer.add_attribute('base',
-            _qname(restriction.base.name,
-                   restriction.base.schema, schema))
+        xml_writer.add_attribute(
+            'base',
+            _qname(restriction.base.name, restriction.base.schema, schema))
 
         if restriction.enumeration:
             for e in restriction.enumeration:
@@ -172,7 +190,8 @@ def _dump_listitem(listitem, schema, xml_writer):
     assert checks.is_primitive_type(listitem)
 
     with _TagGuard('list', xml_writer):
-        xml_writer.add_attribute('itemType',
+        xml_writer.add_attribute(
+            'itemType',
             _qname(listitem.name, listitem.schema, schema))
 
 
@@ -180,17 +199,19 @@ def _dump_union(union, schema, xml_writer):
     assert all([checks.is_primitive_type(m) for m in union])
 
     with _TagGuard('union', xml_writer):
-        xml_writer.add_attribute('memberTypes',
+        xml_writer.add_attribute(
+            'memberTypes',
             ' '.join([_qname(m.name, m.schema, schema) for m in union]))
 
 
 def _dump_simple_content(ct, schema, xml_writer):
     with _TagGuard('simpleContent', xml_writer):
         with _TagGuard('extension', xml_writer):
-            xml_writer.add_attribute('base',
-                _qname(ct.text.type.name, ct.text.type.schema, schema))
+            qn = _qname(ct.text().component.type.name,
+                        ct.text().component.type.schema, schema)
+            xml_writer.add_attribute('base', qn)
 
-            _dump_attribute_uses(ct.attribute_uses, schema, xml_writer)
+            _dump_attribute_uses(ct.attribute_uses(), schema, xml_writer)
 
 
 def _dump_particle(particle, schema, xml_writer, names, in_group=False):
@@ -201,14 +222,17 @@ def _dump_particle(particle, schema, xml_writer, names, in_group=False):
             xml_writer.add_attribute('maxOccurs',
                                      _max_occurs(particle.max_occurs))
 
-    if particle.term.schema != schema:
+    if not checks.is_particle(particle):
+        return
+    elif particle.term.schema != schema:
         groups = xml_writer.element_groups.get(
             particle.term.schema.target_ns, {})
 
         if particle.term in [t for t in groups.iterkeys()]:
             group_name = groups[particle.term].name
             with _TagGuard('group', xml_writer):
-                xml_writer.add_attribute('ref',
+                xml_writer.add_attribute(
+                    'ref',
                     _qname(group_name, particle.term.schema, schema))
 
                 dump_occurs_attributes()
@@ -221,7 +245,7 @@ def _dump_particle(particle, schema, xml_writer, names, in_group=False):
             dump_occurs_attributes()
 
         if checks.is_compositor(particle.term):
-            for p in particle.term.particles:
+            for p in particle.term.members:
                 _dump_particle(p, schema, xml_writer, names)
         elif checks.is_element(particle.term):
             is_element_def = False
@@ -234,26 +258,26 @@ def _dump_particle(particle, schema, xml_writer, names, in_group=False):
                                      schema, xml_writer)
 
             if is_element_def:
-                xml_writer.add_attribute('form',
+                xml_writer.add_attribute(
+                    'form',
                     'qualified' if particle.qualified else 'unqualified')
         elif checks.is_any(particle.term):
             _dump_any(particle.term, schema, xml_writer)
-        else: # pragma: no cover
+        else:  # pragma: no cover
             assert False
 
 
 def _dump_attribute_uses(attr_uses, schema, xml_writer):
     for u in attr_uses:
-        if checks.is_any(u.attribute):
+        if checks.is_any(u.component.attribute):
             with _TagGuard('anyAttribute', xml_writer):
-                _dump_any(u.attribute, schema, xml_writer)
+                _dump_any(u.component.attribute, schema, xml_writer)
         else:
-            _dump_attribute_use(u, schema, xml_writer)
+            _dump_attribute_use(u.component, schema, xml_writer)
 
 
 def _dump_attribute_use(attr_use, schema, xml_writer):
-    assert (checks.is_attribute(attr_use.attribute) or
-            checks.is_xml_attribute(attr_use.attribute))
+    assert checks.is_attribute(attr_use.attribute)
 
     attribute = attr_use.attribute
 
@@ -263,18 +287,18 @@ def _dump_attribute_use(attr_use, schema, xml_writer):
 
         if attribute.schema == schema:
             is_attribute_def = attribute not in top_attributes
-        else:
-            if attribute not in top_attributes:
-                # We reference attribute from other schema but it's not amongst
-                # top level attributes in that schema. We don't have other
-                # options except for referencing attribute group.
-                groups = xml_writer.attribute_groups[attribute.schema.target_ns]
-                group_name = groups[attribute].name
-                with _TagGuard('attributeGroup', xml_writer):
-                    xml_writer.add_attribute('ref',
-                        _qname(group_name, attribute.schema, schema))
+        elif attribute not in top_attributes:
+            # We reference attribute from other schema but it's not amongst
+            # top level attributes in that schema. We don't have other
+            # options except for referencing attribute group.
+            groups = xml_writer.attribute_groups[attribute.schema.target_ns]
+            group_name = groups[attribute].name
+            with _TagGuard('attributeGroup', xml_writer):
+                xml_writer.add_attribute(
+                    'ref',
+                    _qname(group_name, attribute.schema, schema))
 
-                return
+            return
 
     with _TagGuard('attribute', xml_writer):
         if checks.is_xml_attribute(attribute):
@@ -285,7 +309,8 @@ def _dump_attribute_use(attr_use, schema, xml_writer):
                                        schema, xml_writer)
 
         if is_attribute_def:
-            xml_writer.add_attribute('form',
+            xml_writer.add_attribute(
+                'form',
                 'qualified' if attr_use.qualified else 'unqualified')
 
         if attr_use.attribute.constraint.value is None:
@@ -307,15 +332,18 @@ def _dump_attribute_attributes(attribute, is_attribute_definition,
     assert checks.is_attribute(attribute)
 
     if is_attribute_definition:
-        xml_writer.add_attribute('name',
+        xml_writer.add_attribute(
+            'name',
             _qname(attribute.name, attribute.schema, schema))
 
         if not checks.is_simple_urtype(attribute.type):
-            xml_writer.add_attribute('type',
+            xml_writer.add_attribute(
+                'type',
                 _qname(attribute.type.name, attribute.type.schema, schema))
     else:
-        xml_writer.add_attribute('ref',
-            _qname(attribute.name, attribute.schema, schema, prefix=_XSD_PREFIX))
+        qn = _qname(attribute.name, attribute.schema,
+                    schema, prefix=_XSD_PREFIX)
+        xml_writer.add_attribute('ref', qn)
 
     if attribute.constraint.fixed:
         assert attribute.constraint.value, \
@@ -332,12 +360,14 @@ def _dump_element_attributes(element, is_element_definition,
     assert checks.is_element(element)
 
     if is_element_definition:
-        xml_writer.add_attribute('name',
+        xml_writer.add_attribute(
+            'name',
             _qname(element.name, element.schema, schema))
 
         if (not checks.is_complex_urtype(element.type) and
-            not checks.is_simple_urtype(element.type)):
-            xml_writer.add_attribute('type',
+                not checks.is_simple_urtype(element.type)):
+            xml_writer.add_attribute(
+                'type',
                 _qname(element.type.name, element.type.schema, schema))
 
         if element.constraint.fixed:
@@ -349,22 +379,30 @@ def _dump_element_attributes(element, is_element_definition,
             xml_writer.add_attribute('default',
                                      element.constraint.value)
     else:
-        xml_writer.add_attribute('ref',
+        xml_writer.add_attribute(
+            'ref',
             _qname(element.name, element.schema, schema))
 
 
 def _dump_any(elem, schema, xml_writer):
     assert checks.is_any(elem)
 
-    val = elem.namespace
-    if isinstance(elem.namespace, list):
-        val = ' '.join(elem.namespace)
-        if val == '':
-            val = '##local'
-    elif elem.namespace == elements.Any.ANY:
+    val = '##any'
+    if not elem.constraints:
         val = '##any'
-    elif elem.namespace == elements.Any.OTHER:
+    elif (len(elem.constraints) == 1 and
+          isinstance(elem.constraints[0], elements.Any.Not) and
+          isinstance(elem.constraints[0].name, elements.Any.Name) and
+          elem.constraints[0].name.ns == schema.target_ns and
+          elem.constraints[0].name.tag is None):
         val = '##other'
+    elif (len(elem.constraints) > 1 and
+          all(map(lambda x: isinstance(x, elements.Any.Name) and x.tag is None,
+                  elem.constraints))):
+        val = ' '.join(map(lambda x: x.ns, elem.constraints))
+    else:
+        # Issue a warning about impossibility to convert to XSD any.
+        pass
 
     xml_writer.add_attribute('namespace', val)
 
@@ -373,8 +411,7 @@ def _dump_schema(schema, xml_writer):
     with _TagGuard('schema', xml_writer):
         if schema.target_ns is not None:
             xml_writer.add_attribute('targetNamespace', schema.target_ns)
-            if not checks.is_xml_namespace(schema.target_ns):
-                xml_writer.define_namespace(None, schema.target_ns)
+            xml_writer.define_namespace(None, schema.target_ns)
 
         for sub_schema in sorted(schema.imports.itervalues(),
                                  key=lambda v: None if not v else v.target_ns):
@@ -382,7 +419,8 @@ def _dump_schema(schema, xml_writer):
                 continue
 
             assert sub_schema.prefix, 'No prefix for imported schema'
-            xml_writer.define_namespace(sub_schema.prefix, sub_schema.target_ns)
+            xml_writer.define_namespace(sub_schema.prefix,
+                                        sub_schema.target_ns)
 
         if schema.imports:
             xml_writer.add_comment('Imports')
@@ -419,15 +457,17 @@ def _dump_schema(schema, xml_writer):
                 if ct.mixed:
                     xml_writer.add_attribute('mixed', str(ct.mixed).lower())
 
+                attribute_uses = list(ct.attribute_uses())
                 if checks.has_simple_content(ct):
                     _dump_simple_content(ct, schema, xml_writer)
                 elif ct.mixed or checks.has_complex_content(ct):
-                    _dump_particle(ct.particle, schema, xml_writer, set())
+                    _dump_particle(_root_particle(ct),
+                                   schema, xml_writer, set())
 
-                    _dump_attribute_uses(ct.attribute_uses, schema, xml_writer)
+                    _dump_attribute_uses(attribute_uses, schema, xml_writer)
                 elif ct.attribute_uses:
                     assert checks.has_empty_content(ct), 'Expected empty CT'
-                    _dump_attribute_uses(ct.attribute_uses, schema, xml_writer)
+                    _dump_attribute_uses(attribute_uses, schema, xml_writer)
 
         if schema.elements:
             xml_writer.add_comment('Top-level Elements')
@@ -497,7 +537,7 @@ def _collect_attribute_groups(schemata):
         attribute = attr_use.attribute
 
         if (checks.is_xml_attribute(attribute) or
-            checks.is_any(attribute) or attribute.schema == schema):
+                checks.is_any(attribute) or attribute.schema == schema):
             return group_count
 
         top_attributes = [a for a in attribute.schema.attributes]
@@ -512,8 +552,8 @@ def _collect_attribute_groups(schemata):
     group_count = 1
     for schema in schemata:
         for ct in schema.complex_types:
-            for u in ct.attribute_uses:
-                group_count = find_groups(u, schema, group_count)
+            for u in ct.attribute_uses():
+                group_count = find_groups(u.component, schema, group_count)
 
     return attribute_groups
 
@@ -525,8 +565,10 @@ def _collect_element_groups(schemata):
         compositors = []
 
         # First check elements.
-        for p in particle.term.particles:
-            if checks.is_compositor(p.term):
+        for p in particle.term.members:
+            if not checks.is_particle(p):
+                continue
+            elif checks.is_compositor(p.term):
                 compositors.append(p)
                 continue
             elif checks.is_any(p.term):
@@ -556,6 +598,6 @@ def _collect_element_groups(schemata):
     for schema in schemata:
         for ct in schema.complex_types:
             if ct.mixed or checks.has_complex_content(ct):
-                group_count = find_groups(ct.particle, schema, group_count)
+                group_count = find_groups(ct.structure, schema, group_count)
 
     return element_groups

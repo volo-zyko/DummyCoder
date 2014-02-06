@@ -38,7 +38,7 @@ class OpacityManager(object):
             name = '@{}'.format(dumco.utils.string_utils.cxx_name(ct, member))
         elif dumco.schema.checks.is_text(member):
             name = 'text()'
-        else: # pragma: no cover
+        else:  # pragma: no cover
             assert False
         return (name not in member_set)
 

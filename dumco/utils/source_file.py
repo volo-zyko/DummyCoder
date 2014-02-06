@@ -77,8 +77,9 @@ class SourceFile(object):
     def done(self):
         content = ''.join(self.strings)
         basename = os.path.basename(self.filename)
-        prev_file_info = (SourceFile.previous_files_info[basename] if
-            basename in SourceFile.previous_files_info else (None, None))
+        prev_file_info = (SourceFile.previous_files_info[basename]
+                          if basename in SourceFile.previous_files_info
+                          else (None, None))
 
         is_new_file = self.is_new_file()
 
@@ -102,7 +103,7 @@ class SourceFile(object):
         if os.path.exists(self.filename):
             if is_new_file:
                 if is_same_content:
-                    return # Nothing to do.
+                    return  # Nothing to do.
                 write_mode = 'w'
             os.chmod(self.filename, stat.S_IWRITE)
         elif not os.path.exists(os.path.dirname(self.filename)):

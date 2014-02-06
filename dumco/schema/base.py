@@ -3,20 +3,13 @@
 import collections
 import sys
 
-from dumco.utils.decorators import function_once
+import checks
 
 
 # Constants.
 XML_NAMESPACE = 'http://www.w3.org/XML/1998/namespace'
 
 UNBOUNDED = sys.maxsize
-
-
-@function_once
-def xml_attributes():
-    attrs = {x: XmlAttribute(x) for x in ['base', 'id', 'lang', 'space']}
-    attrs['space'].constraint = ValueConstraint(None, 'preserve')
-    return attrs
 
 
 class SchemaBase(object):
@@ -42,6 +35,52 @@ class SchemaBase(object):
         self.__dict__[name] = value
 
 
+ChildComponent = collections.namedtuple('ChildComponent',
+                                        ['parent', 'component'])
+
+
+class Compositor(SchemaBase):
+    def __init__(self, parent_schema):
+        super(Compositor, self).__init__(parent_schema)
+
+        self.members = []
+
+    def traverse_with_parents(self, flatten=True):
+        for x in self.members:
+            assert ((checks.is_particle(x) and
+                     (checks.is_terminal(x.term) or
+                      checks.is_compositor(x.term)))
+                    or
+                    (checks.is_attribute_use(x) and
+                     (checks.is_attribute(x.attribute) or
+                      checks.is_any(x.attribute)))
+                    or
+                    checks.is_text(x)), \
+                'Unknown member in compositor'
+
+            if (checks.is_particle(x) and
+                    checks.is_compositor(x.term) and flatten):
+                for pair in x.term.traverse_with_parents(flatten=flatten):
+                    yield pair
+            else:
+                yield ChildComponent(self, x)
+
+
+class DataComponent(SchemaBase):
+    # Element of attribute.
+    def __init__(self, name, default, fixed, parent_schema):
+        super(DataComponent, self).__init__(parent_schema)
+
+        assert default is None or fixed is None, \
+            'Default and fixed can never be in effect at the same time'
+
+        self.name = name
+        self.type = None
+        self.constraint = ValueConstraint(
+            False if fixed is None else True,
+            default if fixed is None else fixed)
+
+
 class NativeType(SchemaBase):
     def __init__(self, uri, name):
         super(NativeType, self).__init__(None)
@@ -50,21 +89,5 @@ class NativeType(SchemaBase):
         self.name = name
 
 
-class SchemaText(SchemaBase):
-    def __init__(self, simple_type):
-        super(SchemaText, self).__init__(None)
-
-        self.name = 'text()'
-        self.type = simple_type
-
-
 ValueConstraint = collections.namedtuple('ValueConstraint',
                                          ['fixed', 'value'])
-
-
-class XmlAttribute(SchemaBase):
-    def __init__(self, name):
-        super(XmlAttribute, self).__init__(None)
-
-        self.name = name
-        self.constraint = ValueConstraint(False, None)

@@ -33,8 +33,14 @@ def cxx_norm_name(name):
 
 
 _ENTITIES = {chr(x): '&#{};'.format(x) for x in xrange(127, 256)}
-def quote_xml_string(value):
+
+
+def quote_xml_attribute(value):
     return xml.sax.saxutils.quoteattr(str(value), _ENTITIES)
+
+
+def quote_xml_string(value):
+    return xml.sax.saxutils.escape(str(value), _ENTITIES)
 
 
 upper_first_letter = lambda name: name[:1].upper() + name[1:]

@@ -65,7 +65,7 @@ class CommonNamer(object):
         if dumco.schema.checks.is_complex_type(element):
             if dumco.schema.checks.is_element(parent):
                 return self._name_ct_from_parent_elem(parent_name, index)
-            else: # pragma: no cover
+            else:  # pragma: no cover
                 assert False
         elif dumco.schema.checks.is_simple_type(element):
             if dumco.schema.checks.is_element(parent):
@@ -75,7 +75,8 @@ class CommonNamer(object):
             elif dumco.schema.checks.is_complex_type(parent):
                 return self._name_st_from_parent_ct(parent_name, index)
             elif dumco.schema.checks.is_restriction_type(parent):
-                return self._name_st_from_parent_restriction_st(parent_name, index)
+                return self._name_st_from_parent_restriction_st(
+                    parent_name, index)
             elif dumco.schema.checks.is_union_type(parent):
                 if element in parent.union:
                     tmp = parent.union.index(element)
@@ -84,10 +85,11 @@ class CommonNamer(object):
                     tmp = self.force_index
 
                 uindex = str(tmp) if tmp > 0 else ''
-                return self._name_st_from_parent_union_st(parent_name, uindex, index)
+                return self._name_st_from_parent_union_st(
+                    parent_name, uindex, index)
             elif dumco.schema.checks.is_list_type(parent):
                 return self._name_st_from_parent_list_st(parent_name, index)
-            else: # pragma: no cover
+            else:  # pragma: no cover
                 assert False
         elif dumco.schema.checks.is_particle(element):
             assert (dumco.schema.checks.is_particle(parent) or
@@ -104,21 +106,24 @@ class CommonNamer(object):
                 return self._name_choice(parent_name, pindex, index)
             elif dumco.schema.checks.is_all(element.term):
                 return self._name_all(parent_name, pindex, index)
-            else: # pragma: no cover
+            else:  # pragma: no cover
                 assert False
-        else: # pragma: no cover
+        else:  # pragma: no cover
             assert False
 
     @staticmethod
     def _particle_index(particle, parent):
         assert dumco.schema.checks.is_particle(particle)
 
-        particles = (parent.particles
+        particles = (parent.members
                      if dumco.schema.checks.is_compositor(parent)
                      else [parent.particle])
 
         compositors = {'all': 0, 'chc': 0, 'seq': 0}
         for p in particles:
+            if not dumco.schema.checks.is_particle(p):
+                continue
+
             if dumco.schema.checks.is_all(p.term):
                 if p == particle and compositors['all'] > 0:
                     return compositors['all']
