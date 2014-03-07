@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<grammar ns="http://schemas.openxmlformats.org/package/2006/content-types" xmlns="http://relaxng.org/ns/structure/1.0" xmlns:c="http://schemas.openxmlformats.org/package/2006/content-types" datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
+  <start>
+    <ref name="a"/>
+  </start>
+  <start combine="interleave">
+    <ref name="b"/>
+  </start>
+  <define name="a">
+    <element>
+      <name>a</name>
+      <group>
+        <attribute>
+          <name>version</name>
+          <value type="token">1.2</value>
+        </attribute>
+        <choice>
+          <empty/>
+          <attribute>
+            <name>transformation</name>
+            <list>
+              <choice>
+                <empty/>
+                <oneOrMore>
+                  <data type="anyURI" datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes"/>
+                </oneOrMore>
+              </choice>
+            </list>
+          </attribute>
+        </choice>
+      </group>
+    </element>
+  </define>
+  <define name="b">
+    <element>
+      <name>b</name>
+      <group>
+        <choice>
+          <empty/>
+          <attribute>
+            <name>name</name>
+            <data type="NMTOKEN" datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes"/>
+          </attribute>
+        </choice>
+        <ref name="c"/>
+        <choice>
+          <empty/>
+          <attribute>
+            <name>http-equiv</name>
+            <data type="NMTOKEN" datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes"/>
+          </attribute>
+        </choice>
+      </group>
+    </element>
+  </define>
+  <define name="c">
+    <element>
+      <nsName>
+        <except>
+          <name>a</name>
+        </except>
+      </nsName>
+      <attribute>
+        <name>content</name>
+        <data type="token" datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
+          <except>
+            <empty/>
+            <value type="token">aaaa</value>
+            <ref name="d"/>
+          </except>
+        </data>
+      </attribute>
+    </element>
+  </define>
+  <define name="d">
+    <data type="language" datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes"/>
+  </define>
+</grammar>

@@ -2,25 +2,37 @@
 
 cd "$(dirname "$BASH_SOURCE")/.."
 
-SOURCE_DIR=$PWD
+SOURCE_DIR="$PWD"
 BASE_OUTPUT_DIR='/tmp/dumco'
 
 COVERAGE_BEGIN_COMMAND=''
 COVERAGE_APPEND_COMMAND=''
 COVERAGE_REPORT_DIR="$BASE_OUTPUT_DIR/dumco_cov"
 VALIDATE_SCHEMATA=0
+DUMP_RNG=0
+DUMP_RNG_DIR=''
 
 function print_help()
 {
-    echo "Usage: $0 [-c [-d <dir>]] [-v]"
+    echo "Usage: $0 [-f|[-c [-d <dir>]] [-v] [-r [<dir>]]]"
+    echo ' -f           do full check (includes all options below)'
     echo ' -c           generate coverage report'
     echo ' -d <dir>     place coverage report in <dir>'
-    echo ' -v           validate schemata'
+    echo ' -v           validate XSD schemata (input and output)'
+    echo " -r [<dir>]   dump RNG to <dir> for additional checks (default $BASE_OUTPUT_DIR/rng-dumps0)"
 }
 
 while [ $# -gt 0 ]
 do
     case $1 in
+        -f)
+            shift
+            COVERAGE_ERASE_COMMAND='coverage erase'
+            COVERAGE_BEGIN_COMMAND='coverage run --branch'
+            COVERAGE_APPEND_COMMAND='coverage run --branch --append'
+            VALIDATE_SCHEMATA=1
+            DUMP_RNG=1
+            ;;
         -c)
             shift
             COVERAGE_ERASE_COMMAND='coverage erase'
@@ -29,12 +41,20 @@ do
             ;;
         -d)
             shift
-            COVERAGE_REPORT_DIR=$1
+            COVERAGE_REPORT_DIR="$1"
             shift
             ;;
         -v)
             shift
             VALIDATE_SCHEMATA=1
+            ;;
+        -r)
+            shift
+            DUMP_RNG=1
+            if [ $# -gt 0 -a -d "$1" ]; then
+                DUMP_RNG_DIR="$1"
+                shift
+            fi
             ;;
         -h|*)
             print_help
@@ -46,7 +66,7 @@ function build_schema_validator()
 {
     which cmake &>/dev/null || { echo 'cmake is not found' ; return 1 ; }
 
-    build_dir=$1
+    build_dir="$1"
 
     mkdir -p "$build_dir"
     pushd "$PWD" &>/dev/null
@@ -107,6 +127,10 @@ function single_run()
             cmd+=("$mode")
             cmd+=('-o')
             cmd+=("$out")
+            if [ "$syntax" = 'rng' -a "$DUMP_RNG" -ne 0 ]; then
+                cmd+=('--dump-rng-model-to-dir')
+                cmd+=("$DUMP_RNG_DIR")
+            fi
             ;;
         rfilter)
             out="${out}${3}${4}"
@@ -136,7 +160,7 @@ function single_run()
         $run -i "$out" dumpxsd -o "$again"
 
         (
-            res="$BASE_OUTPUT_DIR/$(basename "${out}").diff"
+            res="$BASE_OUTPUT_DIR/$(basename "$out").diff"
 
             set +o errexit
             diff -rub "$out" "$again" >"$res"
@@ -170,12 +194,19 @@ function single_run()
 
 set -o errexit
 
+if [ "$DUMP_RNG" -ne 0 ]; then
+    if [ -z "$DUMP_RNG_DIR" ]; then
+        DUMP_RNG_DIR="$BASE_OUTPUT_DIR/rng-dumps0"
+    fi
+    rm -rf "$DUMP_RNG_DIR"
+fi
+
 $COVERAGE_ERASE_COMMAND
 
 $COVERAGE_BEGIN_COMMAND "$PWD/dumco.py" -h
 $COVERAGE_APPEND_COMMAND "$PWD/dumco.py" --version
 
-syntaxes=('rng')
+syntaxes=('xsd')
 if [ -n "$COVERAGE_BEGIN_COMMAND" ]; then
     syntaxes+=('xsd')
 fi
@@ -200,25 +231,56 @@ do
     done
 done
 
+if [ "$DUMP_RNG" -ne 0 ]; then
+    outp="$BASE_OUTPUT_DIR/rng-dumps1"
+    again="$BASE_OUTPUT_DIR/again"
+
+    echo '###'
+    echo '### Checking RNG re-loading'
+    echo '###'
+
+    for in_rng in $(find "$DUMP_RNG_DIR" -type f -name '*.rng')
+    do
+        rm -rf "$outp"
+        mkdir -p "$outp"
+
+        out_rng="$outp/$(basename "$in_rng")"
+        res_diff="$BASE_OUTPUT_DIR/$(basename "$in_rng").diff"
+
+        $COVERAGE_APPEND_COMMAND "$PWD/dumco.py" -s rng -n oxml -i "$in_rng" \
+            dumpxsd -o "$again" --dump-rng-model-to-dir "$outp"
+
+        set +o errexit
+        diff -rub "$in_rng" "$out_rng" >"$res_diff"
+        set -o errexit
+
+        if [ -s "$res_diff" ]; then
+            echo "### ERROR: '$in_rng' and '$out_rng' is different after reloading, see $res_diff" >&2
+            false
+        fi
+        rm -f "$res_diff"
+    done
+fi
+
 # content_class='--context-class V::None::LoadContext'
 # content_class_header='--context-class-header Formats/None/LoadContext.h'
 
-# prefices='--uri-prefices http://schemas.openxmlformats.org/ urn:schemas-microsoft-com:'
-# single_run UT/schemas/OXMLTran3/ '' rfilter "$prefices $content_class $content_class_header"
+# prefixes='--uri-prefixes http://schemas.openxmlformats.org/ urn:schemas-microsoft-com:'
+# single_run UT/schemas/OXMLTran3/ '' rfilter "$prefixes $content_class $content_class_header"
 
-# prefices='--uri-prefices http://schemas.openxmlformats.org/ http://purl.org/'
-# single_run UT/schemas/OPC3/ '' rfilter "$prefices $content_class $content_class_header"
+# prefixes='--uri-prefixes http://schemas.openxmlformats.org/ http://purl.org/'
+# single_run UT/schemas/OPC3/ '' rfilter "$prefixes $content_class $content_class_header"
 
-# prefices='--uri-prefices urn:oasis:names:tc:'
-# single_run UT/schemas/ODF12/ '' rfilter "$prefices $content_class $content_class_header"
+# prefixes='--uri-prefixes urn:oasis:names:tc:'
+# single_run UT/schemas/ODF12/ '' rfilter "$prefixes $content_class $content_class_header"
 
-# # prefices='--uri-prefices http://www.w3.org/'
-# # single_run UT/schemas/XHTML10/ '' rfilter "$prefices $content_class $content_class_header"
+# # prefixes='--uri-prefixes http://www.w3.org/'
+# # single_run UT/schemas/XHTML10/ '' rfilter "$prefixes $content_class $content_class_header"
 
 # content_class='--context-class V::Fb2::LoadContext'
 # content_class_header='--context-class-header Formats/Fb2/LoadContext.h'
-# prefices='--uri-prefices http://www.gribuser.ru/'
-# single_run UT/schemas/FB20/ '-n fb2' rfilter "$prefices $content_class $content_class_header"
+# prefixes='--uri-prefixes http://www.gribuser.ru/'
+# single_run UT/schemas/FB20/ '-n fb2' rfilter "$prefixes $content_class $content_class_header"
 
 if [ -n "$COVERAGE_BEGIN_COMMAND" ]; then
     test -d "$COVERAGE_REPORT_DIR" && rm -rf "$COVERAGE_REPORT_DIR"

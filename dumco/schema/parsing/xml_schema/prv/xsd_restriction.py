@@ -109,43 +109,53 @@ class XsdRestriction(xsd_base.XsdBase):
         })
 
     xsd_fractionDigits = lambda _x, attrs, parent_element, factory, schema_path, \
-        all_schemata: XsdRestriction._value_handler('fraction_digits', attrs,
+        all_schemata: XsdRestriction._value_handler(
+            'fraction_digits', attrs,
             parent_element, factory, schema_path, all_schemata)
 
     xsd_length = lambda _x, attrs, parent_element, factory, schema_path, \
-        all_schemata: XsdRestriction._value_handler('length', attrs,
+        all_schemata: XsdRestriction._value_handler(
+            'length', attrs,
             parent_element, factory, schema_path, all_schemata)
 
     xsd_maxExclusive = lambda _x, attrs, parent_element, factory, schema_path, \
-        all_schemata: XsdRestriction._value_handler('max_exclusive', attrs,
+        all_schemata: XsdRestriction._value_handler(
+            'max_exclusive', attrs,
             parent_element, factory, schema_path, all_schemata)
 
     xsd_maxInclusive = lambda _x, attrs, parent_element, factory, schema_path, \
-        all_schemata: XsdRestriction._value_handler('max_inclusive', attrs,
+        all_schemata: XsdRestriction._value_handler(
+            'max_inclusive', attrs,
             parent_element, factory, schema_path, all_schemata)
 
     xsd_maxLength = lambda _x, attrs, parent_element, factory, schema_path, \
-        all_schemata: XsdRestriction._value_handler('max_length', attrs,
+        all_schemata: XsdRestriction._value_handler(
+            'max_length', attrs,
             parent_element, factory, schema_path, all_schemata)
 
     xsd_minExclusive = lambda _x, attrs, parent_element, factory, schema_path, \
-        all_schemata: XsdRestriction._value_handler('min_exclusive', attrs,
+        all_schemata: XsdRestriction._value_handler(
+            'min_exclusive', attrs,
             parent_element, factory, schema_path, all_schemata)
 
     xsd_minInclusive = lambda _x, attrs, parent_element, factory, schema_path, \
-        all_schemata: XsdRestriction._value_handler('min_inclusive', attrs,
+        all_schemata: XsdRestriction._value_handler(
+            'min_inclusive', attrs,
             parent_element, factory, schema_path, all_schemata)
 
     xsd_minLength = lambda _x, attrs, parent_element, factory, schema_path, \
-        all_schemata: XsdRestriction._value_handler('min_length', attrs,
+        all_schemata: XsdRestriction._value_handler(
+            'min_length', attrs,
             parent_element, factory, schema_path, all_schemata)
 
     xsd_pattern = lambda _x, attrs, parent_element, factory, schema_path, \
-        all_schemata: XsdRestriction._value_handler('pattern', attrs,
+        all_schemata: XsdRestriction._value_handler(
+            'pattern', attrs,
             parent_element, factory, schema_path, all_schemata)
 
     xsd_totalDigits = lambda _x, attrs, parent_element, factory, schema_path, \
-        all_schemata: XsdRestriction._value_handler('total_digits', attrs,
+        all_schemata: XsdRestriction._value_handler(
+            'total_digits', attrs,
             parent_element, factory, schema_path, all_schemata)
 
     @staticmethod

@@ -55,34 +55,38 @@ class RngElement(rng_base.RngBase):
         super(RngElement, self).__init__(attrs, parent_element)
 
         try:
-            name = rng_name.RngName({}, parent_element,
+            name = rng_name.RngName(
+                {}, parent_element,
                 factory.get_attribute(attrs, 'name').strip(), factory)
 
             self.children.append(name)
         except LookupError:
             pass
 
-        self.name = None
-        self.pattern = None
+        # Temporary for dumping to RNG.
         self.define_name = None
 
+        self.name = None
+        self.pattern = None
+        self.not_allowed = False
+
     @method_once
-    def finalize_name(self, grammar, all_schemata, factory):
+    def finalize_name(self, grammar, factory):
         assert rng_utils.is_name_class(self.children[0]), \
             'Wrong name in element'
         self.name = self.children[0]
-        self.name.finalize(grammar, all_schemata, factory)
+        self.name.finalize(grammar, factory)
 
     @method_once
-    def finalize(self, grammar, all_schemata, factory):
-        self.finalize_name(grammar, all_schemata, factory)
+    def finalize(self, grammar, factory):
+        self.finalize_name(grammar, factory)
 
         patterns = []
         for c in self.children[1:]:
             assert rng_utils.is_pattern(c), 'Wrong content of element'
 
             if isinstance(c, rng_ref.RngRef):
-                c = c.get_element(grammar)
+                c = c.get_ref_pattern(grammar)
 
             patterns.append(c)
 
@@ -93,9 +97,9 @@ class RngElement(rng_base.RngBase):
             self.pattern = rng_group.RngGroup({}, self)
             self.pattern.children = patterns
 
-        self.pattern.finalize(grammar, all_schemata, factory)
+        self.pattern.finalize(grammar, factory)
 
-        super(RngElement, self).finalize(grammar, all_schemata, factory)
+        super(RngElement, self).finalize(grammar, factory)
 
     def _dump_internals(self, fhandle, indent):
         fhandle.write('>\n')

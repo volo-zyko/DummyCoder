@@ -79,7 +79,7 @@ def is_empty_complex_type(schema_type):
 
 
 def is_list_type(schema_type):
-    return (is_simple_type(schema_type) and schema_type.listitem is not None)
+    return (is_simple_type(schema_type) and schema_type.listitems)
 
 
 def is_native_type(schema_type):

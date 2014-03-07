@@ -40,7 +40,7 @@ class RngList(rng_base.RngBase):
         self.data_pattern = None
 
     @method_once
-    def finalize(self, grammar, all_schemata, factory):
+    def finalize(self, grammar, factory):
         patterns = []
         for c in self.children:
             patterns.append(c)
@@ -52,9 +52,9 @@ class RngList(rng_base.RngBase):
             self.data_pattern = rng_group.RngGroup({}, self)
             self.data_pattern.children = patterns
 
-        self.data_pattern.finalize(grammar, all_schemata, factory)
+        self.data_pattern.finalize(grammar, factory)
 
-        super(RngList, self).finalize(grammar, all_schemata, factory)
+        super(RngList, self).finalize(grammar, factory)
 
     def _dump_internals(self, fhandle, indent):
         fhandle.write('>\n')

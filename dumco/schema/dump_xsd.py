@@ -20,7 +20,7 @@ _XSD_NAMESPACE = xsd_types.XSD_NAMESPACE
 _XML_XSD_URI = xsd_types.XML_XSD_URI
 
 
-class _XmlWriter(object):
+class _XmlWritingContext(object):
     def __init__(self, filename):
         self.indentation = 0
         self.fhandle = None
@@ -32,6 +32,7 @@ class _XmlWriter(object):
         # In this case XmlWriter is used as global object.
         self.attribute_groups = None
         self.element_groups = None
+        self.simple_types = None
 
         if not os.path.exists(os.path.dirname(filename)):
             os.makedirs(os.path.dirname(filename))
@@ -186,13 +187,13 @@ def _dump_restriction(restriction, schema, xml_writer):
                 xml_writer.add_attribute('value', value)
 
 
-def _dump_listitem(listitem, schema, xml_writer):
-    assert checks.is_primitive_type(listitem)
+def _dump_listitems(listitems, schema, xml_writer):
+    assert len(listitems) == 1, 'Cannot dump xs:list'
 
     with _TagGuard('list', xml_writer):
         xml_writer.add_attribute(
             'itemType',
-            _qname(listitem.name, listitem.schema, schema))
+            _qname(listitems[0].type.name, listitems[0].type.schema, schema))
 
 
 def _dump_union(union, schema, xml_writer):
@@ -436,16 +437,16 @@ def _dump_schema(schema, xml_writer):
                 xml_writer.add_attribute('schemaLocation',
                                          '{}.xsd'.format(sub_schema.filename))
 
-        if schema.simple_types:
+        if xml_writer.simple_types[schema.target_ns]:
             xml_writer.add_comment('Simple Types')
-        for st in schema.simple_types:
+        for st in xml_writer.simple_types[schema.target_ns]:
             with _TagGuard('simpleType', xml_writer):
                 xml_writer.add_attribute('name', st.name)
 
                 if st.restriction is not None:
                     _dump_restriction(st.restriction, schema, xml_writer)
-                elif st.listitem is not None:
-                    _dump_listitem(st.listitem, schema, xml_writer)
+                elif st.listitems:
+                    _dump_listitems(st.listitems, schema, xml_writer)
                 elif st.union:
                     _dump_union(st.union, schema, xml_writer)
 
@@ -469,6 +470,22 @@ def _dump_schema(schema, xml_writer):
                     assert checks.has_empty_content(ct), 'Expected empty CT'
                     _dump_attribute_uses(attribute_uses, schema, xml_writer)
 
+        if schema.attributes:
+            xml_writer.add_comment('Top-level Attributes')
+        for attr in schema.attributes:
+            with _TagGuard('attribute', xml_writer):
+                _dump_attribute_attributes(attr, True, schema, xml_writer)
+
+        attr_groups = xml_writer.attribute_groups.get(schema.target_ns, {})
+        if attr_groups:
+            xml_writer.add_comment('Attribute Groups')
+        for (name, attr_use) in sorted(attr_groups.itervalues(),
+                                       key=lambda x: x.name):
+            with _TagGuard('attributeGroup', xml_writer):
+                xml_writer.add_attribute('name', name)
+
+                _dump_attribute_use(attr_use, schema, xml_writer)
+
         if schema.elements:
             xml_writer.add_comment('Top-level Elements')
         for elem in schema.elements:
@@ -486,26 +503,11 @@ def _dump_schema(schema, xml_writer):
                 _dump_particle(particle, schema, xml_writer,
                                set(), in_group=True)
 
-        if schema.attributes:
-            xml_writer.add_comment('Top-level Attributes')
-        for attr in schema.attributes:
-            with _TagGuard('attribute', xml_writer):
-                _dump_attribute_attributes(attr, True, schema, xml_writer)
-
-        attr_groups = xml_writer.attribute_groups.get(schema.target_ns, {})
-        if attr_groups:
-            xml_writer.add_comment('Attribute Groups')
-        for (name, attr_use) in sorted(attr_groups.itervalues(),
-                                       key=lambda x: x.name):
-            with _TagGuard('attributeGroup', xml_writer):
-                xml_writer.add_attribute('name', name)
-
-                _dump_attribute_use(attr_use, schema, xml_writer)
-
 
 def dump_xsd(schemata, output_dir):
     attribute_groups = _collect_attribute_groups(schemata)
     element_groups = _collect_element_groups(schemata)
+    simple_types = _simplify_simple_types(schemata)
 
     print('Dumping XML Schema files to {}...'.format(
         os.path.realpath(output_dir)))
@@ -516,9 +518,10 @@ def dump_xsd(schemata, output_dir):
     for schema in schemata:
         file_path = os.path.join(output_dir, '{}.xsd'.format(schema.filename))
 
-        xml_writer = _XmlWriter(file_path)
+        xml_writer = _XmlWritingContext(file_path)
         xml_writer.attribute_groups = attribute_groups
         xml_writer.element_groups = element_groups
+        xml_writer.simple_types = simple_types
 
         _dump_schema(schema, xml_writer)
 
@@ -601,3 +604,15 @@ def _collect_element_groups(schemata):
                 group_count = find_groups(ct.structure, schema, group_count)
 
     return element_groups
+
+
+def _simplify_simple_types(schemata):
+    simple_types = {}
+
+    for schema in schemata:
+        simple_types[schema.target_ns] = []
+        simple_types_for_ns = simple_types[schema.target_ns]
+        for st in schema.simple_types:
+            simple_types_for_ns.append(st)
+
+    return simple_types

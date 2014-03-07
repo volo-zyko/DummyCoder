@@ -207,9 +207,10 @@ class XsdElementFactory(object):
                 if c.restriction is not None:
                     add_import_if_differ(xsd_schema.schema_element,
                                          c.restriction.base.schema)
-                elif c.listitem is not None:
-                    add_import_if_differ(xsd_schema.schema_element,
-                                         c.listitem.schema)
+                elif c.listitems:
+                    for s in c.listitems:
+                        add_import_if_differ(xsd_schema.schema_element,
+                                             s.type.schema)
                 elif c.union:
                     for s in c.union:
                         add_import_if_differ(xsd_schema.schema_element,

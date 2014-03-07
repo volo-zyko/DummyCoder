@@ -2,6 +2,7 @@
 
 from dumco.utils.decorators import method_once
 
+import dumco.schema.base
 import dumco.schema.elements
 import dumco.schema.uses
 
@@ -44,18 +45,21 @@ class XsdSimpleType(xsd_base.XsdBase):
             if isinstance(c, xsd_restriction.XsdRestriction):
                 self.schema_element.restriction = c.finalize(factory)
             elif isinstance(c, xsd_list.XsdList):
-                self.schema_element.listitem = c.finalize(factory).itemtype
+                listitem = dumco.schema.elements.ListTypeCardinality(
+                    c.finalize(factory).itemtype,
+                    0, dumco.schema.base.UNBOUNDED)
+                self.schema_element.listitems.append(listitem)
             elif isinstance(c, xsd_union.XsdUnion):
                 self.schema_element.union = c.finalize(factory).membertypes
 
         assert ((self.schema_element.restriction is not None and
-                 self.schema_element.listitem is None and
+                 self.schema_element.listitems == [] and
                  self.schema_element.union == []) or
-                (self.schema_element.listitem is not None and
+                (self.schema_element.listitems != [] and
                  self.schema_element.restriction is None and
                  self.schema_element.union == []) or
                 (self.schema_element.union != [] and
-                 self.schema_element.listitem is None and
+                 self.schema_element.listitems == [] and
                  self.schema_element.restriction is None)), \
             'SimpleType must be any of restriction, list, union'
 

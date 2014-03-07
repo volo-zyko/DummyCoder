@@ -60,7 +60,8 @@ class RngAttribute(rng_base.RngBase):
 
         factory.ns_attribute_stack.append(ns)
         try:
-            name = rng_name.RngName({}, parent_element,
+            name = rng_name.RngName(
+                {}, parent_element,
                 factory.get_attribute(attrs, 'name').strip(), factory)
 
             self.children.append(name)
@@ -72,27 +73,27 @@ class RngAttribute(rng_base.RngBase):
         self.pattern = None
 
     @method_once
-    def finalize(self, grammar, all_schemata, factory):
+    def finalize(self, grammar, factory):
         assert rng_utils.is_name_class(self.children[0]), \
             'Wrong name in attribute'
         self.name = self.children[0]
-        self.name.finalize(grammar, all_schemata, factory)
+        self.name.finalize(grammar, factory)
 
         for c in self.children[1:]:
             assert rng_utils.is_pattern(c), 'Wrong content of attribute'
 
-            c.finalize(grammar, all_schemata, factory)
+            c.finalize(grammar, factory)
 
             assert self.pattern is None, 'Wrong pattern in attribute'
             if isinstance(c, rng_ref.RngRef):
-                self.pattern = c.get_element(grammar)
+                self.pattern = c.get_ref_pattern(grammar)
             else:
                 self.pattern = c
 
         if self.pattern is None:
             self.pattern = rng_text.RngText({}, self)
 
-        super(RngAttribute, self).finalize(grammar, all_schemata, factory)
+        super(RngAttribute, self).finalize(grammar, factory)
 
     def _dump_internals(self, fhandle, indent):
         fhandle.write('>\n')

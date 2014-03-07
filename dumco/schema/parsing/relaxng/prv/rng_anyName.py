@@ -22,16 +22,16 @@ class RngAnyName(rng_base.RngBase):
         self.except_name_class = None
 
     @method_once
-    def finalize(self, grammar, all_schemata, factory):
+    def finalize(self, grammar, factory):
         for c in self.children:
             assert (isinstance(c, rng_except.RngExceptName) and
                     self.except_name_class is None), \
                 'Wrong content of anyName element'
 
-            c.finalize(grammar, all_schemata, factory)
+            c.finalize(grammar, factory)
             self.except_name_class = c
 
-        super(RngAnyName, self).finalize(grammar, all_schemata, factory)
+        super(RngAnyName, self).finalize(grammar, factory)
 
     def _dump_internals(self, fhandle, indent):
         if self.except_name_class is None:

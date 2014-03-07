@@ -6,8 +6,9 @@ import StringIO
 from dumco.utils.decorators import method_once
 
 import dumco.schema.checks
+from dumco.schema.rng_types import RNG_NAMESPACE
+
 import dumco.schema.parsing.xml_parser
-import dumco.schema.parsing.relaxng.element_factory
 
 import rng_base
 import rng_define
@@ -33,19 +34,19 @@ class RngGrammar(rng_base.RngBase):
     def __init__(self, attrs, parent_element, grammar_path, factory):
         super(RngGrammar, self).__init__(attrs, parent_element)
 
-        self.known_prefices = factory.all_namespace_prefices
+        # Temporaries.
+        self.known_prefixes = factory.all_namespace_prefixes
         self.grammar_path = grammar_path
-
-        self.start = None
         self.start_combined = False
         self.defines = {}
         self.defines_combined = {}
-
-        self.elements = []
         self.element_counter = 1
 
+        self.start = None
+        self.elements = []
+
     @method_once
-    def finalize(self, grammar, all_schemata, factory):
+    def finalize(self, grammar, factory):
         # Collect children in defines without finalizing them. This
         # prevents finalization loops.
         for d in self.defines.itervalues():
@@ -53,7 +54,7 @@ class RngGrammar(rng_base.RngBase):
 
         # Finalize everything from grammar start. This also collects
         # all elements in a grammar and assigns them new names.
-        self.start.finalize(grammar, all_schemata, factory)
+        self.start.finalize(grammar, factory)
 
         self.elements.sort(key=lambda e: e.define_name)
 
@@ -61,9 +62,9 @@ class RngGrammar(rng_base.RngBase):
         # start is finalized because this might create infinite finalization
         # loops.
         for e in self.elements:
-            e.finalize(grammar, all_schemata, factory)
+            e.finalize(grammar, factory)
 
-        super(RngGrammar, self).finalize(grammar, all_schemata, factory)
+        super(RngGrammar, self).finalize(grammar, factory)
 
     def add_start(self, start):
         assert (self.start is None or start.combine == '' or
@@ -97,7 +98,8 @@ class RngGrammar(rng_base.RngBase):
                 self.start.children = [combine]
 
             assert self.start_combined, \
-                'There is more than one start element without combine attribute'
+                'There is more than one start element ' \
+                'without combine attribute'
             assert (start.combine == '' or
                     (start.combine == 'choice' and
                      isinstance(combine, rng_choice.RngChoicePattern))
@@ -146,7 +148,8 @@ class RngGrammar(rng_base.RngBase):
                 self.defines[define.name].children = [combine]
 
             assert self.defines_combined[define.name], \
-                'There is more than one define element without combine attribute'
+                'There is more than one define element ' \
+                'without combine attribute'
             assert (define.combine == '' or
                     (define.combine == 'choice' and
                      isinstance(combine, rng_choice.RngChoicePattern))
@@ -170,8 +173,8 @@ class RngGrammar(rng_base.RngBase):
             StringIO.StringIO(rng_root.toxml('utf-8')))
 
     def _dump_internals(self, fhandle, indent):
-        fhandle.write(' xmlns="{}"'.format(_rng_namespace()))
-        for (uri, prefix) in sorted(self.known_prefices.iteritems()):
+        fhandle.write(' xmlns="{}"'.format(RNG_NAMESPACE))
+        for (uri, prefix) in sorted(self.known_prefixes.iteritems()):
             if not dumco.schema.checks.is_xml_namespace(uri):
                 fhandle.write(' xmlns:{}="{}"'.format(prefix, uri))
         fhandle.write('>\n')
@@ -182,10 +185,11 @@ class RngGrammar(rng_base.RngBase):
             assert isinstance(e, rng_element.RngElement), \
                 'Only elements should be defined in RNG dump'
 
-            fhandle.write(
-                '{}<define name="{}">\n'.format(' ' * indent, e.define_name))
+            space = ' ' * indent
+            fhandle.write('{}<define name="{}">\n'.format(space,
+                                                          e.define_name))
             e.dump(fhandle, indent + self._tab)
-            fhandle.write('{}</define>\n'.format(' ' * indent))
+            fhandle.write('{}</define>\n'.format(space))
 
         return rng_base.RngBase._CLOSING_TAG
 
@@ -193,7 +197,7 @@ class RngGrammar(rng_base.RngBase):
 class _RngIncludeLogic(dumco.schema.parsing.xml_parser.IncludeLogic):
     def _is_rng_node(self, node, name):
         return (node.nodeType == node.ELEMENT_NODE and
-                _rng_namespace() == node.namespaceURI and
+                RNG_NAMESPACE == node.namespaceURI and
                 node.localName == name)
 
     def _is_root_node(self, node):
@@ -219,10 +223,6 @@ class _RngIncludeLogic(dumco.schema.parsing.xml_parser.IncludeLogic):
         new_node.tagName = 'div'
 
         include_node.insertBefore(new_node, include_node.firstChild)
-
-
-def _rng_namespace():
-    return dumco.schema.parsing.relaxng.element_factory.RNG_NAMESPACE
 
 
 def _make_combine(combine_type, parent):

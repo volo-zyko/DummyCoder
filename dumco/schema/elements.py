@@ -150,6 +150,10 @@ class Element(base.DataComponent):
 EnumerationValue = collections.namedtuple('EnumerationValue', ['value', 'doc'])
 
 
+ListTypeCardinality = collections.namedtuple(
+    'ListTypeCardinality', ['type', 'min_occurs', 'max_occurs'])
+
+
 class Restriction(base.SchemaBase):
     # white_space member can take any of these values.
     WS_PRESERVE = 1
@@ -227,7 +231,7 @@ class SimpleType(base.SchemaBase):
 
         self.name = name
         self.restriction = None
-        self.listitem = None
+        self.listitems = []
         self.union = []
 
     @staticmethod

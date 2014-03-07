@@ -21,20 +21,21 @@ class RngData(rng_base.RngBase):
     def __init__(self, attrs, parent_element, factory):
         super(RngData, self).__init__(attrs, parent_element)
 
+        type_name = factory.get_attribute(attrs, 'type').strip()
+
         self.params = []
         self.except_pattern = None
         self.datatypes_uri = factory.get_datatypes_uri()
-        type_name = factory.get_attribute(attrs, 'type').strip()
         self.type = factory.builtin_types(self.datatypes_uri)[type_name]
 
     @method_once
-    def finalize(self, grammar, all_schemata, factory):
+    def finalize(self, grammar, factory):
         for c in self.children:
             assert (isinstance(c, rng_param.RngParam) or
                     isinstance(c, rng_except.RngExceptPattern)), \
                 'Wrong content of data element'
 
-            c.finalize(grammar, all_schemata, factory)
+            c.finalize(grammar, factory)
             if isinstance(c, rng_param.RngParam):
                 self.params.append(c)
             elif isinstance(c, rng_except.RngExceptPattern):
@@ -42,7 +43,7 @@ class RngData(rng_base.RngBase):
                     'More than one except element in data element'
                 self.except_pattern = c
 
-        super(RngData, self).finalize(grammar, all_schemata, factory)
+        super(RngData, self).finalize(grammar, factory)
 
     def _dump_internals(self, fhandle, indent):
         fhandle.write(' type="{}" datatypeLibrary="{}"'.

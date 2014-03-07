@@ -48,8 +48,8 @@ def set_define_name_for_element(element, grammar):
         assert is_name_class(element.name), 'Element has bad name'
 
         if isinstance(element.name, rng_name.RngName):
-            if element.name.ns in grammar.known_prefices:
-                prefix = grammar.known_prefices[element.name.ns]
+            if element.name.ns in grammar.known_prefixes:
+                prefix = grammar.known_prefixes[element.name.ns]
                 name = '{}-{}-element'.format(prefix, element.name.name)
             else:
                 name = '{}-element'.format(element.name.name)
@@ -65,3 +65,8 @@ def set_define_name_for_element(element, grammar):
 
         element.define_name = name
         grammar.elements.append(element)
+
+
+def dump_element_ref(element, fhandle, indent):
+    space = ' ' * indent
+    fhandle.write('{}<ref name="{}"/>\n'.format(space, element.define_name))

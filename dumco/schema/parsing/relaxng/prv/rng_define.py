@@ -53,13 +53,14 @@ class RngDefine(rng_base.RngBase):
     def __init__(self, attrs, parent_element, factory):
         super(RngDefine, self).__init__(attrs, parent_element)
 
-        self.name = factory.get_attribute(attrs, 'name').strip()
+        # Temporary for handling of multiple defines with same name.
         try:
             self.combine = factory.get_attribute(attrs, 'combine').strip()
         except LookupError:
             self.combine = ''
 
         self.pattern = None
+        self.name = factory.get_attribute(attrs, 'name').strip()
 
     @method_once
     def prefinalize(self, grammar):
@@ -67,10 +68,11 @@ class RngDefine(rng_base.RngBase):
             return
 
         if len(self.children) == 1:
+            assert rng_utils.is_pattern(self.children[0]), \
+                'Wrong content of define'
             self.pattern = self.children[0]
-            assert rng_utils.is_pattern(self.pattern), 'Wrong content of define'
             if isinstance(self.pattern, rng_ref.RngRef):
-                self.pattern = self.pattern.get_element(grammar)
+                self.pattern = self.pattern.get_ref_pattern(grammar)
         else:
             patterns = []
             for c in self.children:

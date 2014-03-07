@@ -53,36 +53,37 @@ class RngStart(rng_base.RngBase):
     def __init__(self, attrs, parent_element, factory):
         super(RngStart, self).__init__(attrs, parent_element)
 
+        # Temporary for handling of multiple starts.
         try:
             self.combine = factory.get_attribute(attrs, 'combine').strip()
         except LookupError:
             self.combine = ''
 
         self.pattern = None
+        self.not_allowed = False
 
     @method_once
-    def finalize(self, grammar, all_schemata, factory):
+    def finalize(self, grammar, factory):
         assert (len(self.children) == 1 and
                 rng_utils.is_pattern(self.children[0])), \
             'Wrong content of start'
 
         if isinstance(self.children[0], rng_ref.RngRef):
-            self.pattern = self.children[0].get_element(grammar)
+            self.pattern = self.children[0].get_ref_pattern(grammar)
         else:
             self.pattern = self.children[0]
 
-        self.pattern.finalize(grammar, all_schemata, factory)
+        self.pattern.finalize(grammar, factory)
 
         if isinstance(self.pattern, rng_element.RngElement):
             rng_utils.set_define_name_for_element(self.pattern, grammar)
 
-        super(RngStart, self).finalize(grammar, all_schemata, factory)
+        super(RngStart, self).finalize(grammar, factory)
 
     def _dump_internals(self, fhandle, indent):
         fhandle.write('>\n')
         if isinstance(self.pattern, rng_element.RngElement):
-            fhandle.write('{}<ref name="{}"/>\n'.format(
-                ' ' * indent, self.pattern.define_name))
+            rng_utils.dump_element_ref(self.pattern, fhandle, indent)
         else:
             self.pattern.dump(fhandle, indent)
 

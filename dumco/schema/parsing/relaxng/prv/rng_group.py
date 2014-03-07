@@ -51,40 +51,40 @@ class RngGroup(rng_base.RngBase):
         self.patterns = []
 
     @method_once
-    def finalize(self, grammar, all_schemata, factory):
+    def finalize(self, grammar, factory):
         for c in self.children:
             assert rng_utils.is_pattern(c), 'Wrong content of group'
 
             if isinstance(c, rng_ref.RngRef):
-                c = c.get_element(grammar)
+                c = c.get_ref_pattern(grammar)
 
             if isinstance(c, rng_empty.RngEmpty):
                 continue
 
             if isinstance(c, rng_element.RngElement):
-                c.finalize_name(grammar, all_schemata, factory)
+                c.finalize_name(grammar, factory)
                 rng_utils.set_define_name_for_element(c, grammar)
                 self.patterns.append(c)
                 continue
 
-            c.finalize(grammar, all_schemata, factory)
+            c.finalize(grammar, factory)
 
             if ((isinstance(c, rng_choice.RngChoicePattern) or
-                 isinstance(c, RngGroup) or
-                 isinstance(c, rng_interleave.RngInterleave) or
-                 isinstance(c, rng_oneOrMore.RngOneOrMore)) and
-                len(c.patterns) == 0):
+                    isinstance(c, RngGroup) or
+                    isinstance(c, rng_interleave.RngInterleave) or
+                    isinstance(c, rng_oneOrMore.RngOneOrMore)) and
+                    len(c.patterns) == 0):
                 continue
 
             if ((isinstance(c, rng_choice.RngChoicePattern) or
-                 isinstance(c, RngGroup) or
-                 isinstance(c, rng_interleave.RngInterleave)) and
-                len(c.patterns) == 1):
+                    isinstance(c, RngGroup) or
+                    isinstance(c, rng_interleave.RngInterleave)) and
+                    len(c.patterns) == 1):
                 c = c.patterns[0]
 
             self.patterns.append(c)
 
-        super(RngGroup, self).finalize(grammar, all_schemata, factory)
+        super(RngGroup, self).finalize(grammar, factory)
 
     def _dump_internals(self, fhandle, indent):
         assert self.patterns, 'Empty group pattern'
@@ -92,8 +92,7 @@ class RngGroup(rng_base.RngBase):
         fhandle.write('>\n')
         for p in self.patterns:
             if isinstance(p, rng_element.RngElement):
-                fhandle.write(
-                    '{}<ref name="{}"/>\n'.format(' ' * indent, p.define_name))
+                rng_utils.dump_element_ref(p, fhandle, indent)
             else:
                 p.dump(fhandle, indent)
 

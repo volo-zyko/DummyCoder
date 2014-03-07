@@ -7,8 +7,8 @@ import StringIO
 import dumco.schema.base
 import dumco.schema.checks
 import dumco.schema.elements
-import dumco.schema.rng_types
-import dumco.schema.xsd_types
+from dumco.schema.rng_types import RNG_NAMESPACE, rng_builtin_types
+from dumco.schema.xsd_types import xsd_builtin_types
 
 import prv.rng_choice
 import prv.rng_define
@@ -18,23 +18,22 @@ import prv.rng_grammar
 import prv.rng_oneOrMore
 import prv.rng_start
 import prv.rng_text
-
-
-RNG_NAMESPACE = 'http://relaxng.org/ns/structure/1.0'
+import prv.rng_to_model
 
 
 class RelaxElementFactory(object):
-    def __init__(self, element_namer, extension):
+    def __init__(self, arguments, element_namer, extension):
         # Reset internals of this factory.
         self.reset()
 
         # These internals should not be reset.
         self.included_schema_paths = {}
 
-        # All prefices encountered during schemata loading.
-        self.all_namespace_prefices = {dumco.schema.base.XML_NAMESPACE: 'xml'}
+        # All prefixes encountered during schemata loading.
+        self.all_namespace_prefixes = {dumco.schema.base.XML_NAMESPACE: 'xml'}
 
         # Part of the factorie's interface.
+        self.arguments = arguments
         self.namer = element_namer
         self.extension = extension
 
@@ -64,8 +63,8 @@ class RelaxElementFactory(object):
             if prefix is not None and uri != RNG_NAMESPACE:
                 # This makes sure that prefix will be the same no matter
                 # what was the order of loading of schemata.
-                if prefix > self.all_namespace_prefices.get(uri, ''):
-                    self.all_namespace_prefices[uri] = prefix
+                if prefix > self.all_namespace_prefixes.get(uri, ''):
+                    self.all_namespace_prefixes[uri] = prefix
 
     def new_element(self, name, attrs, schema_path, all_grammars):
         self.element_stack.append(self.element)
@@ -118,37 +117,45 @@ class RelaxElementFactory(object):
             self.element.append_text(text)
 
     def finalize_documents(self, all_grammars):
-        all_schemata = []
-        for (uri, prefix) in self.all_namespace_prefices.iteritems():
+        all_schemata = {}
+        for (uri, prefix) in self.all_namespace_prefixes.iteritems():
+            if dumco.schema.checks.is_xml_namespace(uri):
+                continue
+
             schema = dumco.schema.elements.Schema(uri)
-            schema.set_prefix(self.all_namespace_prefices)
+            schema.set_prefix(self.all_namespace_prefixes)
             schema.filename = schema.prefix
 
-            all_schemata.append(schema)
+            all_schemata[schema.target_ns] = schema
 
         sorted_all_grammars = sorted(all_grammars.values(),
                                      key=lambda g: g.grammar_path)
 
+        converter = prv.rng_to_model.Rng2Model(all_schemata, self)
         for grammar in sorted_all_grammars:
-            grammar.finalize(grammar, all_schemata, self)
+            grammar.finalize(grammar, self)
 
-        # We don't really need to dump rng but this is an additional check for
-        # validity of loaded grammars. Let's do it but make optional saving
-        # the dump to disk.
-        for (c, grammar) in enumerate(all_grammars.itervalues(), start=1):
-            stream = StringIO.StringIO()
-            stream.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-            grammar.dump(stream, 0)
+            converter.convert(grammar)
 
-            if False: # pragma: no cover
-                base = os.path.splitext(os.path.basename(grammar.grammar_path))
-                path = '{}_{}.rng'.format(base[0], c)
+        if self.arguments.dump_rng_model_to_dir is not None:
+            # We don't really need to dump rng but this is an additional check
+            # for validity of loaded grammars.
+            if not os.path.exists(self.arguments.dump_rng_model_to_dir):
+                os.makedirs(self.arguments.dump_rng_model_to_dir)
+            for (c, grammar) in enumerate(all_grammars.itervalues(), start=1):
+                stream = StringIO.StringIO()
+                stream.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+                grammar.dump(stream, 0)
+
+                path = os.path.join(self.arguments.dump_rng_model_to_dir,
+                                    os.path.basename(grammar.grammar_path))
                 with open(path, 'w') as f:
                     f.write(stream.getvalue())
 
-        all_schemata = filter(lambda s: not _is_schema_empty(s), all_schemata)
-        all_schemata.sort(key=lambda s: s.target_ns)
-        return all_schemata
+        sorted_all_schemata = filter(lambda s: not _is_schema_empty(s),
+                                     all_schemata.itervalues())
+        sorted_all_schemata.sort(key=lambda s: s.target_ns)
+        return sorted_all_schemata
 
     def get_datatypes_uri(self):
         found = itertools.dropwhile(lambda x: x is None,
@@ -162,17 +169,17 @@ class RelaxElementFactory(object):
 
     def builtin_types(self, uri):
         if dumco.schema.checks.is_xsd_namespace(uri):
-            return dumco.schema.xsd_types.xsd_builtin_types()
-        return dumco.schema.rng_types.rng_builtin_types()
+            return xsd_builtin_types()
+        return rng_builtin_types()
 
     def get_attribute(self, attrs, localname, uri=None):
-        if not attrs.has_key((uri, localname)):
+        if (uri, localname) not in attrs:
             raise LookupError
         return attrs.get((uri, localname))
 
     @staticmethod
     def noop_handler(attrs, parent_element, factory,
-                     schema_path, all_grammars):
+                     schema_path, all_grammars):  # pragma: no cover
         return (parent_element, {})
 
     @staticmethod
@@ -230,6 +237,7 @@ class RelaxElementFactory(object):
             return (None, qname)
         else:
             return (self.namespaces[splitted[0]], splitted[1])
+
 
 def _is_schema_empty(schema):
     return (not schema.attributes and not schema.complex_types and

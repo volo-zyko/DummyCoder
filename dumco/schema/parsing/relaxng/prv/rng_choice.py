@@ -70,37 +70,37 @@ class RngChoicePattern(rng_base.RngBase):
         self.patterns = []
 
     @method_once
-    def finalize(self, grammar, all_schemata, factory):
+    def finalize(self, grammar, factory):
         has_empty = False
         for c in self.children:
             assert rng_utils.is_pattern(c), 'Wrong content of choice pattern'
 
             if isinstance(c, rng_ref.RngRef):
-                c = c.get_element(grammar)
+                c = c.get_ref_pattern(grammar)
 
             if isinstance(c, rng_empty.RngEmpty):
                 has_empty = True
                 continue
 
             if isinstance(c, rng_element.RngElement):
-                c.finalize_name(grammar, all_schemata, factory)
+                c.finalize_name(grammar, factory)
                 rng_utils.set_define_name_for_element(c, grammar)
                 self.patterns.append(c)
                 continue
 
-            c.finalize(grammar, all_schemata, factory)
+            c.finalize(grammar, factory)
 
             if ((isinstance(c, RngChoicePattern) or
-                 isinstance(c, rng_group.RngGroup) or
-                 isinstance(c, rng_interleave.RngInterleave) or
-                 isinstance(c, rng_oneOrMore.RngOneOrMore)) and
-                len(c.patterns) == 0):
+                    isinstance(c, rng_group.RngGroup) or
+                    isinstance(c, rng_interleave.RngInterleave) or
+                    isinstance(c, rng_oneOrMore.RngOneOrMore)) and
+                    len(c.patterns) == 0):
                 continue
 
             if ((isinstance(c, RngChoicePattern) or
-                 isinstance(c, rng_group.RngGroup) or
-                 isinstance(c, rng_interleave.RngInterleave)) and
-                len(c.patterns) == 1):
+                    isinstance(c, rng_group.RngGroup) or
+                    isinstance(c, rng_interleave.RngInterleave)) and
+                    len(c.patterns) == 1):
                 c = c.patterns[0]
 
             self.patterns.append(c)
@@ -108,7 +108,7 @@ class RngChoicePattern(rng_base.RngBase):
         if has_empty and self.patterns:
             self.patterns.insert(0, rng_empty.RngEmpty({}, self))
 
-        super(RngChoicePattern, self).finalize(grammar, all_schemata, factory)
+        super(RngChoicePattern, self).finalize(grammar, factory)
 
     def _tag_name(self):
         return 'choice'
@@ -119,8 +119,7 @@ class RngChoicePattern(rng_base.RngBase):
         fhandle.write('>\n')
         for p in self.patterns:
             if isinstance(p, rng_element.RngElement):
-                fhandle.write(
-                    '{}<ref name="{}"/>\n'.format(' ' * indent, p.define_name))
+                rng_utils.dump_element_ref(p, fhandle, indent)
             else:
                 p.dump(fhandle, indent)
 
@@ -134,15 +133,15 @@ class RngChoiceName(rng_base.RngBase):
         self.name_classes = []
 
     @method_once
-    def finalize(self, grammar, all_schemata, factory):
+    def finalize(self, grammar, factory):
         for c in self.children:
             assert rng_utils.is_name_class(c), 'Wrong content of choice name'
 
-            c.finalize(grammar, all_schemata, factory)
+            c.finalize(grammar, factory)
 
             self.name_classes.append(c)
 
-        super(RngChoiceName, self).finalize(grammar, all_schemata, factory)
+        super(RngChoiceName, self).finalize(grammar, factory)
 
     def _tag_name(self):
         return 'choice'

@@ -3,11 +3,9 @@
 from dumco.utils.decorators import method_once
 
 import rng_anyName
-import rng_attribute
 import rng_base
 import rng_choice
 import rng_data
-import rng_element
 import rng_empty
 import rng_group
 import rng_interleave
@@ -17,7 +15,6 @@ import rng_notAllowed
 import rng_nsName
 import rng_oneOrMore
 import rng_ref
-import rng_text
 import rng_utils
 import rng_value
 
@@ -28,22 +25,18 @@ def rng_except(attrs, parent_element, factory, grammar_path, all_grammars):
         parent_element.children.append(excpt)
 
         return (excpt, {
-            'attribute': rng_attribute.rng_attribute,
             'choice': rng_choice.rng_choice,
             'data': rng_data.rng_data,
-            'element': rng_element.rng_element,
             'empty': rng_empty.rng_empty,
             'externalRef': factory.noop_handler,
             'group': rng_group.rng_group,
             'interleave': rng_interleave.rng_interleave,
             'list': rng_list.rng_list,
-            'mixed': factory.rng_mixed,
             'notAllowed': rng_notAllowed.rng_notAllowed,
             'oneOrMore': rng_oneOrMore.rng_oneOrMore,
             'optional': factory.rng_optional,
             'parentRef': factory.noop_handler,
             'ref': rng_ref.rng_ref,
-            'text': rng_text.rng_text,
             'value': rng_value.rng_value,
             'zeroOrMore': factory.rng_zeroOrMore,
         })
@@ -66,40 +59,31 @@ class RngExceptPattern(rng_base.RngBase):
         self.patterns = []
 
     @method_once
-    def finalize(self, grammar, all_schemata, factory):
+    def finalize(self, grammar, factory):
         for c in self.children:
             assert rng_utils.is_pattern(c), 'Wrong content of execept pattern'
 
             if isinstance(c, rng_ref.RngRef):
-                c = c.get_element(grammar)
+                c = c.get_ref_pattern(grammar)
 
-            if isinstance(c, rng_empty.RngEmpty):
-                continue
-
-            if isinstance(c, rng_element.RngElement):
-                c.finalize_name(grammar, all_schemata, factory)
-                rng_utils.set_define_name_for_element(c, grammar)
-                self.patterns.append(c)
-                continue
-
-            c.finalize(grammar, all_schemata, factory)
+            c.finalize(grammar, factory)
 
             if ((isinstance(c, rng_choice.RngChoicePattern) or
-                 isinstance(c, rng_group.RngGroup) or
-                 isinstance(c, rng_interleave.RngInterleave) or
-                 isinstance(c, rng_oneOrMore.RngOneOrMore)) and
-                len(c.patterns) == 0):
+                    isinstance(c, rng_group.RngGroup) or
+                    isinstance(c, rng_interleave.RngInterleave) or
+                    isinstance(c, rng_oneOrMore.RngOneOrMore)) and
+                    len(c.patterns) == 0):
                 continue
 
             if ((isinstance(c, rng_choice.RngChoicePattern) or
-                 isinstance(c, rng_group.RngGroup) or
-                 isinstance(c, rng_interleave.RngInterleave)) and
-                len(c.patterns) == 1):
+                    isinstance(c, rng_group.RngGroup) or
+                    isinstance(c, rng_interleave.RngInterleave)) and
+                    len(c.patterns) == 1):
                 c = c.patterns[0]
 
             self.patterns.append(c)
 
-        super(RngExceptPattern, self).finalize(grammar, all_schemata, factory)
+        super(RngExceptPattern, self).finalize(grammar, factory)
 
     def _tag_name(self):
         return 'except'
@@ -109,11 +93,7 @@ class RngExceptPattern(rng_base.RngBase):
 
         fhandle.write('>\n')
         for p in self.patterns:
-            if isinstance(p, rng_element.RngElement):
-                fhandle.write(
-                    '{}<ref name="{}"/>\n'.format(' ' * indent, p.define_name))
-            else:
-                p.dump(fhandle, indent)
+            p.dump(fhandle, indent)
 
         return rng_base.RngBase._CLOSING_TAG
 
@@ -125,11 +105,11 @@ class RngExceptName(rng_base.RngBase):
         self.name_classes = []
 
     @method_once
-    def finalize(self, grammar, all_schemata, factory):
+    def finalize(self, grammar, factory):
         for c in self.children:
             assert rng_utils.is_name_class(c), 'Wrong content of except name'
 
-            c.finalize(grammar, all_schemata, factory)
+            c.finalize(grammar, factory)
             self.name_classes.append(c)
 
         if len(self.name_classes) > 1:
@@ -137,7 +117,7 @@ class RngExceptName(rng_base.RngBase):
             choice.name_classes = self.name_classes
             self.name_classes = [choice]
 
-        super(RngExceptName, self).finalize(grammar, all_schemata, factory)
+        super(RngExceptName, self).finalize(grammar, factory)
 
     def _tag_name(self):
         return 'except'

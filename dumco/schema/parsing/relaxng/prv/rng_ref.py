@@ -16,26 +16,26 @@ class RngRef(rng_base.RngBase):
     def __init__(self, attrs, parent_element):
         super(RngRef, self).__init__(attrs, parent_element)
 
-        self.element = None
+        self.ref_pattern = None
 
-    def get_element(self, grammar):
-        if self.element is None:
+    def get_ref_pattern(self, grammar):
+        if self.ref_pattern is None:
             name = self.attr('name').strip()
 
             define = grammar.get_define(name)
             define.prefinalize(grammar)
 
-            self.element = define.pattern
+            self.ref_pattern = define.pattern
 
-        assert self.element is not None, 'Reference is malformed'
+        assert self.ref_pattern is not None, 'Reference is malformed'
 
-        return self.element
+        return self.ref_pattern
 
     @method_once
-    def finalize(self, grammar, all_schemata, factory):
-        # Make self.element valid.
-        self.get_element(grammar)
+    def finalize(self, grammar, factory):
+        # Make self.ref_pattern valid.
+        self.get_ref_pattern(grammar)
 
-        self.element.finalize(grammar, all_schemata, factory)
+        self.ref_pattern.finalize(grammar, factory)
 
-        super(RngRef, self).finalize(grammar, all_schemata, factory)
+        super(RngRef, self).finalize(grammar, factory)
