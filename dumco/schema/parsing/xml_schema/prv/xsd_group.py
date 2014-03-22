@@ -51,4 +51,4 @@ class XsdGroup(xsd_base.XsdBase):
                 term = c.finalize(factory).term
 
         return dumco.schema.uses.Particle(
-            None, self.min_occurs, self.max_occurs, term)
+            False, self.min_occurs, self.max_occurs, term)

@@ -59,7 +59,8 @@ class SourceFile(object):
         if self.is_new_file():
             if self.read_only:
                 self << '// This file is generated. DO NOT EDIT IT!' << nl
-            self << '// Distributed under the GPLv2 License; see accompanying file COPYING.' << nl2
+            self << '// Distributed under the GPLv2 License; '
+            self << 'see accompanying file COPYING.' << nl2
         elif not append:
             raise FileExists(self.filename)
 
@@ -183,10 +184,11 @@ class FileGuard(object):
         self.source = source
 
     def __enter__(self):
-        pass
+        return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.source.done()
+        return exc_value is None
 
 
 class FileExists(BaseException):

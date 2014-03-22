@@ -206,7 +206,7 @@ $COVERAGE_ERASE_COMMAND
 $COVERAGE_BEGIN_COMMAND "$PWD/dumco.py" -h
 $COVERAGE_APPEND_COMMAND "$PWD/dumco.py" --version
 
-syntaxes=('xsd')
+syntaxes=('rng')
 if [ -n "$COVERAGE_BEGIN_COMMAND" ]; then
     syntaxes+=('xsd')
 fi

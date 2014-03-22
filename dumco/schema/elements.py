@@ -119,13 +119,13 @@ class ComplexType(base.SchemaBase):
     @staticmethod
     @function_once
     def urtype():
-        seqpart = uses.Particle(None, 1, 1, Sequence(None))
+        seqpart = uses.Particle(False, 1, 1, Sequence(None))
         seqpart.term.members.append(
-            uses.Particle(None, 1, base.UNBOUNDED, Any([], None)))
+            uses.Particle(False, 1, base.UNBOUNDED, Any([], None)))
 
-        root_seqpart = uses.Particle(None, 1, 1, Sequence(None))
+        root_seqpart = uses.Particle(False, 1, 1, Sequence(None))
         root_seqpart.term.members.append(
-            uses.AttributeUse(None, None, None, Any([], None)))
+            uses.AttributeUse(False, None, False, Any([], None)))
         root_seqpart.term.members.append(seqpart)
         root_seqpart.term.members.append(
             SchemaText(xsd_types.xsd_builtin_types()['string']))

@@ -102,9 +102,11 @@ class _TagGuard(object):
 
     def __enter__(self):
         self.writer.open_tag(self.prefix, self.uri, self.tag)
+        return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.writer.close_tag(self.prefix, self.uri, self.tag)
+        return exc_value is None
 
 
 def _qname(name, own_schema, other_schema, prefix=_XSD_PREFIX):

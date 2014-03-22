@@ -78,17 +78,17 @@ class XsdComplexExtension(xsd_base.XsdBase):
             return self.part
 
         new_elem = dumco.schema.elements.Sequence(self.schema.schema_element)
-        copy_base = dumco.schema.uses.Particle(None,
+        copy_base = dumco.schema.uses.Particle(False,
                                                base_part.min_occurs,
                                                base_part.max_occurs,
                                                base_part.term)
-        copy_self = dumco.schema.uses.Particle(None,
+        copy_self = dumco.schema.uses.Particle(False,
                                                self.part.min_occurs,
                                                self.part.max_occurs,
                                                self.part.term)
         new_elem.members.extend([copy_base, copy_self])
 
-        return dumco.schema.uses.Particle(None, 1, 1, new_elem)
+        return dumco.schema.uses.Particle(False, 1, 1, new_elem)
 
 
 def _root_particle(ct):

@@ -22,7 +22,7 @@ FileGuard = dumco.utils.source_file.FileGuard
 
 class CppSourceFile(dumco.utils.source_file.SourceFile):
     def __init__(self, filename, append=False):
-        super(CppSourceFile, self).__init__(filename, append)
+        super(CppSourceFile, self).__init__(filename, append=append)
 
         self.namespaces = []
 
@@ -74,7 +74,8 @@ class NsGuard(object):
     def __init__(self, source, namespaces):
         self.source = source
 
-        diff = list(itertools.dropwhile(lambda x: x[0] == [1],
+        diff = list(itertools.dropwhile(
+            lambda x: x[0] == [1],
             itertools.izip_longest(namespaces, source.namespaces,
                                    fillvalue=None)))
 
@@ -86,7 +87,9 @@ class NsGuard(object):
     def __enter__(self):
         self.source._close_namespaces(self.closed_nss)
         self.source._open_namespaces(self.added_nss)
+        return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.source._close_namespaces(self.added_nss)
         self.source._open_namespaces(self.closed_nss)
+        return exc_value is None

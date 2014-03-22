@@ -10,9 +10,13 @@ class Particle(object):
     def __init__(self, qualified, min_occurs, max_occurs, term):
         assert min_occurs <= max_occurs
 
+        # qualified = boolean.
         self.qualified = qualified
+        # min_occurs = integer.
         self.min_occurs = min_occurs
+        # max_occurs = integer.
         self.max_occurs = max_occurs
+        # term = Element/Sequence/Choice/All/Any.
         self.term = term
         self.name = None
 
@@ -37,9 +41,13 @@ class Particle(object):
 
 class AttributeUse(object):
     def __init__(self, qualified, constraint, required, attribute):
+        # qualified = boolean.
         self.qualified = qualified
+        # constraint = ValueConstraint/None.
         self.constraint = constraint
+        # required = boolean.
         self.required = required
+        # attribute = Attribute/Any.
         self.attribute = attribute
 
     def append_doc(self, doc):

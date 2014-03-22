@@ -24,7 +24,7 @@ class XsdAll(xsd_base.XsdBase):
         super(XsdAll, self).__init__(attrs)
 
         self.schema_element = dumco.schema.uses.Particle(
-            None,
+            False,
             factory.particle_min_occurs(attrs),
             factory.particle_max_occurs(attrs),
             dumco.schema.elements.All(parent_schema.schema_element))

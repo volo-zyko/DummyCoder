@@ -31,7 +31,7 @@ class XsdSequence(xsd_base.XsdBase):
         super(XsdSequence, self).__init__(attrs)
 
         self.schema_element = dumco.schema.uses.Particle(
-            None,
+            False,
             factory.particle_min_occurs(attrs),
             factory.particle_max_occurs(attrs),
             dumco.schema.elements.Sequence(parent_schema.schema_element))

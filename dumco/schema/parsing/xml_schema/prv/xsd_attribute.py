@@ -39,7 +39,7 @@ class XsdAttribute(xsd_base.XsdBase):
         self.schema = parent_schema
         self.schema_element = dumco.schema.uses.AttributeUse(
             self.qualified, attribute.constraint,
-            self.attr('required'), attribute)
+            self.attr('use') == 'required', attribute)
         self.prohibited = self.attr('use') == 'prohibited'
 
     @method_once

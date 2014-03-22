@@ -90,7 +90,7 @@ class XsdComplexType(xsd_base.XsdBase):
         if mixed:
             if particle is None:
                 particle = dumco.schema.uses.Particle(
-                    None, 1, 1,
+                    False, 1, 1,
                     dumco.schema.elements.Sequence(self.schema_element.schema))
 
             text = dumco.schema.elements.SchemaText(
@@ -111,7 +111,7 @@ class XsdComplexType(xsd_base.XsdBase):
 
         if attr_uses or text is not None:
             root = dumco.schema.uses.Particle(
-                None, 1, 1,
+                False, 1, 1,
                 dumco.schema.elements.Sequence(self.schema_element.schema))
             root.term.members.extend(attr_uses)
             if particle is not None:
