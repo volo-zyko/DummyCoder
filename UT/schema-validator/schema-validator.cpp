@@ -14,6 +14,9 @@
 #include <xercesc/util/XMLString.hpp>
 #include <xercesc/util/XercesVersion.hpp>
 
+#include <libxml/xmlmemory.h>
+#include <libxml/relaxng.h>
+
 namespace fs = boost::filesystem;
 namespace xs = xercesc;
 
@@ -193,6 +196,9 @@ private:
     bool m_had_errors;
 };
 
+auto relaxng_ctxt_deleter = [](xmlRelaxNGParserCtxtPtr p) { xmlRelaxNGFreeParserCtxt(p); };
+auto relaxng_schema_deleter = [](xmlRelaxNGPtr p) { xmlRelaxNGFree(p); };
+
 } // anonymous
 
 int main(int argc, char *argv[])
@@ -207,68 +213,84 @@ int main(int argc, char *argv[])
 
     fs::path abs_path(fs::canonical(fs::system_complete(root_file)));
 
-    // Xerces magic.
-    XercesIniFiniGuard ini_fini_gu;
+    bool loading_failed = true;
+    if (abs_path.extension() == ".xsd")
+    {
+        // Xerces magic.
+        XercesIniFiniGuard ini_fini_gu;
 
-    SVInputSource input_source(abs_path.string());
+        SVInputSource input_source(abs_path.string());
 
-    XMLCh const gLS[] = { xs::chLatin_L, xs::chLatin_S, xs::chNull };
+        XMLCh const gLS[] = { xs::chLatin_L, xs::chLatin_S, xs::chNull };
 
-    xs::DOMImplementationLS* impl(
-        static_cast<xs::DOMImplementationLS*>(
-            xs::DOMImplementationRegistry::getDOMImplementation(gLS)));
+        xs::DOMImplementationLS* impl(
+            static_cast<xs::DOMImplementationLS*>(
+                xs::DOMImplementationRegistry::getDOMImplementation(gLS)));
 
 #if XERCES_VERSION_MAJOR >= 3
-    std::unique_ptr<xs::DOMLSParser> parser(
-        impl->createLSParser(xs::DOMImplementationLS::MODE_SYNCHRONOUS, 0));
+        std::unique_ptr<xs::DOMLSParser> parser(
+            impl->createLSParser(xs::DOMImplementationLS::MODE_SYNCHRONOUS, 0));
 
-    xs::DOMConfiguration* conf(parser->getDomConfig());
+        xs::DOMConfiguration* conf(parser->getDomConfig());
 
-    conf->setParameter(xs::XMLUni::fgDOMComments, false);
-    conf->setParameter(xs::XMLUni::fgDOMDatatypeNormalization, false);
-    conf->setParameter(xs::XMLUni::fgDOMEntities, false);
-    conf->setParameter(xs::XMLUni::fgDOMNamespaces, true);
-    conf->setParameter(xs::XMLUni::fgDOMValidate, false);
-    conf->setParameter(xs::XMLUni::fgDOMElementContentWhitespace, false);
-    conf->setParameter(xs::XMLUni::fgXercesSchema, true);
-    conf->setParameter(xs::XMLUni::fgXercesSchemaFullChecking, true);
-    conf->setParameter(xs::XMLUni::fgXercesLoadExternalDTD, false);
-    conf->setParameter(xs::XMLUni::fgXercesContinueAfterFatalError, true);
-    conf->setParameter(xs::XMLUni::fgXercesValidationErrorAsFatal, false);
-    conf->setParameter(xs::XMLUni::fgXercesUseCachedGrammarInParse, true);
-    conf->setParameter(xs::XMLUni::fgXercesCacheGrammarFromParse, true);
+        conf->setParameter(xs::XMLUni::fgDOMComments, false);
+        conf->setParameter(xs::XMLUni::fgDOMDatatypeNormalization, false);
+        conf->setParameter(xs::XMLUni::fgDOMEntities, false);
+        conf->setParameter(xs::XMLUni::fgDOMNamespaces, true);
+        conf->setParameter(xs::XMLUni::fgDOMValidate, false);
+        conf->setParameter(xs::XMLUni::fgDOMElementContentWhitespace, false);
+        conf->setParameter(xs::XMLUni::fgXercesSchema, true);
+        conf->setParameter(xs::XMLUni::fgXercesSchemaFullChecking, true);
+        conf->setParameter(xs::XMLUni::fgXercesLoadExternalDTD, false);
+        conf->setParameter(xs::XMLUni::fgXercesContinueAfterFatalError, true);
+        conf->setParameter(xs::XMLUni::fgXercesValidationErrorAsFatal, false);
+        conf->setParameter(xs::XMLUni::fgXercesUseCachedGrammarInParse, true);
+        conf->setParameter(xs::XMLUni::fgXercesCacheGrammarFromParse, true);
 
-    SVErrorHandler eh;
-    conf->setParameter(xs::XMLUni::fgDOMErrorHandler, &eh);
+        SVErrorHandler eh;
+        conf->setParameter(xs::XMLUni::fgDOMErrorHandler, &eh);
 
-    xs::Wrapper4InputSource wrap(&input_source, false);
-    parser->loadGrammar(&wrap, xs::Grammar::SchemaGrammarType);
+        xs::Wrapper4InputSource wrap(&input_source, false);
+        parser->loadGrammar(&wrap, xs::Grammar::SchemaGrammarType);
 #else
-    std::unique_ptr<xs::DOMBuilder> parser(
-        impl->createDOMBuilder(xs::DOMImplementationLS::MODE_SYNCHRONOUS, 0));
+        std::unique_ptr<xs::DOMBuilder> parser(
+            impl->createDOMBuilder(xs::DOMImplementationLS::MODE_SYNCHRONOUS, 0));
 
-    parser->setFeature(xs::XMLUni::fgDOMComments, false);
-    parser->setFeature(xs::XMLUni::fgDOMDatatypeNormalization, false);
-    parser->setFeature(xs::XMLUni::fgDOMEntities, false);
-    parser->setFeature(xs::XMLUni::fgDOMNamespaces, true);
-    parser->setFeature(xs::XMLUni::fgDOMValidation, false);
-    parser->setFeature(xs::XMLUni::fgDOMWhitespaceInElementContent, false);
-    parser->setFeature(xs::XMLUni::fgXercesSchema, true);
-    parser->setFeature(xs::XMLUni::fgXercesSchemaFullChecking, true);
-    parser->setFeature(xs::XMLUni::fgXercesLoadExternalDTD, false);
-    parser->setFeature(xs::XMLUni::fgXercesContinueAfterFatalError, true);
-    parser->setFeature(xs::XMLUni::fgXercesValidationErrorAsFatal, false);
-    parser->setFeature(xs::XMLUni::fgXercesUseCachedGrammarInParse, true);
-    parser->setFeature(xs::XMLUni::fgXercesCacheGrammarFromParse, true);
+        parser->setFeature(xs::XMLUni::fgDOMComments, false);
+        parser->setFeature(xs::XMLUni::fgDOMDatatypeNormalization, false);
+        parser->setFeature(xs::XMLUni::fgDOMEntities, false);
+        parser->setFeature(xs::XMLUni::fgDOMNamespaces, true);
+        parser->setFeature(xs::XMLUni::fgDOMValidation, false);
+        parser->setFeature(xs::XMLUni::fgDOMWhitespaceInElementContent, false);
+        parser->setFeature(xs::XMLUni::fgXercesSchema, true);
+        parser->setFeature(xs::XMLUni::fgXercesSchemaFullChecking, true);
+        parser->setFeature(xs::XMLUni::fgXercesLoadExternalDTD, false);
+        parser->setFeature(xs::XMLUni::fgXercesContinueAfterFatalError, true);
+        parser->setFeature(xs::XMLUni::fgXercesValidationErrorAsFatal, false);
+        parser->setFeature(xs::XMLUni::fgXercesUseCachedGrammarInParse, true);
+        parser->setFeature(xs::XMLUni::fgXercesCacheGrammarFromParse, true);
 
-    SVErrorHandler eh;
-    parser->setErrorHandler(&eh);
+        SVErrorHandler eh;
+        parser->setErrorHandler(&eh);
 
-    xs::Wrapper4InputSource wrap(&input_source, false);
-    parser->loadGrammar(wrap, xs::Grammar::SchemaGrammarType);
+        xs::Wrapper4InputSource wrap(&input_source, false);
+        parser->loadGrammar(wrap, xs::Grammar::SchemaGrammarType);
 #endif
 
-    if (eh.had_errors())
+        loading_failed = eh.had_errors();
+    }
+    else if (abs_path.extension() == ".rng")
+    {
+        std::unique_ptr<_xmlRelaxNGParserCtxt, decltype(relaxng_ctxt_deleter)> rngparser(
+            xmlRelaxNGNewParserCtxt(argv[1]), relaxng_ctxt_deleter);
+
+        std::unique_ptr<_xmlRelaxNG, decltype(relaxng_schema_deleter)> schema(
+            xmlRelaxNGParse(rngparser.get()), relaxng_schema_deleter);
+
+        loading_failed = schema.get() == NULL;
+    }
+
+    if (loading_failed)
     {
         std::cerr << root_file << " is BAD" << std::endl;
         return 0;

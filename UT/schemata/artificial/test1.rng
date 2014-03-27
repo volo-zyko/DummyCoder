@@ -3,7 +3,7 @@
   <start>
     <ref name="a"/>
   </start>
-  <start combine="interleave">
+  <start combine="choice">
     <ref name="b"/>
   </start>
   <define name="a">
@@ -64,15 +64,11 @@
         <name>content</name>
         <data type="token" datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
           <except>
-            <empty/>
             <value type="token">aaaa</value>
-            <ref name="d"/>
+            <data type="language" datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes"/>
           </except>
         </data>
       </attribute>
     </element>
-  </define>
-  <define name="d">
-    <data type="language" datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes"/>
   </define>
 </grammar>
