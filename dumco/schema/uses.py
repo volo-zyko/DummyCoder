@@ -1,9 +1,30 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
+import collections
+
 from dumco.utils.decorators import method_once
 
 import checks
 import namer
+
+
+class AttributeUse(object):
+    def __init__(self, qualified, constraint, required, attribute):
+        # qualified = boolean.
+        self.qualified = qualified
+        # constraint = ValueConstraint/None.
+        self.constraint = constraint
+        # required = boolean.
+        self.required = required
+        # attribute = Attribute/Any.
+        self.attribute = attribute
+
+    def append_doc(self, doc):
+        self.attribute.append_doc(doc)
+
+
+ListTypeCardinality = collections.namedtuple(
+    'ListTypeCardinality', ['type', 'min_occurs', 'max_occurs'])
 
 
 class Particle(object):
@@ -37,18 +58,3 @@ class Particle(object):
             if checks.is_compositor(p.term):
                 p.nameit(parents + [self], factory, names)
                 assert p.name is not None, 'Name cannot be None'
-
-
-class AttributeUse(object):
-    def __init__(self, qualified, constraint, required, attribute):
-        # qualified = boolean.
-        self.qualified = qualified
-        # constraint = ValueConstraint/None.
-        self.constraint = constraint
-        # required = boolean.
-        self.required = required
-        # attribute = Attribute/Any.
-        self.attribute = attribute
-
-    def append_doc(self, doc):
-        self.attribute.append_doc(doc)

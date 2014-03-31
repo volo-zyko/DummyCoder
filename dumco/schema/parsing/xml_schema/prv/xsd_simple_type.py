@@ -45,7 +45,7 @@ class XsdSimpleType(xsd_base.XsdBase):
             if isinstance(c, xsd_restriction.XsdRestriction):
                 self.schema_element.restriction = c.finalize(factory)
             elif isinstance(c, xsd_list.XsdList):
-                listitem = dumco.schema.elements.ListTypeCardinality(
+                listitem = dumco.schema.uses.ListTypeCardinality(
                     c.finalize(factory).itemtype,
                     0, dumco.schema.base.UNBOUNDED)
                 self.schema_element.listitems.append(listitem)
