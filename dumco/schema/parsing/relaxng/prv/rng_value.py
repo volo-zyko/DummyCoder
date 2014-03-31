@@ -4,15 +4,15 @@ import rng_base
 
 
 def rng_value(attrs, parent_element, factory, grammar_path, all_grammars):
-    value = RngValue(attrs, parent_element, factory)
+    value = RngValue(attrs, factory)
     parent_element.children.append(value)
 
     return (value, {})
 
 
 class RngValue(rng_base.RngBase):
-    def __init__(self, attrs, parent_element, factory):
-        super(RngValue, self).__init__(attrs, parent_element)
+    def __init__(self, attrs, factory):
+        super(RngValue, self).__init__(attrs)
 
         self.value = None
         self.ns = factory.get_ns()

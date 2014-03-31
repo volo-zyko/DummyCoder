@@ -19,7 +19,7 @@ import rng_start
 
 
 def rng_grammar(attrs, parent_element, factory, grammar_path, all_grammars):
-    grammar = RngGrammar(attrs, parent_element, grammar_path, factory)
+    grammar = RngGrammar(attrs, grammar_path, factory)
     all_grammars[grammar_path] = grammar
 
     return (grammar, {
@@ -31,19 +31,24 @@ def rng_grammar(attrs, parent_element, factory, grammar_path, all_grammars):
 
 
 class RngGrammar(rng_base.RngBase):
-    def __init__(self, attrs, parent_element, grammar_path, factory):
-        super(RngGrammar, self).__init__(attrs, parent_element)
+    def __init__(self, attrs, grammar_path, factory):
+        super(RngGrammar, self).__init__(attrs)
 
         # Temporaries.
         self.known_prefixes = factory.all_namespace_prefixes
         self.grammar_path = grammar_path
+        # In start_combined, defines_combined members we track combine
+        # attribute in start and define elements.
         self.start_combined = False
-        self.defines = {}
         self.defines_combined = {}
+        # defines member contains define elements from original grammar.
+        self.defines = {}
         self.element_counter = 1
 
         self.start = None
-        self.elements = []
+        # We reassign define names after loading and here we track all new
+        # names for defines/elements and elements themselves.
+        self.named_elements = {}
 
     @method_once
     def finalize(self, grammar, factory):
@@ -56,12 +61,11 @@ class RngGrammar(rng_base.RngBase):
         # all elements in a grammar and assigns them new names.
         self.start.finalize(grammar, factory)
 
-        self.elements.sort(key=lambda e: e.define_name)
-
         # Finish finalization of elements. Elements are not finalized when
         # start is finalized because this might create infinite finalization
         # loops.
-        for e in self.elements:
+        for e in sorted(self.named_elements.itervalues(),
+                        key=lambda e: e.define_name):
             e.finalize(grammar, factory)
 
         super(RngGrammar, self).finalize(grammar, factory)
@@ -79,7 +83,7 @@ class RngGrammar(rng_base.RngBase):
             else:
                 self.start_combined = True
 
-                combine = _make_combine(start.combine, start)
+                combine = _make_combine(start.combine)
 
                 self.start.children.append(combine)
                 return combine
@@ -92,7 +96,7 @@ class RngGrammar(rng_base.RngBase):
             if not self.start_combined and start.combine != '':
                 self.start_combined = True
 
-                combine = _make_combine(start.combine, self.start)
+                combine = _make_combine(start.combine)
                 combine.children = self.start.children
 
                 self.start.children = [combine]
@@ -128,7 +132,7 @@ class RngGrammar(rng_base.RngBase):
             else:
                 self.defines_combined[define.name] = True
 
-                combine = _make_combine(define.combine, define)
+                combine = _make_combine(define.combine)
 
                 self.defines[define.name].children.append(combine)
                 return combine
@@ -141,8 +145,7 @@ class RngGrammar(rng_base.RngBase):
             if not self.defines_combined[define.name] and define.combine != '':
                 self.defines_combined[define.name] = True
 
-                combine = _make_combine(
-                    define.combine, self.defines[define.name])
+                combine = _make_combine(define.combine)
                 combine.children = self.defines[define.name].children
 
                 self.defines[define.name].children = [combine]
@@ -181,7 +184,8 @@ class RngGrammar(rng_base.RngBase):
 
         self.start.dump(fhandle, indent)
 
-        for e in self.elements:
+        for e in sorted(self.named_elements.itervalues(),
+                        key=lambda e: e.define_name):
             assert isinstance(e, rng_element.RngElement), \
                 'Only elements should be defined in RNG dump'
 
@@ -225,11 +229,11 @@ class _RngIncludeLogic(dumco.schema.parsing.xml_parser.IncludeLogic):
         include_node.insertBefore(new_node, include_node.firstChild)
 
 
-def _make_combine(combine_type, parent):
+def _make_combine(combine_type):
     assert combine_type == 'choice' or combine_type == 'interleave', \
         'Combine can be either choice or interleave'
 
     if combine_type == 'choice':
-        return rng_choice.RngChoicePattern({}, parent)
+        return rng_choice.RngChoicePattern({})
     elif combine_type == 'interleave':
-        return rng_interleave.RngInterleave({}, parent)
+        return rng_interleave.RngInterleave({})

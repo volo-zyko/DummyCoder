@@ -6,15 +6,15 @@ import rng_base
 
 
 def rng_param(attrs, parent_element, factory, grammar_path, all_grammars):
-    param = RngParam(attrs, parent_element)
+    param = RngParam(attrs)
     parent_element.children.append(param)
 
     return (param, {})
 
 
 class RngParam(rng_base.RngBase):
-    def __init__(self, attrs, parent_element):
-        super(RngParam, self).__init__(attrs, parent_element)
+    def __init__(self, attrs):
+        super(RngParam, self).__init__(attrs)
 
         self.name = self.attr('name').strip()
         self.value = None

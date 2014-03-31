@@ -28,7 +28,7 @@ def rng_choice(attrs, parent_element, factory, grammar_path, all_grammars):
         ((isinstance(parent_element, rng_element.RngElement) or
           isinstance(parent_element, rng_attribute.RngAttribute)) and
          not parent_element.children)):
-        choice = RngChoiceName(attrs, parent_element)
+        choice = RngChoiceName(attrs)
         parent_element.children.append(choice)
 
         return (choice, {
@@ -38,7 +38,7 @@ def rng_choice(attrs, parent_element, factory, grammar_path, all_grammars):
             'nsName': rng_nsName.rng_nsName,
         })
     else:
-        choice = RngChoicePattern(attrs, parent_element)
+        choice = RngChoicePattern(attrs)
         parent_element.children.append(choice)
 
         return (choice, {
@@ -64,8 +64,8 @@ def rng_choice(attrs, parent_element, factory, grammar_path, all_grammars):
 
 
 class RngChoicePattern(rng_base.RngBase):
-    def __init__(self, attrs, parent_element):
-        super(RngChoicePattern, self).__init__(attrs, parent_element)
+    def __init__(self, attrs):
+        super(RngChoicePattern, self).__init__(attrs)
 
         self.patterns = []
 
@@ -81,14 +81,15 @@ class RngChoicePattern(rng_base.RngBase):
             if isinstance(c, rng_empty.RngEmpty):
                 has_empty = True
                 continue
-
-            if isinstance(c, rng_element.RngElement):
+            elif isinstance(c, rng_element.RngElement):
                 c.finalize_name(grammar, factory)
-                rng_utils.set_define_name_for_element(c, grammar)
+                c = c.define_and_simplify_name(grammar, factory)
                 self.patterns.append(c)
                 continue
+            elif isinstance(c, rng_attribute.RngAttribute):
+                c = c.simplify_name(grammar, factory)
 
-            c.finalize(grammar, factory)
+            c = c.finalize(grammar, factory)
 
             if ((isinstance(c, RngChoicePattern) or
                     isinstance(c, rng_group.RngGroup) or
@@ -96,19 +97,20 @@ class RngChoicePattern(rng_base.RngBase):
                     isinstance(c, rng_oneOrMore.RngOneOrMore)) and
                     len(c.patterns) == 0):
                 continue
-
-            if ((isinstance(c, RngChoicePattern) or
+            elif ((isinstance(c, RngChoicePattern) or
                     isinstance(c, rng_group.RngGroup) or
                     isinstance(c, rng_interleave.RngInterleave)) and
                     len(c.patterns) == 1):
                 c = c.patterns[0]
+            elif isinstance(c, rng_notAllowed.RngNotAllowed):
+                continue
 
             self.patterns.append(c)
 
         if has_empty and self.patterns:
-            self.patterns.insert(0, rng_empty.RngEmpty({}, self))
+            self.patterns.insert(0, rng_empty.RngEmpty({}))
 
-        super(RngChoicePattern, self).finalize(grammar, factory)
+        return super(RngChoicePattern, self).finalize(grammar, factory)
 
     def _tag_name(self):
         return 'choice'
@@ -119,7 +121,7 @@ class RngChoicePattern(rng_base.RngBase):
         fhandle.write('>\n')
         for p in self.patterns:
             if isinstance(p, rng_element.RngElement):
-                rng_utils.dump_element_ref(p, fhandle, indent)
+                p.dump_element_ref(fhandle, indent)
             else:
                 p.dump(fhandle, indent)
 
@@ -127,8 +129,8 @@ class RngChoicePattern(rng_base.RngBase):
 
 
 class RngChoiceName(rng_base.RngBase):
-    def __init__(self, attrs, parent_element):
-        super(RngChoiceName, self).__init__(attrs, parent_element)
+    def __init__(self, attrs):
+        super(RngChoiceName, self).__init__(attrs)
 
         self.name_classes = []
 
@@ -138,8 +140,9 @@ class RngChoiceName(rng_base.RngBase):
             assert rng_utils.is_name_class(c), 'Wrong content of choice name'
 
             c.finalize(grammar, factory)
-
             self.name_classes.append(c)
+
+        assert len(self.name_classes) > 0, 'Wrong content of choice name'
 
         super(RngChoiceName, self).finalize(grammar, factory)
 

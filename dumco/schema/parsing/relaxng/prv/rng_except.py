@@ -21,7 +21,7 @@ import rng_value
 
 def rng_except(attrs, parent_element, factory, grammar_path, all_grammars):
     if isinstance(parent_element, rng_data.RngData):
-        excpt = RngExceptPattern(attrs, parent_element)
+        excpt = RngExceptPattern(attrs)
         parent_element.children.append(excpt)
 
         return (excpt, {
@@ -41,7 +41,7 @@ def rng_except(attrs, parent_element, factory, grammar_path, all_grammars):
             'zeroOrMore': factory.rng_zeroOrMore,
         })
     else:
-        excpt = RngExceptName(attrs, parent_element)
+        excpt = RngExceptName(attrs)
         parent_element.children.append(excpt)
 
         return (excpt, {
@@ -53,20 +53,20 @@ def rng_except(attrs, parent_element, factory, grammar_path, all_grammars):
 
 
 class RngExceptPattern(rng_base.RngBase):
-    def __init__(self, attrs, parent_element):
-        super(RngExceptPattern, self).__init__(attrs, parent_element)
+    def __init__(self, attrs):
+        super(RngExceptPattern, self).__init__(attrs)
 
         self.patterns = []
 
     @method_once
     def finalize(self, grammar, factory):
         for c in self.children:
-            assert rng_utils.is_pattern(c), 'Wrong content of execept pattern'
+            assert rng_utils.is_pattern(c), 'Wrong content of except pattern'
 
             if isinstance(c, rng_ref.RngRef):
                 c = c.get_ref_pattern(grammar)
 
-            c.finalize(grammar, factory)
+            c = c.finalize(grammar, factory)
 
             if ((isinstance(c, rng_choice.RngChoicePattern) or
                     isinstance(c, rng_group.RngGroup) or
@@ -74,16 +74,18 @@ class RngExceptPattern(rng_base.RngBase):
                     isinstance(c, rng_oneOrMore.RngOneOrMore)) and
                     len(c.patterns) == 0):
                 continue
-
-            if ((isinstance(c, rng_choice.RngChoicePattern) or
+            elif ((isinstance(c, rng_choice.RngChoicePattern) or
                     isinstance(c, rng_group.RngGroup) or
                     isinstance(c, rng_interleave.RngInterleave)) and
                     len(c.patterns) == 1):
                 c = c.patterns[0]
+            elif isinstance(c, rng_notAllowed.RngNotAllowed):
+                self.patterns = []
+                return self
 
             self.patterns.append(c)
 
-        super(RngExceptPattern, self).finalize(grammar, factory)
+        return super(RngExceptPattern, self).finalize(grammar, factory)
 
     def _tag_name(self):
         return 'except'
@@ -99,8 +101,8 @@ class RngExceptPattern(rng_base.RngBase):
 
 
 class RngExceptName(rng_base.RngBase):
-    def __init__(self, attrs, parent_element):
-        super(RngExceptName, self).__init__(attrs, parent_element)
+    def __init__(self, attrs):
+        super(RngExceptName, self).__init__(attrs)
 
         self.name_classes = []
 
@@ -111,6 +113,8 @@ class RngExceptName(rng_base.RngBase):
 
             c.finalize(grammar, factory)
             self.name_classes.append(c)
+
+        assert len(self.name_classes) > 0, 'Wrong content of except name'
 
         if len(self.name_classes) > 1:
             choice = rng_choice.RngChoiceName({}, self)

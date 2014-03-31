@@ -24,7 +24,7 @@ def rng_define(attrs, parent_element, factory, grammar_path, all_grammars):
     assert isinstance(parent_element, rng_grammar.RngGrammar), \
         'Define only expected to be in grammar'
 
-    define = RngDefine(attrs, parent_element, factory)
+    define = RngDefine(attrs, factory)
     define = parent_element.add_define(define)
 
     return (define, {
@@ -50,8 +50,8 @@ def rng_define(attrs, parent_element, factory, grammar_path, all_grammars):
 
 
 class RngDefine(rng_base.RngBase):
-    def __init__(self, attrs, parent_element, factory):
-        super(RngDefine, self).__init__(attrs, parent_element)
+    def __init__(self, attrs, factory):
+        super(RngDefine, self).__init__(attrs)
 
         # Temporary for handling of multiple defines with same name.
         try:
@@ -81,5 +81,5 @@ class RngDefine(rng_base.RngBase):
                 patterns.append(c)
 
             assert patterns, 'Wrong pattern in define'
-            self.pattern = rng_group.RngGroup({}, self)
+            self.pattern = rng_group.RngGroup({})
             self.pattern.children = patterns

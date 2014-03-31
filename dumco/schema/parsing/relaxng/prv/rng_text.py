@@ -4,15 +4,12 @@ import rng_base
 
 
 def rng_text(attrs, parent_element, factory, grammar_path, all_grammars):
-    text = RngText(attrs, parent_element)
+    text = RngText(attrs)
     parent_element.children.append(text)
 
     return (text, {})
 
 
 class RngText(rng_base.RngBase):
-    def __init__(self, attrs, parent_element):
-        super(RngText, self).__init__(attrs, parent_element)
-
     def _dump_internals(self, fhandle, indent):
         return rng_base.RngBase._CLOSING_EMPTY_TAG

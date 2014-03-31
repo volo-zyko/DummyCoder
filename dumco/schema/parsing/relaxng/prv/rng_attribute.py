@@ -6,7 +6,6 @@ import rng_anyName
 import rng_base
 import rng_choice
 import rng_data
-import rng_element
 import rng_empty
 import rng_group
 import rng_interleave
@@ -22,20 +21,18 @@ import rng_value
 
 
 def rng_attribute(attrs, parent_element, factory, grammar_path, all_grammars):
-    attr = RngAttribute(attrs, parent_element, factory)
+    attr = RngAttribute(attrs, factory)
     parent_element.children.append(attr)
 
     return (attr, {
         'anyName': rng_anyName.rng_anyName,
         'choice': rng_choice.rng_choice,
         'data': rng_data.rng_data,
-        'element': rng_element.rng_element,
         'empty': rng_empty.rng_empty,
         'externalRef': factory.noop_handler,
         'group': rng_group.rng_group,
         'interleave': rng_interleave.rng_interleave,
         'list': rng_list.rng_list,
-        'mixed': factory.rng_mixed,
         'name': rng_name.rng_name,
         'notAllowed': rng_notAllowed.rng_notAllowed,
         'nsName': rng_nsName.rng_nsName,
@@ -50,8 +47,8 @@ def rng_attribute(attrs, parent_element, factory, grammar_path, all_grammars):
 
 
 class RngAttribute(rng_base.RngBase):
-    def __init__(self, attrs, parent_element, factory):
-        super(RngAttribute, self).__init__(attrs, parent_element)
+    def __init__(self, attrs, factory):
+        super(RngAttribute, self).__init__(attrs)
 
         try:
             ns = factory.get_attribute(attrs, 'ns')
@@ -61,8 +58,7 @@ class RngAttribute(rng_base.RngBase):
         factory.ns_attribute_stack.append(ns)
         try:
             name = rng_name.RngName(
-                {}, parent_element,
-                factory.get_attribute(attrs, 'name').strip(), factory)
+                {}, factory.get_attribute(attrs, 'name').strip(), factory)
 
             self.children.append(name)
         except LookupError:
@@ -74,26 +70,42 @@ class RngAttribute(rng_base.RngBase):
 
     @method_once
     def finalize(self, grammar, factory):
+        for c in self.children[1:]:
+            assert rng_utils.is_pattern(c), 'Wrong content of attribute'
+
+            c = c.finalize(grammar, factory)
+
+            assert self.pattern is None, 'Wrong pattern in attribute'
+            if isinstance(c, rng_ref.RngRef):
+                self.pattern = c.get_ref_pattern(grammar)
+            elif isinstance(c, rng_notAllowed.RngNotAllowed):
+                return c
+            else:
+                self.pattern = c
+
+        if self.pattern is None:
+            self.pattern = rng_text.RngText({})
+
+        return super(RngAttribute, self).finalize(grammar, factory)
+
+    @method_once
+    def simplify_name(self, grammar, factory):
         assert rng_utils.is_name_class(self.children[0]), \
             'Wrong name in attribute'
         self.name = self.children[0]
         self.name.finalize(grammar, factory)
 
-        for c in self.children[1:]:
-            assert rng_utils.is_pattern(c), 'Wrong content of attribute'
+        if isinstance(self.name, rng_choice.RngChoiceName):
+            choice = rng_choice.RngChoicePattern({})
+            for n in self.name.name_classes:
+                child = RngAttribute({}, factory)
+                child.children.append(n)
+                child.children.extend(self.children[1:])
+                choice.children.append(child)
 
-            c.finalize(grammar, factory)
+            return choice
 
-            assert self.pattern is None, 'Wrong pattern in attribute'
-            if isinstance(c, rng_ref.RngRef):
-                self.pattern = c.get_ref_pattern(grammar)
-            else:
-                self.pattern = c
-
-        if self.pattern is None:
-            self.pattern = rng_text.RngText({}, self)
-
-        super(RngAttribute, self).finalize(grammar, factory)
+        return self
 
     def _dump_internals(self, fhandle, indent):
         fhandle.write('>\n')

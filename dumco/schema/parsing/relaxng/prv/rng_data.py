@@ -8,7 +8,7 @@ import rng_param
 
 
 def rng_data(attrs, parent_element, factory, grammar_path, all_grammars):
-    data = RngData(attrs, parent_element, factory)
+    data = RngData(attrs, factory)
     parent_element.children.append(data)
 
     return (data, {
@@ -18,8 +18,8 @@ def rng_data(attrs, parent_element, factory, grammar_path, all_grammars):
 
 
 class RngData(rng_base.RngBase):
-    def __init__(self, attrs, parent_element, factory):
-        super(RngData, self).__init__(attrs, parent_element)
+    def __init__(self, attrs, factory):
+        super(RngData, self).__init__(attrs)
 
         type_name = factory.get_attribute(attrs, 'type').strip()
 
@@ -35,15 +35,16 @@ class RngData(rng_base.RngBase):
                     isinstance(c, rng_except.RngExceptPattern)), \
                 'Wrong content of data element'
 
-            c.finalize(grammar, factory)
+            c = c.finalize(grammar, factory)
             if isinstance(c, rng_param.RngParam):
                 self.params.append(c)
             elif isinstance(c, rng_except.RngExceptPattern):
                 assert self.except_pattern is None, \
                     'More than one except element in data element'
-                self.except_pattern = c
+                if len(c.patterns) != 0:
+                    self.except_pattern = c
 
-        super(RngData, self).finalize(grammar, factory)
+        return super(RngData, self).finalize(grammar, factory)
 
     def _dump_internals(self, fhandle, indent):
         fhandle.write(' type="{}" datatypeLibrary="{}"'.

@@ -24,7 +24,7 @@ def rng_start(attrs, parent_element, factory, grammar_path, all_grammars):
     assert isinstance(parent_element, rng_grammar.RngGrammar), \
         'Start only expected to be in grammar'
 
-    start = RngStart(attrs, parent_element, factory)
+    start = RngStart(attrs, factory)
     start = parent_element.add_start(start)
 
     return (start, {
@@ -50,8 +50,8 @@ def rng_start(attrs, parent_element, factory, grammar_path, all_grammars):
 
 
 class RngStart(rng_base.RngBase):
-    def __init__(self, attrs, parent_element, factory):
-        super(RngStart, self).__init__(attrs, parent_element)
+    def __init__(self, attrs, factory):
+        super(RngStart, self).__init__(attrs)
 
         # Temporary for handling of multiple starts.
         try:
@@ -76,14 +76,15 @@ class RngStart(rng_base.RngBase):
         self.pattern.finalize(grammar, factory)
 
         if isinstance(self.pattern, rng_element.RngElement):
-            rng_utils.set_define_name_for_element(self.pattern, grammar)
+            self.pattern = self.pattern.define_and_simplify_name(
+                grammar, factory)
 
-        super(RngStart, self).finalize(grammar, factory)
+        return super(RngStart, self).finalize(grammar, factory)
 
     def _dump_internals(self, fhandle, indent):
         fhandle.write('>\n')
         if isinstance(self.pattern, rng_element.RngElement):
-            rng_utils.dump_element_ref(self.pattern, fhandle, indent)
+            self.pattern.dump_element_ref(fhandle, indent)
         else:
             self.pattern.dump(fhandle, indent)
 

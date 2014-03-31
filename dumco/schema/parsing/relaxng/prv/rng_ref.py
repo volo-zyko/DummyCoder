@@ -6,15 +6,15 @@ import rng_base
 
 
 def rng_ref(attrs, parent_element, factory, grammar_path, all_grammars):
-    ref = RngRef(attrs, parent_element)
+    ref = RngRef(attrs)
     parent_element.children.append(ref)
 
     return (ref, {})
 
 
 class RngRef(rng_base.RngBase):
-    def __init__(self, attrs, parent_element):
-        super(RngRef, self).__init__(attrs, parent_element)
+    def __init__(self, attrs):
+        super(RngRef, self).__init__(attrs)
 
         self.ref_pattern = None
 
@@ -38,4 +38,4 @@ class RngRef(rng_base.RngBase):
 
         self.ref_pattern.finalize(grammar, factory)
 
-        super(RngRef, self).finalize(grammar, factory)
+        return super(RngRef, self).finalize(grammar, factory)

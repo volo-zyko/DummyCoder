@@ -14,7 +14,7 @@ import rng_value
 
 
 def rng_list(attrs, parent_element, factory, grammar_path, all_grammars):
-    lst = RngList(attrs, parent_element)
+    lst = RngList(attrs)
     parent_element.children.append(lst)
 
     return (lst, {
@@ -34,8 +34,8 @@ def rng_list(attrs, parent_element, factory, grammar_path, all_grammars):
 
 
 class RngList(rng_base.RngBase):
-    def __init__(self, attrs, parent_element):
-        super(RngList, self).__init__(attrs, parent_element)
+    def __init__(self, attrs):
+        super(RngList, self).__init__(attrs)
 
         self.data_pattern = None
 
@@ -49,12 +49,12 @@ class RngList(rng_base.RngBase):
         if len(patterns) == 1:
             self.data_pattern = patterns[0]
         else:
-            self.data_pattern = rng_group.RngGroup({}, self)
+            self.data_pattern = rng_group.RngGroup({})
             self.data_pattern.children = patterns
 
         self.data_pattern.finalize(grammar, factory)
 
-        super(RngList, self).finalize(grammar, factory)
+        return super(RngList, self).finalize(grammar, factory)
 
     def _dump_internals(self, fhandle, indent):
         fhandle.write('>\n')

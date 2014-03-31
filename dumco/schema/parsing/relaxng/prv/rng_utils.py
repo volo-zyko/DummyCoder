@@ -41,32 +41,3 @@ def is_pattern(value):
             isinstance(value, rng_ref.RngRef) or
             isinstance(value, rng_text.RngText) or
             isinstance(value, rng_value.RngValue))
-
-
-def set_define_name_for_element(element, grammar):
-    if element.define_name is None:
-        assert is_name_class(element.name), 'Element has bad name'
-
-        if isinstance(element.name, rng_name.RngName):
-            if element.name.ns in grammar.known_prefixes:
-                prefix = grammar.known_prefixes[element.name.ns]
-                name = '{}-{}-element'.format(prefix, element.name.name)
-            else:
-                name = '{}-element'.format(element.name.name)
-        elif (isinstance(element.name, rng_anyName.RngAnyName) or
-              isinstance(element.name, rng_nsName.RngNsName)):
-            name = 'any'
-        elif isinstance(element.name, rng_choice.RngChoiceName):
-            name = 'choice'
-
-        if [e for e in grammar.elements if e.define_name == name]:
-            name = '{}{}'.format(name, grammar.element_counter)
-            grammar.element_counter += 1
-
-        element.define_name = name
-        grammar.elements.append(element)
-
-
-def dump_element_ref(element, fhandle, indent):
-    space = ' ' * indent
-    fhandle.write('{}<ref name="{}"/>\n'.format(space, element.define_name))

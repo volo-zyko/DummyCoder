@@ -7,7 +7,7 @@ import rng_except
 
 
 def rng_anyName(attrs, parent_element, factory, grammar_path, all_grammars):
-    any_name = RngAnyName(attrs, parent_element)
+    any_name = RngAnyName(attrs)
     parent_element.children.append(any_name)
 
     return (any_name, {
@@ -16,8 +16,8 @@ def rng_anyName(attrs, parent_element, factory, grammar_path, all_grammars):
 
 
 class RngAnyName(rng_base.RngBase):
-    def __init__(self, attrs, parent_element):
-        super(RngAnyName, self).__init__(attrs, parent_element)
+    def __init__(self, attrs):
+        super(RngAnyName, self).__init__(attrs)
 
         self.except_name_class = None
 

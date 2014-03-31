@@ -4,15 +4,15 @@ import rng_base
 
 
 def rng_name(attrs, parent_element, factory, grammar_path, all_grammars):
-    name = RngName(attrs, parent_element, '', factory)
+    name = RngName(attrs, '', factory)
     parent_element.children.append(name)
 
     return (name, {})
 
 
 class RngName(rng_base.RngBase):
-    def __init__(self, attrs, parent_element, text, factory):
-        super(RngName, self).__init__(attrs, parent_element)
+    def __init__(self, attrs, text, factory):
+        super(RngName, self).__init__(attrs)
 
         (ns, self.name) = factory.parse_qname(text)
         self.ns = factory.get_ns() if ns is None else ns

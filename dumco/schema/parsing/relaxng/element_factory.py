@@ -200,7 +200,7 @@ class RelaxElementFactory(object):
         (interleave, dispatcher) = prv.rng_interleave.rng_interleave(
             {}, parent_element, factory, schema_path, all_grammars)
 
-        interleave.children.append(prv.rng_text.RngText({}, interleave))
+        interleave.children.append(prv.rng_text.RngText({}))
 
         return (interleave, dispatcher)
 
@@ -212,7 +212,7 @@ class RelaxElementFactory(object):
         (choice, dispatcher) = prv.rng_choice.rng_choice(
             {}, parent_element, factory, schema_path, all_grammars)
 
-        choice.children.append(prv.rng_empty.RngEmpty({}, choice))
+        choice.children.append(prv.rng_empty.RngEmpty({}))
 
         return (choice, dispatcher)
 
@@ -224,7 +224,7 @@ class RelaxElementFactory(object):
         (choice, _) = prv.rng_choice.rng_choice(
             {}, parent_element, factory, schema_path, all_grammars)
 
-        choice.children.append(prv.rng_empty.RngEmpty({}, choice))
+        choice.children.append(prv.rng_empty.RngEmpty({}))
 
         (one, dispatcher) = prv.rng_oneOrMore.rng_oneOrMore(
             {}, choice, factory, schema_path, all_grammars)

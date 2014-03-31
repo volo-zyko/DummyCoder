@@ -10,9 +10,8 @@ class RngBase(object):
     _CLOSING_TAG_INLINE = 2
     _CLOSING_TAG = 3
 
-    def __init__(self, attrs, parent):
+    def __init__(self, attrs):
         self.attrs = attrs
-        self.parent = parent
         self.children = []
         self.text = ''
         self._tab = 2
@@ -36,6 +35,7 @@ class RngBase(object):
         del self.attrs
         del self.children
         del self.text
+        return self
 
     def dump(self, fhandle, indent):
         tag = self._tag_name()

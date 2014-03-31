@@ -19,7 +19,7 @@ import rng_value
 
 
 def rng_group(attrs, parent_element, factory, grammar_path, all_grammars):
-    group = RngGroup(attrs, parent_element)
+    group = RngGroup(attrs)
     parent_element.children.append(group)
 
     return (group, {
@@ -45,8 +45,8 @@ def rng_group(attrs, parent_element, factory, grammar_path, all_grammars):
 
 
 class RngGroup(rng_base.RngBase):
-    def __init__(self, attrs, parent_element):
-        super(RngGroup, self).__init__(attrs, parent_element)
+    def __init__(self, attrs):
+        super(RngGroup, self).__init__(attrs)
 
         self.patterns = []
 
@@ -60,14 +60,15 @@ class RngGroup(rng_base.RngBase):
 
             if isinstance(c, rng_empty.RngEmpty):
                 continue
-
-            if isinstance(c, rng_element.RngElement):
+            elif isinstance(c, rng_element.RngElement):
                 c.finalize_name(grammar, factory)
-                rng_utils.set_define_name_for_element(c, grammar)
+                c = c.define_and_simplify_name(grammar, factory)
                 self.patterns.append(c)
                 continue
+            elif isinstance(c, rng_attribute.RngAttribute):
+                c = c.simplify_name(grammar, factory)
 
-            c.finalize(grammar, factory)
+            c = c.finalize(grammar, factory)
 
             if ((isinstance(c, rng_choice.RngChoicePattern) or
                     isinstance(c, RngGroup) or
@@ -75,16 +76,17 @@ class RngGroup(rng_base.RngBase):
                     isinstance(c, rng_oneOrMore.RngOneOrMore)) and
                     len(c.patterns) == 0):
                 continue
-
-            if ((isinstance(c, rng_choice.RngChoicePattern) or
+            elif ((isinstance(c, rng_choice.RngChoicePattern) or
                     isinstance(c, RngGroup) or
                     isinstance(c, rng_interleave.RngInterleave)) and
                     len(c.patterns) == 1):
                 c = c.patterns[0]
+            elif isinstance(c, rng_notAllowed.RngNotAllowed):
+                return c
 
             self.patterns.append(c)
 
-        super(RngGroup, self).finalize(grammar, factory)
+        return super(RngGroup, self).finalize(grammar, factory)
 
     def _dump_internals(self, fhandle, indent):
         assert self.patterns, 'Empty group pattern'
@@ -92,7 +94,7 @@ class RngGroup(rng_base.RngBase):
         fhandle.write('>\n')
         for p in self.patterns:
             if isinstance(p, rng_element.RngElement):
-                rng_utils.dump_element_ref(p, fhandle, indent)
+                p.dump_element_ref(fhandle, indent)
             else:
                 p.dump(fhandle, indent)
 
