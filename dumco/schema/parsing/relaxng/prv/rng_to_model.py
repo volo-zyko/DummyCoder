@@ -27,6 +27,7 @@ class Rng2Model(object):
     def __init__(self, all_schemata, factory):
         self.all_schemata = all_schemata
         self.factory = factory
+        self.added_elements = set()
         self.untyped_elements = {}
         self.unique_type_names = set()
         self.unique_type_counter = 0
@@ -35,15 +36,19 @@ class Rng2Model(object):
     def convert(self, grammar):
         assert isinstance(grammar, rng_grammar.RngGrammar)
 
-        added_elements = set()
-        self._convert_start(grammar.start, added_elements)
+        self._convert_start(grammar.start)
 
-        for e in sorted(grammar.named_elements.itervalues(),
-                        key=lambda e: e.define_name):
-            if e not in added_elements:
+        element_set = set(self.added_elements)
+        remaining = element_set
+        while remaining:
+            for e in sorted(remaining, key=lambda e: e.define_name):
                 self._convert_element(e)
 
-        for (pattern, element) in self.untyped_elements.iteritems():
+            new_element_set = set(self.named_elements.itervalues())
+            remaining = new_element_set - element_set
+            element_set = new_element_set
+
+        for (pattern, (element, _)) in self.untyped_elements.iteritems():
             if _is_complex_pattern(pattern.pattern):
                 if not checks.is_any(element):
                     element.type = self._convert_complex_type(
@@ -52,24 +57,22 @@ class Rng2Model(object):
                 element.type = self._convert_simple_type(
                     pattern.pattern, pattern.define_name, element.schema)
 
-    def _convert_start(self, start_pattern, added_elements):
-        def convert_root_element(pattern, ns, name, excpt=None):
+    def _convert_start(self, start_pattern):
+        def convert_root_element(pattern, ns, name, qualified, excpt=None):
             assert name is not None, 'Any is not allowed as top-level element'
-            added_elements.add(pattern)
+            self.added_elements.add(pattern)
 
             schema = self.all_schemata[ns]
             elem = elements.Element(name, None, None, schema)
             assert pattern not in self.untyped_elements
-            self.untyped_elements[pattern] = elem
-            return elem
+            self.untyped_elements[pattern] = (elem, qualified)
+            schema.elements.append(elem)
+            # No need to return anything as we've already
+            # done all what we needed.
 
         def convert_root_elements(pattern):
             if isinstance(pattern, rng_element.RngElement):
-                element = \
-                    _convert_named_component(pattern, convert_root_element)
-
-                schema = self.all_schemata[element.schema.target_ns]
-                schema.elements.append(element)
+                _convert_named_component(pattern, convert_root_element)
             else:
                 for p in pattern.patterns:
                     convert_root_elements(p)
@@ -77,24 +80,23 @@ class Rng2Model(object):
         convert_root_elements(start_pattern.pattern)
 
     def _convert_element(self, elem_pattern):
-        def convert_local_element(pattern, ns, name, excpt=None):
+        def convert_local_element(pattern, ns, name, qualified, excpt=None):
+            self.added_elements.add(pattern)
             if name is None and ns is None:
                 any_elem = elements.Any([], None)
                 assert pattern not in self.untyped_elements
-                self.untyped_elements[pattern] = any_elem
-                return any_elem
+                self.untyped_elements[pattern] = (any_elem, False)
             elif name is None:
                 constraint = elements.Any.Name(ns, None)
                 any_elem = elements.Any([constraint], None)
                 assert pattern not in self.untyped_elements
-                self.untyped_elements[pattern] = any_elem
-                return any_elem
+                self.untyped_elements[pattern] = (any_elem, False)
             else:
                 elem_schema = self.all_schemata[ns]
                 elem = elements.Element(name, None, None, elem_schema)
                 assert pattern not in self.untyped_elements
-                self.untyped_elements[pattern] = elem
-                return elem
+                self.untyped_elements[pattern] = (elem, qualified)
+            # No need to return anything as we don't use it here.
 
         _convert_named_component(elem_pattern, convert_local_element)
 
@@ -222,13 +224,18 @@ class Rng2Model(object):
             struct = None
         elif isinstance(type_pattern, rng_oneOrMore.RngOneOrMore):
             assert len(type_pattern.patterns) == 1
-            struct = self._convert_type_structure(type_pattern.members[0],
+            struct = self._convert_type_structure(type_pattern.patterns[0],
+                                                  element_name,
                                                   schema)
             max_occurs = base.UNBOUNDED
         else:
-            struct = self._convert_type_structure(type_pattern, schema)
+            struct = self._convert_type_structure(type_pattern,
+                                                  element_name,
+                                                  schema)
 
-        if checks.is_attribute_use(struct):
+        if ((checks.is_particle(struct) and
+                not checks.is_compositor(struct.term)) or
+                checks.is_attribute_use(struct)):
             sequence = elements.Sequence(schema)
             sequence.members.append(struct)
             t.structure = uses.Particle(False, 1, 1, sequence)
@@ -242,7 +249,7 @@ class Rng2Model(object):
 
         return t
 
-    def _convert_type_structure(self, type_pattern, schema):
+    def _convert_type_structure(self, type_pattern, element_name, schema):
         def convert_compositor(compositor):
             min_occurs = 1
             max_occurs = 1
@@ -251,12 +258,12 @@ class Rng2Model(object):
                 if isinstance(p, rng_empty.RngEmpty):
                     min_occurs = 0
                     continue
-                elif isinstance(type_pattern, rng_oneOrMore.RngOneOrMore):
+                elif isinstance(p, rng_oneOrMore.RngOneOrMore):
                     assert len(p.patterns) == 1
                     max_occurs = base.UNBOUNDED
                     p = p.patterns[0]
 
-                struct = self._convert_type_structure(p, schema)
+                struct = self._convert_type_structure(p, element_name, schema)
 
                 if checks.is_particle(struct):
                     struct.min_occurs = min_occurs
@@ -278,29 +285,51 @@ class Rng2Model(object):
             return uses.Particle(False, 1, 1, compositor)
 
         if isinstance(type_pattern, rng_attribute.RngAttribute):
-            def convert_attribute(pattern, ns, name, excpt=None):
+            def convert_attribute(pattern, ns, name, qualified, excpt=None):
                 if name is None and ns is None:
                     any_attr = elements.Any([], schema)
-                    return any_attr
+                    return uses.AttributeUse(False, None, False, any_attr)
                 elif name is None:
-                    constraint = elements.Any.Name(ns, None)
-                    any_attr = elements.Any([constraint], schema)
-                    return any_attr
+                    name_constraint = elements.Any.Name(ns, None)
+                    any_attr = elements.Any([name_constraint], schema)
+                    return uses.AttributeUse(False, None, False, any_attr)
                 else:
-                    a_schema = self.all_schemata[ns]
-                    attribute = elements.Attribute(name, None, None, a_schema)
-                    attribute.type = self._convert_simple_type(
-                        pattern.pattern, name, a_schema)
-                    return attribute
+                    constraint = base.ValueConstraint(False, None)
 
-            attr = _convert_named_component(type_pattern, convert_attribute)
-            constraint = base.ValueConstraint(False, None)
-            return uses.AttributeUse(False, constraint, False, attr)
+                    if checks.is_xml_namespace(ns):
+                        return uses.AttributeUse(
+                            False, constraint, False,
+                            elements.xml_attributes()[name])
+
+                    if ns == '':
+                        a_schema = schema
+                    else:
+                        a_schema = self.all_schemata[ns]
+                        qualified = qualified if a_schema == schema else False
+                    attr = elements.Attribute(name, None, None, a_schema)
+                    attr.type = self._convert_simple_type(
+                        pattern.pattern, name, a_schema)
+                    return uses.AttributeUse(
+                        qualified, constraint, False, attr)
+
+            return _convert_named_component(type_pattern, convert_attribute)
         elif isinstance(type_pattern, rng_element.RngElement):
-            elem = self.untyped_elements[type_pattern]
+            (elem, qualified) = self.untyped_elements[type_pattern]
             if checks.is_any(elem):
                 elem.schema = schema
-            return uses.Particle(False, 1, 1, elem)
+            return uses.Particle(qualified, 1, 1, elem)
+        elif isinstance(type_pattern, rng_text.RngText):
+            return elements.SchemaText(xsd_types.xsd_builtin_types()['string'])
+        elif isinstance(type_pattern, rng_data.RngData):
+            data_type_name = \
+                self._get_next_name('{}-simple-type'.format(element_name))
+            return elements.SchemaText(self._convert_simple_type(
+                type_pattern, data_type_name, schema))
+        elif isinstance(type_pattern, rng_value.RngValue):
+            value_type_name = \
+                self._get_next_name('{}-simple-type'.format(element_name))
+            return elements.SchemaText(self._convert_simple_type(
+                type_pattern, value_type_name, schema))
         elif isinstance(type_pattern, rng_choice.RngChoicePattern):
             choice = elements.Choice(schema)
             return convert_compositor(choice)
@@ -330,12 +359,13 @@ def _convert_named_component(elem_or_attr_pattern, convert_func):
 
     def handle_name_class(name):
         if isinstance(name, rng_name.RngName):
-            return convert_func(elem_or_attr_pattern, name.ns, name.name)
+            return convert_func(elem_or_attr_pattern, name.ns,
+                                name.name, name.qualified)
         elif isinstance(name, rng_anyName.RngAnyName):
-            return convert_func(elem_or_attr_pattern, None, None,
+            return convert_func(elem_or_attr_pattern, None, None, None,
                                 excpt=name.except_name_class)
         elif isinstance(name, rng_nsName.RngNsName):
-            return convert_func(elem_or_attr_pattern, name.ns, None,
+            return convert_func(elem_or_attr_pattern, name.ns, None, None,
                                 excpt=name.except_name_class)
         else:
             assert False

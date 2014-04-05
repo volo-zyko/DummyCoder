@@ -12,7 +12,7 @@ class AttributeUse(object):
     def __init__(self, qualified, constraint, required, attribute):
         # qualified = boolean.
         self.qualified = qualified
-        # constraint = ValueConstraint/None.
+        # constraint = ValueConstraint (for attribute)/None (for any).
         self.constraint = constraint
         # required = boolean.
         self.required = required

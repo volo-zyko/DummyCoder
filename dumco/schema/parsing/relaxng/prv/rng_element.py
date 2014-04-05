@@ -55,9 +55,8 @@ class RngElement(rng_base.RngBase):
         super(RngElement, self).__init__(attrs)
 
         try:
-            name = rng_name.RngName(
-                {}, factory.get_attribute(attrs, 'name').strip(), factory)
-
+            text_name = factory.get_attribute(attrs, 'name').strip()
+            name = rng_name.RngName({}, text_name, factory)
             self.children.append(name)
         except LookupError:
             pass
@@ -86,7 +85,8 @@ class RngElement(rng_base.RngBase):
 
             if isinstance(c, rng_ref.RngRef):
                 c = c.get_ref_pattern(grammar)
-            elif isinstance(c, rng_attribute.RngAttribute):
+
+            if isinstance(c, rng_attribute.RngAttribute):
                 c = c.simplify_name(grammar, factory)
 
             patterns.append(c)
@@ -109,7 +109,7 @@ class RngElement(rng_base.RngBase):
             if isinstance(self.name, rng_choice.RngChoiceName):
                 choice = rng_choice.RngChoicePattern({})
                 for n in self.name.name_classes:
-                    child = rng_element.RngElement({}, factory)
+                    child = RngElement({}, factory)
                     child.children.append(n)
                     child.children.extend(self.children[1:])
                     choice.children.append(child)
@@ -131,6 +131,8 @@ class RngElement(rng_base.RngBase):
                 name = '{}{}'.format(name, grammar.element_counter)
                 grammar.element_counter += 1
 
+            assert name not in grammar.named_elements, \
+                'Invalid name for define'
             self.define_name = name
             grammar.named_elements[name] = self
 

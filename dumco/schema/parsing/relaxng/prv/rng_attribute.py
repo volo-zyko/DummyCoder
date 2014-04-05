@@ -56,17 +56,19 @@ class RngAttribute(rng_base.RngBase):
             ns = ''
 
         factory.ns_attribute_stack.append(ns)
-        try:
-            name = rng_name.RngName(
-                {}, factory.get_attribute(attrs, 'name').strip(), factory)
 
+        try:
+            text_name = factory.get_attribute(attrs, 'name').strip()
+            name = rng_name.RngName({}, text_name, factory)
             self.children.append(name)
         except LookupError:
             pass
-        factory.ns_attribute_stack.pop()
 
         self.name = None
         self.pattern = None
+
+    def end_element(self, factory):
+        factory.ns_attribute_stack.pop()
 
     @method_once
     def finalize(self, grammar, factory):

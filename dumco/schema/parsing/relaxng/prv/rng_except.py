@@ -117,7 +117,7 @@ class RngExceptName(rng_base.RngBase):
         assert len(self.name_classes) > 0, 'Wrong content of except name'
 
         if len(self.name_classes) > 1:
-            choice = rng_choice.RngChoiceName({}, self)
+            choice = rng_choice.RngChoiceName({})
             choice.name_classes = self.name_classes
             self.name_classes = [choice]
 

@@ -51,7 +51,6 @@ class RelaxElementFactory(object):
         self.parents = []
 
     def define_namespace(self, prefix, uri):
-        # from pudb import set_trace; set_trace()
         if uri is None:
             # Remove namespace.
             assert prefix in self.namespaces, 'Closing non-existent namespace'
@@ -84,6 +83,16 @@ class RelaxElementFactory(object):
 
         try:
             self.ns_attribute_stack.append(self.get_attribute(attrs, 'ns'))
+
+            # If namespace is present but there is no prefix for
+            # it then we create a new prefix.
+            new_ns = self.ns_attribute_stack[-1]
+            if new_ns not in self.all_namespace_prefixes:
+                for x in xrange(0, dumco.schema.base.UNBOUNDED):
+                    prefix = 'ns{}'.format(x)
+                    if prefix not in self.namespaces:
+                        self.all_namespace_prefixes[new_ns] = prefix
+                        break
         except LookupError:
             self.ns_attribute_stack.append(None)
 
@@ -102,6 +111,8 @@ class RelaxElementFactory(object):
         if name[0] != RNG_NAMESPACE:
             return
 
+        if self.element is not None:
+            self.element.end_element(self)
         self.dispatcher = self.dispatcher_stack.pop()
         self.datatypes_stack.pop()
         self.ns_attribute_stack.pop()
@@ -118,13 +129,16 @@ class RelaxElementFactory(object):
 
     def finalize_documents(self, all_grammars):
         all_schemata = {}
-        for (uri, prefix) in self.all_namespace_prefixes.iteritems():
+        namespace_prefixes = {'': ''}
+        if len(self.all_namespace_prefixes) > 1:
+            namespace_prefixes = self.all_namespace_prefixes
+        for (uri, prefix) in namespace_prefixes.iteritems():
             if dumco.schema.checks.is_xml_namespace(uri):
                 continue
 
             schema = dumco.schema.elements.Schema(uri)
             schema.set_prefix(self.all_namespace_prefixes)
-            schema.filename = schema.prefix
+            schema.filename = 'ns' if schema.prefix is None else schema.prefix
 
             all_schemata[schema.target_ns] = schema
 

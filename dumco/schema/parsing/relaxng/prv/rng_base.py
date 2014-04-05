@@ -22,6 +22,9 @@ class RngBase(object):
     def append_text(self, text):
         self.text += text.strip()
 
+    def end_element(self, factory):
+        pass
+
     def __setattr__(self, name, value):
         if name not in self.__dict__:
             tb = sys._current_frames().values()[0]

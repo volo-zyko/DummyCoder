@@ -1,6 +1,8 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
+import rng_attribute
 import rng_base
+import rng_element
 
 
 def rng_name(attrs, parent_element, factory, grammar_path, all_grammars):
@@ -14,18 +16,38 @@ class RngName(rng_base.RngBase):
     def __init__(self, attrs, text, factory):
         super(RngName, self).__init__(attrs)
 
-        (ns, self.name) = factory.parse_qname(text)
+        (ns, name) = factory.parse_qname(text)
         self.ns = factory.get_ns() if ns is None else ns
+        self.name = None if name == '' else name
 
         # Temporary for append_text().
         self.factory = factory
 
+        # It's necessary for conversion to XSD.
+        self.qualified = self._is_qualified(ns)
+
     def append_text(self, text):
+        assert self.name is None, \
+            'Name is defined as both attribute and name class'
+
         (ns, name) = self.factory.parse_qname(text.strip())
         if name != '':
-            self.name = name if self.name is None else self.name + name
+            self.name = name
         if ns is not None:
             self.ns = ns
+
+        self.qualified = self._is_qualified(ns)
+
+    def _is_qualified(self, ns):
+        qualified = ns is not None
+
+        for p in self.factory.element_stack:
+            if isinstance(p, rng_element.RngElement):
+                qualified = self.factory.get_ns() != ''
+            elif isinstance(p, rng_attribute.RngAttribute):
+                break
+
+        return qualified
 
     def _dump_internals(self, fhandle, indent):
         fhandle.write(' ns="{}">{}'.format(self.ns, self.name))

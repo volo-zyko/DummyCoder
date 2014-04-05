@@ -46,8 +46,8 @@ class RngGrammar(rng_base.RngBase):
         self.element_counter = 1
 
         self.start = None
-        # We reassign define names after loading and here we track all new
-        # names for defines/elements and elements themselves.
+        # We reassign 'define' names after loading and here we track
+        # correspondence between new names and elements themselves.
         self.named_elements = {}
 
     @method_once
@@ -64,9 +64,15 @@ class RngGrammar(rng_base.RngBase):
         # Finish finalization of elements. Elements are not finalized when
         # start is finalized because this might create infinite finalization
         # loops.
-        for e in sorted(self.named_elements.itervalues(),
-                        key=lambda e: e.define_name):
-            e.finalize(grammar, factory)
+        element_set = set(self.named_elements.itervalues())
+        remaining = element_set
+        while remaining:
+            for e in sorted(remaining, key=lambda e: e.define_name):
+                e.finalize(grammar, factory)
+
+            new_element_set = set(self.named_elements.itervalues())
+            remaining = new_element_set - element_set
+            element_set = new_element_set
 
         super(RngGrammar, self).finalize(grammar, factory)
 
