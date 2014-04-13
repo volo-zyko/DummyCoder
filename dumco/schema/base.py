@@ -13,6 +13,9 @@ UNBOUNDED = sys.maxsize
 
 
 class SchemaBase(object):
+    # Base class for almost all objects in dumco model.
+    # Contains documentation and a reference to the containing schema.
+    # Schema can be None in case of predefined schema.
     def __init__(self, parent_schema):
         self.schema = parent_schema
         self._docs = []
@@ -35,6 +38,7 @@ class SchemaBase(object):
         self.__dict__[name] = value
 
 
+# Utility class necessary for better traversing dumco model.
 ChildComponent = collections.namedtuple('ChildComponent',
                                         ['parent', 'component'])
 
@@ -68,20 +72,15 @@ class Compositor(SchemaBase):
 
 class DataComponent(SchemaBase):
     # Element of attribute.
-    def __init__(self, name, default, fixed, parent_schema):
+    def __init__(self, name, parent_schema):
         super(DataComponent, self).__init__(parent_schema)
-
-        assert default is None or fixed is None, \
-            'Default and fixed can never be in effect at the same time'
 
         self.name = name
         self.type = None
-        self.constraint = ValueConstraint(
-            False if fixed is None else True,
-            default if fixed is None else fixed)
 
 
 class NativeType(SchemaBase):
+    # Represents native (predefined) named type in certain namespace/uri.
     def __init__(self, uri, name):
         super(NativeType, self).__init__(None)
 
@@ -89,5 +88,9 @@ class NativeType(SchemaBase):
         self.name = name
 
 
+# Value constraint helps maintaining default/fixed values.
+# If 'fixed' is true then 'value' contains fixed value; if 'fixed' is false
+# then 'value' contains default value. If there are no constraints then
+# 'value' = None.
 ValueConstraint = collections.namedtuple('ValueConstraint',
                                          ['fixed', 'value'])

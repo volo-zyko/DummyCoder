@@ -39,8 +39,15 @@ class XsdElement(xsd_base.XsdBase):
         self.abstract = (self.attr('abstract') == 'true' or
                          self.attr('abstract') == '1')
 
+        default = self.attr('default')
+        fixed = self.attr('fixed')
+        assert default is None or fixed is None, \
+            'Default and fixed can never be in effect at the same time'
+
         element = dumco.schema.elements.Element(
-            self.attr('name'), self.attr('default'), self.attr('fixed'),
+            self.attr('name'),
+            default if fixed is None else fixed,
+            fixed is not None,
             parent_schema.schema_element)
 
         self.schema = parent_schema

@@ -118,13 +118,11 @@ class XsdSchema(xsd_base.XsdBase):
             schema_element.elements.append(particle.term)
 
         for attr in self.attributes.itervalues():
-            attr_use = attr.finalize(factory)
-            schema_element.attributes.append(attr_use.attribute)
+            attr.finalize(factory)
 
         schema_element.simple_types.sort(key=lambda st: st.name)
         schema_element.complex_types.sort(key=lambda ct: ct.name)
         schema_element.elements.sort(key=lambda e: e.name)
-        schema_element.attributes.sort(key=lambda a: a.name)
 
     @staticmethod
     def _get_schema_location(attrs, factory, schema_path):

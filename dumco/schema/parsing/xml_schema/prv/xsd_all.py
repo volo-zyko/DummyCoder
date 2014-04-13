@@ -27,7 +27,7 @@ class XsdAll(xsd_base.XsdBase):
             False,
             factory.particle_min_occurs(attrs),
             factory.particle_max_occurs(attrs),
-            dumco.schema.elements.All(parent_schema.schema_element))
+            dumco.schema.elements.Interleave(parent_schema.schema_element))
 
     @method_once
     def finalize(self, factory):

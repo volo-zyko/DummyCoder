@@ -138,6 +138,12 @@ def _root_particle(ct):
     return ct.structure
 
 
+def _term_name(term):
+    if checks.is_interleave(term):
+        return 'all'
+    return term.__class__.__name__.lower()
+
+
 def _dump_restriction(restriction, schema, xml_writer):
     with _TagGuard('restriction', xml_writer):
         xml_writer.add_attribute(
@@ -242,7 +248,7 @@ def _dump_particle(particle, schema, xml_writer, names, in_group=False):
 
             return
 
-    name = particle.term.__class__.__name__.lower()
+    name = _term_name(particle.term)
     with _TagGuard(name, xml_writer):
         if not in_group:
             dump_occurs_attributes()
@@ -284,78 +290,54 @@ def _dump_attribute_use(attr_use, schema, xml_writer):
 
     attribute = attr_use.attribute
 
-    is_attribute_def = False
-    if not checks.is_xml_attribute(attribute):
-        top_attributes = [a for a in attribute.schema.attributes]
+    if not checks.is_xml_attribute(attribute) and attribute.schema != schema:
+        # We reference attribute from other schema but since we don't
+        # maintain top-level attributes we can reference then only
+        # attribute group.
+        groups = xml_writer.attribute_groups[attribute.schema.target_ns]
+        group_name = groups[attribute].name
+        with _TagGuard('attributeGroup', xml_writer):
+            xml_writer.add_attribute(
+                'ref',
+                _qname(group_name, attribute.schema, schema))
 
-        if attribute.schema == schema:
-            is_attribute_def = attribute not in top_attributes
-        elif attribute not in top_attributes:
-            # We reference attribute from other schema but it's not amongst
-            # top level attributes in that schema. We don't have other
-            # options except for referencing attribute group.
-            groups = xml_writer.attribute_groups[attribute.schema.target_ns]
-            group_name = groups[attribute].name
-            with _TagGuard('attributeGroup', xml_writer):
-                xml_writer.add_attribute(
-                    'ref',
-                    _qname(group_name, attribute.schema, schema))
-
-            return
+        return
 
     with _TagGuard('attribute', xml_writer):
         if checks.is_xml_attribute(attribute):
             xml_writer.add_attribute('ref', _qname(
                 attribute.name, attribute.schema, schema, prefix=_XML_PREFIX))
         else:
-            _dump_attribute_attributes(attribute, is_attribute_def,
-                                       schema, xml_writer)
+            _dump_attribute_attributes(attribute, schema, xml_writer)
 
-        if is_attribute_def:
-            xml_writer.add_attribute(
-                'form',
-                'qualified' if attr_use.qualified else 'unqualified')
+        xml_writer.add_attribute(
+            'form',
+            'qualified' if attr_use.qualified else 'unqualified')
 
-        if attr_use.attribute.constraint.value is None:
-            if attr_use.constraint.fixed:
-                assert attr_use.constraint.value, \
-                    'Attribute has fixed value but the value itself is unknown'
-                xml_writer.add_attribute('fixed',
-                                         attr_use.constraint.value)
-            elif attr_use.constraint.value is not None:
-                xml_writer.add_attribute('default',
-                                         attr_use.constraint.value)
+        if attr_use.constraint.fixed:
+            assert attr_use.constraint.value is not None, \
+                'Attribute has fixed value but the value itself is unknown'
+            xml_writer.add_attribute('fixed',
+                                     attr_use.constraint.value)
+        elif attr_use.constraint.value is not None:
+            xml_writer.add_attribute('default',
+                                     attr_use.constraint.value)
 
         if attr_use.required:
             xml_writer.add_attribute('use', 'required')
 
 
-def _dump_attribute_attributes(attribute, is_attribute_definition,
-                               schema, xml_writer):
+def _dump_attribute_attributes(attribute, schema, xml_writer):
     assert checks.is_attribute(attribute)
 
-    if is_attribute_definition:
+    xml_writer.add_attribute(
+        'name',
+        _qname(attribute.name, attribute.schema, schema))
+
+    if not checks.is_simple_urtype(attribute.type):
         xml_writer.add_attribute(
-            'name',
-            _qname(attribute.name, attribute.schema, schema))
-
-        if not checks.is_simple_urtype(attribute.type):
-            xml_writer.add_attribute(
-                'type',
-                _qname(attribute.type.name, attribute.type.schema, schema))
-    else:
-        qn = _qname(attribute.name, attribute.schema,
-                    schema, prefix=_XSD_PREFIX)
-        xml_writer.add_attribute('ref', qn)
-
-    if attribute.constraint.fixed:
-        assert attribute.constraint.value, \
-            'Attribute has fixed value but the value itself is unknown'
-        xml_writer.add_attribute('fixed',
-                                 attribute.constraint.value)
-    elif attribute.constraint.value is not None:
-        xml_writer.add_attribute('default',
-                                 attribute.constraint.value)
+            'type',
+            _qname(attribute.type.name, attribute.type.schema, schema))
 
 
 def _dump_element_attributes(element, is_element_definition,
@@ -472,12 +454,6 @@ def _dump_schema(schema, xml_writer):
                     assert checks.has_empty_content(ct), 'Expected empty CT'
                     _dump_attribute_uses(attribute_uses, schema, xml_writer)
 
-        if schema.attributes:
-            xml_writer.add_comment('Top-level Attributes')
-        for attr in schema.attributes:
-            with _TagGuard('attribute', xml_writer):
-                _dump_attribute_attributes(attr, True, schema, xml_writer)
-
         attr_groups = xml_writer.attribute_groups.get(schema.target_ns, {})
         if attr_groups:
             xml_writer.add_comment('Attribute Groups')
@@ -543,10 +519,6 @@ def _collect_attribute_groups(schemata):
 
         if (checks.is_xml_attribute(attribute) or
                 checks.is_any(attribute) or attribute.schema == schema):
-            return group_count
-
-        top_attributes = [a for a in attribute.schema.attributes]
-        if attribute in top_attributes:
             return group_count
 
         group_name = 'AttributeGroup{}'.format(group_count)

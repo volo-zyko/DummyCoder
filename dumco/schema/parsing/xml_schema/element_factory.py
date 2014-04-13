@@ -186,11 +186,8 @@ class XsdElementFactory(object):
             for elem in schema.schema_element.elements:
                 yield elem
 
-            for attr in schema.schema_element.attributes:
-                yield attr
-
         def add_import_if_differ(own_schema, other_schema):
-            if other_schema != own_schema:
+            if own_schema != other_schema:
                 own_schema.add_import(other_schema)
                 return True
             return False
@@ -198,9 +195,12 @@ class XsdElementFactory(object):
         # Traverse all schema components and add imports if necessary.
         for c in enum_schema_content_with_fixes(xsd_schema):
             if add_import_if_differ(xsd_schema.schema_element, c.schema):
+                if checks.is_attribute(c):
+                    add_import_if_differ(c.schema, c.type.schema)
+
                 continue
 
-            if (checks.is_element(c) or checks.is_attribute(c)):
+            if checks.is_element(c) or checks.is_attribute(c):
                 add_import_if_differ(xsd_schema.schema_element,
                                      c.type.schema)
             elif checks.is_simple_type(c):
@@ -275,27 +275,32 @@ class XsdElementFactory(object):
         except LookupError:
             return 1
 
-    def resolve_attribute(self, (uri, localname), schema, finalize=False):
+    def resolve_attribute(self, qname, schema, finalize=False):
+        (uri, localname) = qname
         if uri is None or uri == schema.schema_element.target_ns:
             attr = schema.attributes[localname]
-            return (attr.finalize(self).attribute if finalize
-                    else attr.schema_element.attribute)
+            if finalize:
+                attr = attr.finalize(self)
+            return attr.schema_element
         else:
             try:
                 attr = schema.imports[uri].attributes[localname]
-                return (attr.finalize(self).attribute if finalize
-                        else attr.schema_element.attribute)
+                if finalize:
+                    attr = attr.finalize(self)
+                return attr.schema_element
             except KeyError:
                 return dumco.schema.elements.xml_attributes()[localname]
 
-    def resolve_attribute_group(self, (uri, localname), schema):
+    def resolve_attribute_group(self, qname, schema):
+        (uri, localname) = qname
         if uri is None or uri == schema.schema_element.target_ns:
             return schema.attribute_groups[localname].finalize(self)
         else:
             attr_group = schema.imports[uri].attribute_groups[localname]
             return attr_group.finalize(self)
 
-    def resolve_complex_type(self, (uri, localname), schema, finalize=False):
+    def resolve_complex_type(self, qname, schema, finalize=False):
+        (uri, localname) = qname
         if (dumco.schema.checks.is_xsd_namespace(uri) and
                 localname == 'anyType'):
             return dumco.schema.elements.ComplexType.urtype()
@@ -307,7 +312,8 @@ class XsdElementFactory(object):
             ct = schema.imports[uri].complex_types[localname]
             return (ct.finalize(self) if finalize else ct.schema_element)
 
-    def resolve_element(self, (uri, localname), schema, finalize=False):
+    def resolve_element(self, qname, schema, finalize=False):
+        (uri, localname) = qname
         if uri is None or uri == schema.schema_element.target_ns:
             elem = schema.elements[localname]
             return (elem, elem.finalize(self).term if finalize
@@ -317,13 +323,15 @@ class XsdElementFactory(object):
             return (elem, elem.finalize(self).term if finalize
                     else elem.schema_element.term)
 
-    def resolve_group(self, (uri, localname), schema):
+    def resolve_group(self, qname, schema):
+        (uri, localname) = qname
         if uri is None or uri == schema.schema_element.target_ns:
             return schema.groups[localname].finalize(self)
         else:
             return schema.imports[uri].groups[localname].finalize(self)
 
-    def resolve_simple_type(self, (uri, localname), schema, finalize=False):
+    def resolve_simple_type(self, qname, schema, finalize=False):
+        (uri, localname) = qname
         if dumco.schema.checks.is_xsd_namespace(uri):
             if localname == 'anySimpleType':
                 return dumco.schema.elements.SimpleType.urtype()

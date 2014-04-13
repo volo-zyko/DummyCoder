@@ -204,6 +204,8 @@ fi
 $COVERAGE_ERASE_COMMAND
 
 $COVERAGE_BEGIN_COMMAND "$PWD/dumco.py" -h
+$COVERAGE_APPEND_COMMAND "$PWD/dumco.py" dumpxsd --help
+$COVERAGE_APPEND_COMMAND "$PWD/dumco.py" rfilter --help
 $COVERAGE_APPEND_COMMAND "$PWD/dumco.py" --version
 
 syntaxes=('rng')

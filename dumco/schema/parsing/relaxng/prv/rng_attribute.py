@@ -101,6 +101,7 @@ class RngAttribute(rng_base.RngBase):
             choice = rng_choice.RngChoicePattern({})
             for n in self.name.name_classes:
                 child = RngAttribute({}, factory)
+                child.end_element(factory)
                 child.children.append(n)
                 child.children.extend(self.children[1:])
                 choice.children.append(child)

@@ -13,14 +13,15 @@ import xsd_types
 
 @function_once
 def xml_attributes():
-    attrs = {name: Attribute(name, None, None, None)
+    attrs = {name: uses.AttributeUse(None, False, False, False,
+                                     Attribute(name, None))
              for name in ['base', 'id', 'lang', 'space']}
 
-    attrs['base'].type = xsd_types.xsd_builtin_types()['anyURI']
+    attrs['base'].attribute.type = xsd_types.xsd_builtin_types()['anyURI']
 
-    attrs['id'].type = xsd_types.xsd_builtin_types()['ID']
+    attrs['id'].attribute.type = xsd_types.xsd_builtin_types()['ID']
 
-    attrs['lang'].type = xsd_types.xsd_builtin_types()['language']
+    attrs['lang'].attribute.type = xsd_types.xsd_builtin_types()['language']
 
     # spaceType is an artificial name, it's not defined by any specs.
     space_type = SimpleType('spaceType', None)
@@ -28,34 +29,47 @@ def xml_attributes():
     space_type.restriction.base = xsd_types.xsd_builtin_types()['NCName']
     space_type.restriction.enumeration = [
         EnumerationValue('default', ''), EnumerationValue('preserve', '')]
-    attrs['space'].type = space_type
+    attrs['space'].attribute.type = space_type
     attrs['space'].constraint = base.ValueConstraint(False, 'preserve')
 
     return attrs
 
 
-class All(base.Compositor):
+class Interleave(base.Compositor):
     pass
 
 
 class Any(base.DataComponent):
-    # Any can have type and a list of constraints. If the list is empty
-    # then Any accepts any namespace. Otherwise list contains interleaving
-    # of Name and Not tuples. Name tuple has ns and tag fields (tag can
-    # be None) which contain strings with respective meaning. Not tuple
-    # has only name field which contains instance of Name tuple.
+    # Any can have type and a list of constraints. If the list of constraints
+    # is empty then Any accepts any name in any namespace. Otherwise list
+    # contains an interleaving of Name and Not tuples.
+    # Name tuple has ns and tag fields which contain strings with respective
+    # meanings. Either ns or tag must be None (but not both) and in this case
+    # any restricts either namespace or tag.
+    # Not tuple has only name field which contains instance of Name tuple.
+    # This means anything except for the name.
 
     Name = collections.namedtuple('Name', ['ns', 'tag'])
     Not = collections.namedtuple('Not', ['name'])
 
     def __init__(self, constraints, parent_schema):
-        super(Any, self).__init__(None, None, None, parent_schema)
+        super(Any, self).__init__(None, parent_schema)
+
+        for c in constraints:
+            if isinstance(c, Any.Name):
+                assert ((c.ns is None and c.tag is not None) or
+                        (c.tag is None and c.ns is not None)), \
+                    'Either namespace or tag must be a wildcard'
+            elif isinstance(c, Any.Not):
+                assert c.name.ns is not None or c.name.tag is not None, \
+                    'Incorrect \'Not\' constraint'
 
         self.constraints = constraints
 
 
 class Attribute(base.DataComponent):
-    pass
+    def __init__(self, name, parent_schema):
+        super(Attribute, self).__init__(name, parent_schema)
 
 
 class Choice(base.Compositor):
@@ -125,10 +139,10 @@ class ComplexType(base.SchemaBase):
 
         root_seqpart = uses.Particle(False, 1, 1, Sequence(None))
         root_seqpart.term.members.append(
-            uses.AttributeUse(False, None, False, Any([], None)))
+            uses.AttributeUse(None, False, False, False, Any([], None)))
         root_seqpart.term.members.append(seqpart)
         root_seqpart.term.members.append(
-            SchemaText(xsd_types.xsd_builtin_types()['string']))
+            uses.SchemaText(xsd_types.xsd_builtin_types()['string']))
 
         urtype = ComplexType('anyType', None)
         urtype.structure = root_seqpart
@@ -144,7 +158,10 @@ class ComplexType(base.SchemaBase):
 
 
 class Element(base.DataComponent):
-    pass
+    def __init__(self, name, default, fixed, parent_schema):
+        super(Element, self).__init__(name, parent_schema)
+
+        self.constraint = base.ValueConstraint(fixed, default)
 
 
 EnumerationValue = collections.namedtuple('EnumerationValue', ['value', 'doc'])
@@ -159,8 +176,8 @@ class Restriction(base.SchemaBase):
     def __init__(self, parent_schema):
         super(Restriction, self).__init__(parent_schema)
 
-        # Base type is either a primitive type or a simple type
-        # with list/union content.
+        # Base type is always a primitive type.
+        # List is restricted in its own way.
         self.base = None
 
         # Facets.
@@ -186,11 +203,14 @@ class Schema(base.SchemaBase):
         self.prefix = None
         self.filename = None
 
-        # Containers for elements in the schema.
-        self.attributes = []
-        self.complex_types = []
-        self.elements = []
+        # Member imports references other schemata elements from which
+        # are used in this schema. It potentially can reference schemata
+        # that are not directly used by this schema but which are necessary
+        # for correct dumping of attributes that belong to this schema.
         self.imports = {}
+        # Containers for elements in the schema.
+        self.elements = []
+        self.complex_types = []
         self.simple_types = []
 
     def set_prefix(self, all_namespace_prefixes):
@@ -210,13 +230,6 @@ class Schema(base.SchemaBase):
         self.imports[schema.target_ns] = schema
 
 
-class SchemaText(base.SchemaBase):
-    def __init__(self, simple_type):
-        super(SchemaText, self).__init__(None)
-
-        self.type = simple_type
-
-
 class Sequence(base.Compositor):
     pass
 
@@ -226,8 +239,14 @@ class SimpleType(base.SchemaBase):
         super(SimpleType, self).__init__(parent_schema)
 
         self.name = name
+        # Instance of Restriction.
         self.restriction = None
+        # List of instances of ListTypeCardinality with simple (which
+        # includes unions and potentially lists) or native types inside.
+        # Each of the list items is matched in the input string in order.
         self.listitems = []
+        # List of simple of native types. The first matching type for an
+        # input string is assumed to be its type.
         self.union = []
 
     @staticmethod

@@ -33,20 +33,27 @@ class XsdAttribute(xsd_base.XsdBase):
              parent_schema.attributes_qualified))
 
         attribute = dumco.schema.elements.Attribute(
-            self.attr('name'), self.attr('default'), self.attr('fixed'),
-            parent_schema.schema_element)
+            self.attr('name'), parent_schema.schema_element)
+
+        default = self.attr('default')
+        fixed = self.attr('fixed')
+        assert default is None or fixed is None, \
+            'Default and fixed can never be in effect at the same time'
 
         self.schema = parent_schema
         self.schema_element = dumco.schema.uses.AttributeUse(
-            self.qualified, attribute.constraint,
+            default if fixed is None else fixed,
+            fixed is not None, self.qualified,
             self.attr('use') == 'required', attribute)
         self.prohibited = self.attr('use') == 'prohibited'
 
     @method_once
     def finalize(self, factory):
         if self.attr('ref') is not None:
-            self.schema_element.attribute = \
-                factory.resolve_attribute(self.attr('ref'), self.schema)
+            attr_use = factory.resolve_attribute(self.attr('ref'), self.schema)
+            if self.schema_element.constraint.value is None:
+                self.schema_element.constraint = attr_use.constraint
+            self.schema_element.attribute = attr_use.attribute
         elif self.attr('type') is not None:
             self.schema_element.attribute.type = \
                 factory.resolve_simple_type(self.attr('type'), self.schema)

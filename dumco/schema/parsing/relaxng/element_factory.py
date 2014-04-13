@@ -105,14 +105,15 @@ class RelaxElementFactory(object):
                 attrs, self.element, self, schema_path, all_grammars)
 
     def finalize_current_element(self, name):
+        old_element = self.element
         self.element = self.element_stack.pop()
 
         # Here we don't support anything non-RelaxNG.
         if name[0] != RNG_NAMESPACE:
             return
 
-        if self.element is not None:
-            self.element.end_element(self)
+        if old_element is not None:
+            old_element.end_element(self)
         self.dispatcher = self.dispatcher_stack.pop()
         self.datatypes_stack.pop()
         self.ns_attribute_stack.pop()
@@ -254,5 +255,6 @@ class RelaxElementFactory(object):
 
 
 def _is_schema_empty(schema):
-    return (not schema.attributes and not schema.complex_types and
-            not schema.elements and not schema.simple_types)
+    return (not schema.complex_types and
+            not schema.simple_types and
+            not schema.elements)

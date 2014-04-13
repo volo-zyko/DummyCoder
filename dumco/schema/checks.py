@@ -119,8 +119,8 @@ def is_xsd_native_type(schema_type):
 
 
 # Element checks.
-def is_all(schema_all):
-    return isinstance(schema_all, elements.All)
+def is_interleave(interleave):
+    return isinstance(interleave, elements.Interleave)
 
 
 def is_any(schema_any):
@@ -164,7 +164,7 @@ def is_terminal(term):
 
 
 def is_text(text):
-    return isinstance(text, elements.SchemaText)
+    return isinstance(text, uses.SchemaText)
 
 
 def is_xml_attribute(attr):

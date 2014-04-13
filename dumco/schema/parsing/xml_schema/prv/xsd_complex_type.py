@@ -62,7 +62,7 @@ class XsdComplexType(xsd_base.XsdBase):
             if isinstance(c, xsd_simple_content.XsdSimpleContent):
                 assert particle is None, 'Content model overridden'
                 c.finalize(factory)
-                text = dumco.schema.elements.SchemaText(c.content_type)
+                text = dumco.schema.uses.SchemaText(c.content_type)
                 attr_uses.extend(c.attr_uses)
             elif isinstance(c, xsd_complex_content.XsdComplexContent):
                 assert particle is None, 'Content model overridden'
@@ -93,7 +93,7 @@ class XsdComplexType(xsd_base.XsdBase):
                     False, 1, 1,
                     dumco.schema.elements.Sequence(self.schema_element.schema))
 
-            text = dumco.schema.elements.SchemaText(
+            text = dumco.schema.uses.SchemaText(
                 dumco.schema.xsd_types.xsd_builtin_types()['string'])
 
         _assert_on_duplicate_attributes(attr_uses, self)

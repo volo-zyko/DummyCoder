@@ -104,7 +104,7 @@ class CommonNamer(object):
                 return self._name_sequence(parent_name, pindex, index)
             elif dumco.schema.checks.is_choice(element.term):
                 return self._name_choice(parent_name, pindex, index)
-            elif dumco.schema.checks.is_all(element.term):
+            elif dumco.schema.checks.is_interleave(element.term):
                 return self._name_all(parent_name, pindex, index)
             else:  # pragma: no cover
                 assert False
@@ -124,7 +124,7 @@ class CommonNamer(object):
             if not dumco.schema.checks.is_particle(p):
                 continue
 
-            if dumco.schema.checks.is_all(p.term):
+            if dumco.schema.checks.is_interleave(p.term):
                 if p == particle and compositors['all'] > 0:
                     return compositors['all']
                 compositors['all'] = compositors['all'] + 1

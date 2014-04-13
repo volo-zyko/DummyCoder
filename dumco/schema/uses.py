@@ -4,16 +4,17 @@ import collections
 
 from dumco.utils.decorators import method_once
 
+import base
 import checks
 import namer
 
 
 class AttributeUse(object):
-    def __init__(self, qualified, constraint, required, attribute):
+    def __init__(self, default, fixed, qualified, required, attribute):
+        # constraint = ValueConstraint.
+        self.constraint = base.ValueConstraint(fixed, default)
         # qualified = boolean.
         self.qualified = qualified
-        # constraint = ValueConstraint (for attribute)/None (for any).
-        self.constraint = constraint
         # required = boolean.
         self.required = required
         # attribute = Attribute/Any.
@@ -58,3 +59,11 @@ class Particle(object):
             if checks.is_compositor(p.term):
                 p.nameit(parents + [self], factory, names)
                 assert p.name is not None, 'Name cannot be None'
+
+
+class SchemaText(object):
+    # In case of mixed content in complex type SchemaText represents
+    # constraints for text content. It used along with Particle and
+    # AttributeUse.
+    def __init__(self, simple_type):
+        self.type = simple_type
