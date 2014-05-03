@@ -250,6 +250,7 @@ class SimpleType(base.SchemaBase):
         self.union = []
 
     @staticmethod
+    @function_once
     def urtype():
         urtype = SimpleType('anySimpleType', None)
 

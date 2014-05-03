@@ -12,6 +12,7 @@ import base
 import checks
 import elements
 import xsd_types
+import uses
 
 
 _XSD_PREFIX = 'xsd'
@@ -584,9 +585,25 @@ def _simplify_simple_types(schemata):
     simple_types = {}
 
     for schema in schemata:
-        simple_types[schema.target_ns] = []
-        simple_types_for_ns = simple_types[schema.target_ns]
+        simple_types_for_ns = simple_types.setdefault(schema.target_ns, [])
         for st in schema.simple_types:
-            simple_types_for_ns.append(st)
+            if len(st.listitems) > 1:
+                union_st = elements.SimpleType(st.name + '-union', st.schema)
+                union_st.union = st.listitems
+
+                min_occurs = 0
+                max_occurs = 1
+                for i in st.listitems:
+                    if i.min_occurs > min_occurs:
+                        min_occurs = i.min_occurs
+                    elif i.max_occurs > max_occurs:
+                        max_occurs = i.max_occurs
+                new_st = elements.SimpleType(st.name, st.schema)
+                new_st.listitems.append(
+                    uses.ListTypeCardinality(union_st, min_occurs, max_occurs))
+
+                simple_types_for_ns.append(new_st)
+            else:
+                simple_types_for_ns.append(st)
 
     return simple_types

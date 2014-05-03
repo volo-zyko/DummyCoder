@@ -119,10 +119,12 @@ class RngChoicePattern(rng_base.RngBase):
         assert self.patterns, 'Empty choice pattern'
 
         fhandle.write('>\n')
-        for p in self.patterns:
+        for (i, p) in enumerate(self.patterns):
             if isinstance(p, rng_element.RngElement):
                 p.dump_element_ref(fhandle, indent)
             else:
+                assert not isinstance(p, rng_empty.RngEmpty) or i == 0, \
+                    'Empty is allowed only as first pattern'
                 p.dump(fhandle, indent)
 
         return rng_base.RngBase._CLOSING_TAG

@@ -102,6 +102,8 @@ class RngOneOrMore(rng_base.RngBase):
             if isinstance(p, rng_element.RngElement):
                 p.dump_element_ref(fhandle, indent)
             else:
+                assert not isinstance(p, rng_empty.RngEmpty), \
+                    'Empty is not allowed'
                 p.dump(fhandle, indent)
 
         return rng_base.RngBase._CLOSING_TAG

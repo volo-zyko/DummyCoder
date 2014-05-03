@@ -1,5 +1,7 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
+from dumco.utils.decorators import method_once
+
 import dumco.schema.base as base
 import dumco.schema.checks as checks
 import dumco.schema.elements as elements
@@ -100,9 +102,8 @@ class Rng2Model(object):
         schema.simple_types.append(t)
 
         if isinstance(type_pattern, rng_empty.RngEmpty):
-            t.restriction = elements.Restriction(schema)
-            t.restriction.base = xsd_types.xsd_builtin_types()['string']
-            t.restriction.length = '0'
+            schema.simple_types.pop()
+            t = self._forge_empty_simple_type(schema)
         elif isinstance(type_pattern, rng_value.RngValue):
             assert type_pattern.value is not None
 
@@ -125,34 +126,39 @@ class Rng2Model(object):
         elif isinstance(type_pattern, rng_list.RngList):
             self._convert_list_type(t, type_pattern.data_pattern, schema)
         elif isinstance(type_pattern, rng_choice.RngChoicePattern):
-            # has_empty = False
-            # enum_types = {}
+            choice_types = []
+            choice_item_name = self._get_next_name(
+                '{}-choice'.format(type_name))
+
+            enum_types = {}
 
             for p in type_pattern.patterns:
-                choice_item_name = self._get_next_name(
-                    '{}-choice'.format(type_name))
-                t.union.append(
-                    self._convert_simple_type(p, choice_item_name, schema))
+                if isinstance(p, rng_empty.RngEmpty):
+                    choice_types.append(self._forge_empty_simple_type(schema))
+                elif isinstance(p, rng_oneOrMore.RngOneOrMore):
+                    assert False
+                elif isinstance(p, rng_value.RngValue):
+                    enum_type = enum_types.get((p.datatypes_uri, p.type))
+                    if enum_type is None:
+                        enum_type = \
+                            elements.SimpleType(choice_item_name, schema)
+                        enum_type.restriction = elements.Restriction(schema)
+                        enum_type.restriction.base = p.type
+                        enum_types[(p.datatypes_uri, p.type)] = enum_type
+                        schema.simple_types.append(enum_type)
+                        choice_types.append(enum_type)
 
-                # if isinstance(p, rng_empty.RngEmpty):
-                #     pass
-                #     # has_empty = True
-                # elif isinstance(p, rng_oneOrMore.RngOneOrMore):
-                #     pass
-                # elif isinstance(p, rng_value.RngValue):
-                #     type_key = '{}:{}'.format(p.datatypes_uri, p.type.name)
-                #     enum_type = enum_types.get(type_key, None)
-                #     if enum_type is None:
-                #         enum_type_name = \
-                #             '{}-choice{}'.format(type_name, len(enum_types))
-                #         enum_type = elements.SimpleType(enum_type_name, schema)
-                #         enum_type.restriction = elements.Restriction(schema)
-                #         enum_type.restriction.base = p.type
+                    enum_type.restriction.enumeration.append(
+                        elements.EnumerationValue(p.value, ''))
+                elif isinstance(p, rng_data.RngData):
+                    choice_types.append(
+                        self._convert_simple_type(p, choice_item_name, schema))
+                else:
+                    assert False
+                    # choice_types.append(
+                    #     self._convert_simple_type(p, choice_item_name, schema))
 
-                #     enum_type.restriction.enumeration.append(
-                #         elements.EnumerationValue(p.value, ''))
-                # elif isinstance(p, rng_data.RngData):
-                #     t.union.append(p.type)
+            t.union = choice_types
         elif isinstance(type_pattern, rng_group.RngGroup):
             pass
         elif isinstance(type_pattern, rng_interleave.RngInterleave):
@@ -161,6 +167,16 @@ class Rng2Model(object):
             pass
 
         return t
+
+    @method_once
+    def _forge_empty_simple_type(self, schema):
+        empty_type = elements.SimpleType(
+            self._get_next_name('empty-type'), schema)
+        empty_type.restriction = elements.Restriction(schema)
+        empty_type.restriction.base = xsd_types.xsd_builtin_types()['string']
+        empty_type.restriction.length = '0'
+        schema.simple_types.append(empty_type)
+        return empty_type
 
     def _convert_list_type(self, t, type_pattern, schema):
         item_name = self._get_next_name('{}-list-item'.format(t.name))

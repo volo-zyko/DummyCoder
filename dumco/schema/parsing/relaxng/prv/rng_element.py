@@ -80,19 +80,45 @@ class RngElement(rng_base.RngBase):
         self.finalize_name(grammar, factory)
 
         patterns = []
+        has_empty = False
         for c in self.children[1:]:
             assert rng_utils.is_pattern(c), 'Wrong content of element'
 
             if isinstance(c, rng_ref.RngRef):
                 c = c.get_ref_pattern(grammar)
 
-            if isinstance(c, rng_attribute.RngAttribute):
+            if isinstance(c, rng_empty.RngEmpty):
+                has_empty = True
+                continue
+            elif isinstance(c, RngElement):
+                c.finalize_name(grammar, factory)
+                c = c.define_and_simplify_name(grammar, factory)
+                patterns.append(c)
+                continue
+            elif isinstance(c, rng_attribute.RngAttribute):
                 c = c.simplify_name(grammar, factory)
+
+            c = c.finalize(grammar, factory)
+
+            if ((isinstance(c, rng_choice.RngChoicePattern) or
+                    isinstance(c, rng_group.RngGroup) or
+                    isinstance(c, rng_interleave.RngInterleave) or
+                    isinstance(c, rng_oneOrMore.RngOneOrMore)) and
+                    len(c.patterns) == 0):
+                has_empty = True
+                continue
+            elif ((isinstance(c, rng_choice.RngChoicePattern) or
+                    isinstance(c, rng_group.RngGroup) or
+                    isinstance(c, rng_interleave.RngInterleave)) and
+                    len(c.patterns) == 1):
+                c = c.patterns[0]
 
             patterns.append(c)
 
-        assert patterns, 'Wrong pattern in element'
-        if len(patterns) == 1:
+        assert has_empty or patterns, 'Wrong pattern in element'
+        if not patterns:
+            self.pattern = rng_empty.RngEmpty({})
+        elif len(patterns) == 1:
             self.pattern = patterns[0]
         else:
             self.pattern = rng_group.RngGroup({})
@@ -116,8 +142,7 @@ class RngElement(rng_base.RngBase):
 
                 choice.finalize(grammar, factory)
                 return choice
-
-            if isinstance(self.name, rng_name.RngName):
+            elif isinstance(self.name, rng_name.RngName):
                 if self.name.ns in grammar.known_prefixes:
                     prefix = grammar.known_prefixes[self.name.ns]
                     name = '{}-{}-element'.format(prefix, self.name.name)
