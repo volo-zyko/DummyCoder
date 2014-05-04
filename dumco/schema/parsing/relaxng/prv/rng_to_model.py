@@ -32,6 +32,8 @@ class Rng2Model(object):
         self.untyped_elements = {}
         self.unique_type_names = set()
         self.unique_type_counter = 0
+        self.simple_types = {}
+        self.complex_types = {}
         # self.elements_per_schema = {s: {} for s in all_schemata}
 
     def convert(self, grammar):
@@ -53,6 +55,18 @@ class Rng2Model(object):
             else:
                 element.type = self._convert_simple_type(
                     pattern.pattern, pattern.define_name, element.schema)
+
+        for ((_, schema), st) in self.simple_types.iteritems():
+            assert schema == st.schema
+            schema.simple_types.append(st)
+
+        for ((_, schema), ct) in self.complex_types.iteritems():
+            assert schema == ct.schema
+            schema.complex_types.append(ct)
+
+        for schema in self.all_schemata.itervalues():
+            schema.simple_types.sort(key=lambda s: s.name)
+            schema.complex_types.sort(key=lambda c: c.name)
 
     def _convert_start(self, start_pattern, added_elements):
         def convert_root_element(pattern, ns, name, qualified, excpt=None):
@@ -98,15 +112,13 @@ class Rng2Model(object):
 
     def _convert_simple_type(self, type_pattern, component_name, schema):
         type_name = self._get_next_name('{}-type'.format(component_name))
-        t = elements.SimpleType(type_name, schema)
-        schema.simple_types.append(t)
 
         if isinstance(type_pattern, rng_empty.RngEmpty):
-            schema.simple_types.pop()
             t = self._forge_empty_simple_type(schema)
         elif isinstance(type_pattern, rng_value.RngValue):
             assert type_pattern.value is not None
 
+            t = elements.SimpleType(type_name, schema)
             t.restriction = elements.Restriction(schema)
             t.restriction.base = type_pattern.type
             t.restriction.enumeration.append(
@@ -115,57 +127,24 @@ class Rng2Model(object):
             return xsd_types.xsd_builtin_types()['string']
         elif isinstance(type_pattern, rng_data.RngData):
             if not type_pattern.params and type_pattern.except_pattern is None:
-                schema.simple_types.pop()
                 return type_pattern.type
 
+            t = elements.SimpleType(type_name, schema)
             t.restriction = elements.Restriction(schema)
             t.restriction.base = type_pattern.type
-            _set_restriction_params(type_pattern, t.restriction)
+            if not _set_restriction_params(type_pattern, t.restriction):
+                t = type_pattern.type
             # if type_pattern.except_pattern is not None:
             #     assert False, 'Not implemented'
         elif isinstance(type_pattern, rng_list.RngList):
+            t = elements.SimpleType(type_name, schema)
             self._convert_list_type(t, type_pattern.data_pattern, schema)
         elif isinstance(type_pattern, rng_choice.RngChoicePattern):
-            choice_types = []
-            choice_item_name = self._get_next_name(
-                '{}-choice'.format(type_name))
+            t = self._convert_union_type(type_name, type_pattern, schema)
+        else:
+            assert False, 'Unexpected pattern for simple type'
 
-            enum_types = {}
-
-            for p in type_pattern.patterns:
-                if isinstance(p, rng_empty.RngEmpty):
-                    choice_types.append(self._forge_empty_simple_type(schema))
-                elif isinstance(p, rng_oneOrMore.RngOneOrMore):
-                    assert False
-                elif isinstance(p, rng_value.RngValue):
-                    enum_type = enum_types.get((p.datatypes_uri, p.type))
-                    if enum_type is None:
-                        enum_type = \
-                            elements.SimpleType(choice_item_name, schema)
-                        enum_type.restriction = elements.Restriction(schema)
-                        enum_type.restriction.base = p.type
-                        enum_types[(p.datatypes_uri, p.type)] = enum_type
-                        schema.simple_types.append(enum_type)
-                        choice_types.append(enum_type)
-
-                    enum_type.restriction.enumeration.append(
-                        elements.EnumerationValue(p.value, ''))
-                elif isinstance(p, rng_data.RngData):
-                    choice_types.append(
-                        self._convert_simple_type(p, choice_item_name, schema))
-                else:
-                    assert False
-                    # choice_types.append(
-                    #     self._convert_simple_type(p, choice_item_name, schema))
-
-            t.union = choice_types
-        elif isinstance(type_pattern, rng_group.RngGroup):
-            pass
-        elif isinstance(type_pattern, rng_interleave.RngInterleave):
-            pass
-        elif isinstance(type_pattern, rng_oneOrMore.RngOneOrMore):
-            pass
-
+        self.simple_types[(type_name, schema)] = t
         return t
 
     @method_once
@@ -175,29 +154,34 @@ class Rng2Model(object):
         empty_type.restriction = elements.Restriction(schema)
         empty_type.restriction.base = xsd_types.xsd_builtin_types()['string']
         empty_type.restriction.length = '0'
-        schema.simple_types.append(empty_type)
+
+        self.simple_types[(empty_type.name, schema)] = empty_type
         return empty_type
 
     def _convert_list_type(self, t, type_pattern, schema):
-        item_name = self._get_next_name('{}-list-item'.format(t.name))
+        item_name = self._get_next_name('{}-li'.format(t.name))
 
         if isinstance(type_pattern, rng_choice.RngChoicePattern):
             item_type = None
             has_empty = False
             multiple = False
+
             for p in type_pattern.patterns:
                 if isinstance(p, rng_empty.RngEmpty):
                     has_empty = True
-                elif isinstance(type_pattern, rng_oneOrMore.RngOneOrMore):
+                elif isinstance(p, rng_oneOrMore.RngOneOrMore):
                     assert item_type is None
+
                     multiple = True
                     item_type = self._convert_simple_type(
                         p.patterns[0], item_name, schema)
                 else:
                     assert item_type is None
+
                     item_type = self._convert_simple_type(p, item_name, schema)
 
             assert item_type is not None
+
             min_occurs = 0 if has_empty else 1
             max_occurs = base.UNBOUNDED if multiple else 1
             t.listitems.append(
@@ -221,8 +205,51 @@ class Rng2Model(object):
             t.listitems.append(
                 uses.ListTypeCardinality(item_type, 0, base.UNBOUNDED))
 
-    def _convert_union_type(self):
-        return
+    def _convert_union_type(self, type_name, type_pattern, schema):
+        choice_types = []
+        enum_types = {}
+
+        for p in type_pattern.patterns:
+            item_name = self._get_next_name('{}-um'.format(type_name))
+
+            if isinstance(p, rng_empty.RngEmpty):
+                choice_types.append(self._forge_empty_simple_type(schema))
+            elif isinstance(p, rng_value.RngValue):
+                enum_type = enum_types.get((p.datatypes_uri, p.type))
+                if enum_type is None:
+                    enum_type = \
+                        elements.SimpleType(item_name, schema)
+                    enum_type.restriction = elements.Restriction(schema)
+                    enum_type.restriction.base = p.type
+                    enum_types[(p.datatypes_uri, p.type)] = enum_type
+                    self.simple_types[(item_name, schema)] = enum_type
+                    choice_types.append(enum_type)
+
+                enum_type.restriction.enumeration.append(
+                    elements.EnumerationValue(p.value, ''))
+            elif isinstance(p, rng_data.RngData):
+                choice_types.append(
+                    self._convert_simple_type(p, item_name, schema))
+            elif isinstance(p, rng_list.RngList):
+                item_type = elements.SimpleType(item_name, schema)
+                self._convert_list_type(item_type, p.data_pattern, schema)
+                choice_types.append(item_type)
+            elif isinstance(p, rng_choice.RngChoicePattern):
+                choice_types.append(
+                    self._convert_simple_type(p, item_name, schema))
+            else:
+                assert False, 'Unexpected pattern for simple type'
+
+        if len(choice_types) == 1:
+            item_type = choice_types[0]
+            if (item_type.name, schema) in self.simple_types:
+                del self.simple_types[(item_type.name, schema)]
+            item_type.name = type_name
+            return item_type
+
+        t = elements.SimpleType(type_name, schema)
+        t.union = choice_types
+        return t
 
     def _convert_complex_type(self, type_pattern, element_name, schema):
         type_name = self._get_next_name('{}-type'.format(element_name))
@@ -403,8 +430,8 @@ def _is_complex_pattern(type_pattern):
 
 
 def _set_restriction_params(data, restriction):
-    if checks.is_xsd_namespace(data.datatypes_uri):
-        return
+    if not checks.is_xsd_namespace(data.datatypes_uri):
+        return False
 
     for p in data.params:
         if p.name == 'fractionDigits':
@@ -432,3 +459,5 @@ def _set_restriction_params(data, restriction):
         else:
             assert False, '{} is not allowed as restriction ' \
                 'in XML Schema'.format(p.name)
+
+    return bool(data.params)
