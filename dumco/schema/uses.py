@@ -24,6 +24,11 @@ class AttributeUse(object):
         self.attribute.append_doc(doc)
 
 
+# Utility class necessary for better traversing dumco model.
+ChildComponent = collections.namedtuple('ChildComponent',
+                                        ['parents', 'component'])
+
+
 ListTypeCardinality = collections.namedtuple(
     'ListTypeCardinality', ['type', 'min_occurs', 'max_occurs'])
 
@@ -45,6 +50,38 @@ class Particle(object):
     def append_doc(self, doc):
         self.term.append_doc(doc)
 
+    def traverse(self, flatten=True, parents=None):
+        assert checks.is_compositor(self.term)
+
+        if not flatten:
+            yield ChildComponent(parents, self)
+
+        for x in self.term.members:
+            assert ((checks.is_particle(x) and
+                     (checks.is_terminal(x.term) or
+                      checks.is_compositor(x.term)))
+                    or
+                    (checks.is_attribute_use(x) and
+                     (checks.is_attribute(x.attribute) or
+                      checks.is_any(x.attribute)))
+                    or
+                    checks.is_text(x)), \
+                'Unknown member in compositor'
+
+            if flatten:
+                if checks.is_particle(x) and checks.is_compositor(x.term):
+                    for m in x.traverse():
+                        yield m
+                else:
+                    yield x
+            else:
+                if checks.is_particle(x) and checks.is_compositor(x.term):
+                    for child in x.traverse(flatten=False,
+                                            parents=[self] + parents):
+                        yield child
+                else:
+                    yield ChildComponent([self] + parents, x)
+
     @method_once
     def nameit(self, parents, factory, names):
         namer.forge_name(self, parents, factory, names)
@@ -63,7 +100,7 @@ class Particle(object):
 
 class SchemaText(object):
     # In case of mixed content in complex type SchemaText represents
-    # constraints for text content. It used along with Particle and
-    # AttributeUse.
+    # constraints for text content. It is used along with Particles and
+    # AttributeUses.
     def __init__(self, simple_type):
         self.type = simple_type

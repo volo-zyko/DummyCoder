@@ -1,8 +1,7 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
-from __future__ import print_function
 import collections
-
+import functools
 import os.path
 import shutil
 
@@ -11,6 +10,7 @@ import dumco.utils.string_utils
 import base
 import checks
 import elements
+import enums
 import xsd_types
 import uses
 
@@ -22,7 +22,8 @@ _XML_XSD_URI = xsd_types.XML_XSD_URI
 
 
 class _XmlWritingContext(object):
-    def __init__(self, filename):
+    def __init__(self, filename, opacity_manager):
+        self.om = opacity_manager
         self.indentation = 0
         self.fhandle = None
         self.namespaces = {_XML_PREFIX: base.XML_NAMESPACE}
@@ -31,9 +32,12 @@ class _XmlWritingContext(object):
 
         # We track here attribute and element groups.
         # In this case XmlWriter is used as global object.
-        self.attribute_groups = None
-        self.element_groups = None
-        self.simple_types = None
+        self.elements = None
+        self.ctypes = None
+        self.stypes = None
+        self.agroups = None
+        self.egroups = None
+        self.imports = None
 
         if not os.path.exists(os.path.dirname(filename)):
             os.makedirs(os.path.dirname(filename))
@@ -121,24 +125,6 @@ def _max_occurs(value):
     return ('unbounded' if value == base.UNBOUNDED else value)
 
 
-def _root_particle(ct):
-    if ct.structure is None:
-        return None
-
-    if len(ct.structure.term.members) == 1:
-        return ct.structure
-
-    roots = filter(lambda x: checks.is_particle(x), ct.structure.term.members)
-    if (len(roots) == 1 and
-            ct.structure.min_occurs == 1 and
-            ct.structure.max_occurs == 1 and
-            checks.is_particle(roots[0]) and
-            checks.is_compositor(roots[0].term)):
-        return roots[0]
-
-    return ct.structure
-
-
 def _term_name(term):
     if checks.is_interleave(term):
         return 'all'
@@ -217,14 +203,14 @@ def _dump_union(union, schema, xml_writer):
 def _dump_simple_content(ct, schema, xml_writer):
     with _TagGuard('simpleContent', xml_writer):
         with _TagGuard('extension', xml_writer):
-            qn = _qname(ct.text().component.type.name,
-                        ct.text().component.type.schema, schema)
+            qn = _qname(ct.text().type.name,
+                        ct.text().type.schema, schema)
             xml_writer.add_attribute('base', qn)
 
-            _dump_attribute_uses(ct.attribute_uses(), schema, xml_writer)
+            _dump_attribute_uses(ct, ct.attribute_uses(), schema, xml_writer)
 
 
-def _dump_particle(particle, schema, xml_writer, names, in_group=False):
+def _dump_particle(ct, particle, schema, xml_writer, names, in_group=False):
     def dump_occurs_attributes():
         if particle.min_occurs != 1:
             xml_writer.add_attribute('minOccurs', particle.min_occurs)
@@ -235,8 +221,7 @@ def _dump_particle(particle, schema, xml_writer, names, in_group=False):
     if not checks.is_particle(particle):
         return
     elif particle.term.schema != schema:
-        groups = xml_writer.element_groups.get(
-            particle.term.schema.target_ns, {})
+        groups = xml_writer.egroups.get(particle.term.schema, {})
 
         if particle.term in [t for t in groups.iterkeys()]:
             group_name = groups[particle.term].name
@@ -249,6 +234,14 @@ def _dump_particle(particle, schema, xml_writer, names, in_group=False):
 
             return
 
+    if (checks.is_element(particle.term) and
+            xml_writer.om.is_opaque_ct_member(ct, particle.term)):
+        return
+    elif (checks.is_compositor(particle.term) and
+            all([xml_writer.om.is_opaque_ct_member(ct, p.term)
+                 for p in particle.traverse() if checks.is_particle(p)])):
+        return
+
     name = _term_name(particle.term)
     with _TagGuard(name, xml_writer):
         if not in_group:
@@ -256,7 +249,7 @@ def _dump_particle(particle, schema, xml_writer, names, in_group=False):
 
         if checks.is_compositor(particle.term):
             for p in particle.term.members:
-                _dump_particle(p, schema, xml_writer, names)
+                _dump_particle(ct, p, schema, xml_writer, names)
         elif checks.is_element(particle.term):
             is_element_def = False
             if particle.term.schema == schema:
@@ -277,13 +270,17 @@ def _dump_particle(particle, schema, xml_writer, names, in_group=False):
             assert False
 
 
-def _dump_attribute_uses(attr_uses, schema, xml_writer):
+def _dump_attribute_uses(ct, attr_uses, schema, xml_writer):
     for u in attr_uses:
-        if checks.is_any(u.component.attribute):
+        if (xml_writer.om.is_opaque_ct_member(ct, u.attribute) and
+                not checks.is_single_valued_type(ct)):
+            continue
+
+        if checks.is_any(u.attribute):
             with _TagGuard('anyAttribute', xml_writer):
-                _dump_any(u.component.attribute, schema, xml_writer)
+                _dump_any(u.attribute, schema, xml_writer)
         else:
-            _dump_attribute_use(u.component, schema, xml_writer)
+            _dump_attribute_use(u, schema, xml_writer)
 
 
 def _dump_attribute_use(attr_use, schema, xml_writer):
@@ -295,7 +292,7 @@ def _dump_attribute_use(attr_use, schema, xml_writer):
         # We reference attribute from other schema but since we don't
         # maintain top-level attributes we can reference then only
         # attribute group.
-        groups = xml_writer.attribute_groups[attribute.schema.target_ns]
+        groups = xml_writer.agroups[attribute.schema]
         group_name = groups[attribute].name
         with _TagGuard('attributeGroup', xml_writer):
             xml_writer.add_attribute(
@@ -383,9 +380,9 @@ def _dump_any(elem, schema, xml_writer):
           elem.constraints[0].name.tag is None):
         val = '##other'
     elif (len(elem.constraints) > 1 and
-          all(map(lambda x: isinstance(x, elements.Any.Name) and x.tag is None,
-                  elem.constraints))):
-        val = ' '.join(map(lambda x: x.ns, elem.constraints))
+          all([isinstance(x, elements.Any.Name) and x.tag is None
+               for x in elem.constraints])):
+        val = ' '.join([x.ns for x in elem.constraints])
     else:
         # Issue a warning about impossibility to convert to XSD any.
         pass
@@ -399,8 +396,9 @@ def _dump_schema(schema, xml_writer):
             xml_writer.add_attribute('targetNamespace', schema.target_ns)
             xml_writer.define_namespace(None, schema.target_ns)
 
-        for sub_schema in sorted(schema.imports.itervalues(),
-                                 key=lambda v: None if not v else v.target_ns):
+        imports = sorted(xml_writer.imports.get(schema, []),
+                         key=lambda x: None if not x else x.target_ns)
+        for sub_schema in imports:
             if sub_schema is None:
                 continue
 
@@ -408,10 +406,9 @@ def _dump_schema(schema, xml_writer):
             xml_writer.define_namespace(sub_schema.prefix,
                                         sub_schema.target_ns)
 
-        if schema.imports:
+        if imports:
             xml_writer.add_comment('Imports')
-        for sub_schema in sorted(schema.imports.itervalues(),
-                                 key=lambda v: None if not v else v.target_ns):
+        for sub_schema in imports:
             with _TagGuard('import', xml_writer):
                 if sub_schema is None:
                     xml_writer.add_attribute('namespace', base.XML_NAMESPACE)
@@ -422,9 +419,10 @@ def _dump_schema(schema, xml_writer):
                 xml_writer.add_attribute('schemaLocation',
                                          '{}.xsd'.format(sub_schema.filename))
 
-        if xml_writer.simple_types[schema.target_ns]:
+        simple_types = xml_writer.stypes.get(schema, {})
+        if simple_types:
             xml_writer.add_comment('Simple Types')
-        for st in xml_writer.simple_types[schema.target_ns]:
+        for st in sorted(simple_types.itervalues(), key=lambda x: x.name):
             with _TagGuard('simpleType', xml_writer):
                 xml_writer.add_attribute('name', st.name)
 
@@ -435,27 +433,28 @@ def _dump_schema(schema, xml_writer):
                 elif st.union:
                     _dump_union(st.union, schema, xml_writer)
 
-        if schema.complex_types:
+        complex_types = xml_writer.ctypes.get(schema, {})
+        if complex_types:
             xml_writer.add_comment('Complex Types')
-        for ct in schema.complex_types:
+        for ct in sorted(complex_types.itervalues(), key=lambda x: x.name):
             with _TagGuard('complexType', xml_writer):
                 xml_writer.add_attribute('name', ct.name)
                 if ct.mixed:
                     xml_writer.add_attribute('mixed', str(ct.mixed).lower())
 
-                attribute_uses = list(ct.attribute_uses())
                 if checks.has_simple_content(ct):
                     _dump_simple_content(ct, schema, xml_writer)
                 elif ct.mixed or checks.has_complex_content(ct):
-                    _dump_particle(_root_particle(ct),
-                                   schema, xml_writer, set())
+                    _dump_particle(ct, ct.structure, schema, xml_writer, set())
 
-                    _dump_attribute_uses(attribute_uses, schema, xml_writer)
-                elif ct.attribute_uses:
+                    _dump_attribute_uses(ct, ct.attribute_uses(),
+                                         schema, xml_writer)
+                elif list(ct.attribute_uses()):
                     assert checks.has_empty_content(ct), 'Expected empty CT'
-                    _dump_attribute_uses(attribute_uses, schema, xml_writer)
+                    _dump_attribute_uses(ct, ct.attribute_uses(),
+                                         schema, xml_writer)
 
-        attr_groups = xml_writer.attribute_groups.get(schema.target_ns, {})
+        attr_groups = xml_writer.agroups.get(schema, {})
         if attr_groups:
             xml_writer.add_comment('Attribute Groups')
         for (name, attr_use) in sorted(attr_groups.itervalues(),
@@ -465,128 +464,152 @@ def _dump_schema(schema, xml_writer):
 
                 _dump_attribute_use(attr_use, schema, xml_writer)
 
-        if schema.elements:
+        elements = xml_writer.elements.get(schema, {})
+        if elements:
             xml_writer.add_comment('Top-level Elements')
-        for elem in schema.elements:
+        for elem in sorted(elements.itervalues(), key=lambda x: x.name):
             with _TagGuard('element', xml_writer):
                 _dump_element_attributes(elem, True, schema, xml_writer)
 
-        elem_groups = xml_writer.element_groups.get(schema.target_ns, {})
+        elem_groups = xml_writer.egroups.get(schema, {})
         if elem_groups:
             xml_writer.add_comment('Element Groups')
-        for (name, particle) in sorted(elem_groups.itervalues(),
-                                       key=lambda x: x.name):
+        for (ct, name, particle) in sorted(elem_groups.itervalues(),
+                                           key=lambda x: x.name):
             with _TagGuard('group', xml_writer):
                 xml_writer.add_attribute('name', name)
 
-                _dump_particle(particle, schema, xml_writer,
+                _dump_particle(ct, particle, schema, xml_writer,
                                set(), in_group=True)
 
 
-def dump_xsd(schemata, output_dir):
-    attribute_groups = _collect_attribute_groups(schemata)
-    element_groups = _collect_element_groups(schemata)
-    simple_types = _simplify_simple_types(schemata)
+def dump_xsd(schemata, output_dir, opacity_manager, horn):
+    ctypes = {}
+    stypes = {}
+    elements = _select_top_elements(schemata, opacity_manager, ctypes, stypes)
+    _select_complex_types(schemata, opacity_manager, ctypes, stypes)
+    _simplify_simple_types(stypes, opacity_manager)
+    agroups = _collect_attribute_groups(schemata, opacity_manager)
+    egroups = _collect_element_groups(schemata, opacity_manager)
+    imports = _collect_imports(ctypes, stypes, opacity_manager)
 
-    print('Dumping XML Schema files to {}...'.format(
-        os.path.realpath(output_dir)))
+    horn.beep('Dumping XML Schema files to {}...',
+              os.path.realpath(output_dir))
 
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
 
     for schema in schemata:
+        if (schema not in elements and schema not in ctypes and
+                schema not in stypes and schema not in agroups and
+                schema not in egroups):
+            continue
+
         file_path = os.path.join(output_dir, '{}.xsd'.format(schema.filename))
 
-        xml_writer = _XmlWritingContext(file_path)
-        xml_writer.attribute_groups = attribute_groups
-        xml_writer.element_groups = element_groups
-        xml_writer.simple_types = simple_types
+        xml_writer = _XmlWritingContext(file_path, opacity_manager)
+        xml_writer.elements = elements
+        xml_writer.ctypes = ctypes
+        xml_writer.stypes = stypes
+        xml_writer.agroups = agroups
+        xml_writer.egroups = egroups
+        xml_writer.imports = imports
 
         _dump_schema(schema, xml_writer)
 
         xml_writer.done()
 
 
-_ObjectUse = collections.namedtuple('ObjectUse', ['name', 'object'])
+def _stypes_adder(stypes, t):
+    schema_sts = stypes.setdefault(t.schema, {})
+    schema_sts.setdefault(t.name, t)
 
 
-def _collect_attribute_groups(schemata):
-    attribute_groups = {}
+def _ctypes_adder(ctypes, t):
+    schema_cts = ctypes.setdefault(t.schema, {})
+    schema_cts.setdefault(t.name, t)
 
-    def find_groups(attr_use, schema, group_count):
-        # This function should do checks similar to those in
-        # function _dump_attribute_use().
-        attribute = attr_use.attribute
 
-        if (checks.is_xml_attribute(attribute) or
-                checks.is_any(attribute) or attribute.schema == schema):
-            return group_count
+def _do_for_single_valued_type(t, do_ctypes, do_stypes):
+    # This function traverses single-valued types and invokes given
+    # handlers for found types.
+    if checks.is_single_valued_type(t):
+        if checks.is_simple_type(t):
+            do_stypes(t)
 
-        group_name = 'AttributeGroup{}'.format(group_count)
-        groups = attribute_groups.setdefault(attribute.schema.target_ns, {})
-        groups.setdefault(attribute, _ObjectUse(group_name, attr_use))
-        return group_count + 1
+            if checks.is_restriction_type(t):
+                base = t.restriction.base
+                _do_for_single_valued_type(base, do_ctypes, do_stypes)
+            elif checks.is_list_type(t):
+                for i in t.listitems:
+                    _do_for_single_valued_type(i.type, do_ctypes, do_stypes)
+            elif checks.is_union_type(t):
+                for u in t.union:
+                    _do_for_single_valued_type(u, do_ctypes, do_stypes)
+        elif checks.is_complex_type(t):
+            do_ctypes(t)
 
-    group_count = 1
+            if checks.is_primitive_type(t):
+                _do_for_single_valued_type(t, do_ctypes, do_stypes)
+            elif checks.is_text_complex_type(t):
+                _do_for_single_valued_type(t.text(), do_ctypes, do_stypes)
+            elif checks.is_single_attribute_type(t):
+                attr = next(t.attribute_uses()).attribute
+                _do_for_single_valued_type(attr.type, do_ctypes, do_stypes)
+        # If the type is native type then we don't need to process it.
+
+
+def _select_top_elements(schemata, opacity_manager, ctypes, stypes):
+    elements = {}
     for schema in schemata:
+        if opacity_manager.is_opaque_ns(schema.target_ns):
+            continue
+
+        for e in schema.elements:
+            if opacity_manager.is_opaque_top_element(e):
+                continue
+
+            _do_for_single_valued_type(
+                e.type, functools.partial(_ctypes_adder, ctypes),
+                functools.partial(_stypes_adder, stypes))
+
+            schema_elems = elements.setdefault(schema, {})
+            schema_elems[e.name] = e
+
+    return elements
+
+
+def _select_complex_types(schemata, opacity_manager, ctypes, stypes):
+    for schema in schemata:
+        if opacity_manager.is_opaque_ns(schema.target_ns):
+            continue
+
         for ct in schema.complex_types:
-            for u in ct.attribute_uses():
-                group_count = find_groups(u.component, schema, group_count)
-
-    return attribute_groups
-
-
-def _collect_element_groups(schemata):
-    element_groups = {}
-
-    def find_groups(particle, schema, group_count):
-        compositors = []
-
-        # First check elements.
-        for p in particle.term.members:
-            if not checks.is_particle(p):
-                continue
-            elif checks.is_compositor(p.term):
-                compositors.append(p)
-                continue
-            elif checks.is_any(p.term):
+            if opacity_manager.is_opaque_ct(ct):
                 continue
 
-            assert checks.is_element(p.term)
+            _ctypes_adder(ctypes, ct)
 
-            if p.term.schema == schema:
-                continue
-
-            top_elements = [e for e in p.term.schema.elements]
-            if p.term in top_elements:
-                continue
-
-            group_name = 'ElementGroup{}'.format(group_count)
-            groups = element_groups.setdefault(p.term.schema.target_ns, {})
-            groups.setdefault(particle.term, _ObjectUse(group_name, particle))
-            return group_count + 1
-
-        # Then recurse into compositors.
-        for c in compositors:
-            group_count = find_groups(c, schema, group_count)
-
-        return group_count
-
-    group_count = 1
-    for schema in schemata:
-        for ct in schema.complex_types:
-            if ct.mixed or checks.has_complex_content(ct):
-                group_count = find_groups(ct.structure, schema, group_count)
-
-    return element_groups
+            for x in enums.enum_supported_flat(ct, opacity_manager):
+                if checks.is_particle(x):
+                    _do_for_single_valued_type(
+                        x.term.type, functools.partial(_ctypes_adder, ctypes),
+                        functools.partial(_stypes_adder, stypes))
+                elif checks.is_attribute_use(x):
+                    t = x.attribute.type
+                    _do_for_single_valued_type(
+                        t, functools.partial(_ctypes_adder, ctypes),
+                        functools.partial(_stypes_adder, stypes))
+                elif checks.is_text(x):
+                    _do_for_single_valued_type(
+                        x.type, functools.partial(_ctypes_adder, ctypes),
+                        functools.partial(_stypes_adder, stypes))
 
 
-def _simplify_simple_types(schemata):
-    simple_types = {}
-
-    for schema in schemata:
-        simple_types_for_ns = simple_types.setdefault(schema.target_ns, [])
-        for st in schema.simple_types:
+def _simplify_simple_types(stypes, opacity_manager):
+    # SimpleType simplification is necessary in some cases for RelaxNG schemas.
+    for (schema, simple_types) in stypes.iteritems():
+        for st in list(simple_types.itervalues()):
             if len(st.listitems) > 1:
                 union_st = elements.SimpleType(st.name + '-union', st.schema)
                 union_st.union = st.listitems
@@ -602,8 +625,125 @@ def _simplify_simple_types(schemata):
                 new_st.listitems.append(
                     uses.ListTypeCardinality(union_st, min_occurs, max_occurs))
 
-                simple_types_for_ns.append(new_st)
-            else:
-                simple_types_for_ns.append(st)
+                assert new_st.name not in simple_types
+                simple_types[new_st.name] = new_st
 
-    return simple_types
+    return stypes
+
+
+def _collect_attribute_groups(schemata, opacity_manager):
+    # This function finds all attributes referenced from other schemata
+    # and later these attributes are dumped as xsd:attributeGroup elements.
+    agroups = {}
+
+    AttributeGroup = collections.namedtuple('AttributeGroup',
+                                            ['name', 'attr_use'])
+
+    def find_groups(ct, attr_use, schema, group_count):
+        # This function should do checks similar to those in
+        # function _dump_attribute_use().
+        attribute = attr_use.attribute
+
+        if (opacity_manager.is_opaque_ct_member(ct, attribute) or
+                checks.is_xml_attribute(attribute) or
+                checks.is_any(attribute) or attribute.schema == schema):
+            return group_count
+
+        group_name = 'AttributeGroup{}'.format(group_count)
+        groups = agroups.setdefault(attribute.schema, {})
+        groups.setdefault(attribute, AttributeGroup(group_name, attr_use))
+        return group_count + 1
+
+    group_count = 1
+    for schema in schemata:
+        for ct in schema.complex_types:
+            if opacity_manager.is_opaque_ct(ct):
+                continue
+
+            for u in ct.attribute_uses():
+                group_count = find_groups(ct, u, schema, group_count)
+
+    return agroups
+
+
+def _collect_element_groups(schemata, opacity_manager):
+    # This function finds all particles referenced from other schemata
+    # and later these particles are dumped as xsd:group element.
+    # In case we have anything opaque we assume that particle is equally
+    # opaque across all its uses in different CTs and thus it doesn't
+    # matter with which CT we add it resulting groups.
+    egroups = {}
+
+    ElementGroup = collections.namedtuple('ElementGroup',
+                                          ['ct', 'name', 'particle'])
+
+    def find_groups(ct, particle, schema, group_count):
+        compositors = []
+
+        # First check elements.
+        for p in particle.term.members:
+            if not checks.is_particle(p):
+                continue
+            elif checks.is_compositor(p.term):
+                compositors.append(p)
+                continue
+            elif opacity_manager.is_opaque_ct_member(ct, p.term):
+                continue
+            elif checks.is_any(p.term):
+                continue
+
+            assert checks.is_element(p.term)
+
+            if p.term.schema == schema:
+                continue
+
+            top_elements = [e for e in p.term.schema.elements]
+            if p.term in top_elements:
+                continue
+
+            group_name = 'ElementGroup{}'.format(group_count)
+            groups = egroups.setdefault(p.term.schema, {})
+            groups.setdefault(particle.term,
+                              ElementGroup(ct, group_name, particle))
+            return group_count + 1
+
+        # Then recurse into compositors.
+        for c in compositors:
+            group_count = find_groups(ct, c, schema, group_count)
+
+        return group_count
+
+    group_count = 1
+    for schema in schemata:
+        for ct in schema.complex_types:
+            if opacity_manager.is_opaque_ct(ct):
+                continue
+
+            if ct.mixed or checks.has_complex_content(ct):
+                group_count = find_groups(ct, ct.structure,
+                                          schema, group_count)
+
+    return egroups
+
+
+def _collect_imports(ctypes, stypes, opacity_manager):
+    imports = {}
+    for (schema, complex_types) in list(ctypes.iteritems()):
+        def imports_adder(t):
+            if t.schema != schema:
+                schema_imports = imports.setdefault(schema, set())
+                schema_imports.add(t.schema)
+
+        for ct in complex_types.itervalues():
+            for x in enums.enum_supported_flat(ct, opacity_manager):
+                if checks.is_particle(x):
+                    _do_for_single_valued_type(
+                        x.term.type, imports_adder, imports_adder)
+                elif checks.is_attribute_use(x):
+                    _do_for_single_valued_type(
+                        x.attribute.type, imports_adder, imports_adder)
+                elif checks.is_text(x):
+                    _do_for_single_valued_type(
+                        x.type, imports_adder, imports_adder)
+
+    return imports

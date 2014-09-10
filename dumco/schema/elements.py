@@ -78,15 +78,12 @@ class Choice(base.Compositor):
 
 class ComplexType(base.SchemaBase):
     # ComplexType uses structure member for its content representation.
-    # The structure is comprised of a sequence with min and max ocurrs
+    # The structure is comprised of a sequence with min and max occurs
     # equal to 1 and which contains in order: 1) list of attributes (can
     # be empty); 2) particle which is a content with markup of a given
     # ComplexType (can be missing); 3) textual content (can be missing).
     # If neither of the above 3 parts is present then structure has value None.
     # If ComplexType has both particle and text then its content is mixed.
-    # If there is no attributes and text in ComplexType but particle is
-    # non-empty then structure contains that particle (the wrapping sequence
-    # is left out).
 
     def __init__(self, name, parent_schema):
         super(ComplexType, self).__init__(parent_schema)
@@ -96,38 +93,44 @@ class ComplexType(base.SchemaBase):
 
     @property
     def mixed(self):
-        has_markup = False
-        for _ in self.particles(flatten=True):
-            has_markup = True
-            break
+        for _ in self.particles():
+            return self.text() is not None
+        else:
+            return False
 
-        return self.text().component is not None and has_markup
-
-    def attribute_uses(self):
-        for x in self.traverse_structure_with_parents(flatten=True):
-            if checks.is_attribute_use(x.component):
+    def attribute_uses(self, flatten=True):
+        for x in self.traverse_structure(flatten=flatten):
+            if ((flatten and checks.is_attribute_use(x)) or
+                    (not flatten and checks.is_attribute(x.component))):
                 yield x
+
+    def text(self, flatten=True):
+        for x in self.traverse_structure(flatten=flatten):
+            if ((flatten and checks.is_text(x)) or
+                    (not flatten and checks.is_text(x.component))):
+                return x
+        return None
 
     def particles(self, flatten=True):
-        for x in self.traverse_structure_with_parents(flatten=flatten):
-            if checks.is_particle(x.component):
+        for x in self.traverse_structure(flatten=flatten):
+            if ((flatten and checks.is_particle(x)) or
+                    (not flatten and checks.is_particle(x.component))):
                 yield x
 
-    def text(self):
-        for x in self.traverse_structure_with_parents(flatten=True):
-            if checks.is_text(x.component):
-                return x
-        return base.ChildComponent(self, None)
-
-    def traverse_structure_with_parents(self, flatten=True):
+    def traverse_structure(self, flatten=True):
         # This function generates a sequence of pairs of data elements and
         # their parents. It can happen that it generates nothing.
-        if self.structure is not None:
-            if not flatten:
-                yield base.ChildComponent(self, self.structure)
+        if self.structure is None:
+            return
 
-            term = self.structure.term
-            for x in term.traverse_with_parents(flatten=flatten):
+        assert (checks.is_particle(self.structure) and
+                checks.is_compositor(self.structure.term))
+
+        if flatten:
+            for x in self.structure.traverse():
+                yield x
+        else:
+            for x in self.structure.traverse(flatten=False, parents=[self]):
                 yield x
 
     @staticmethod
@@ -199,9 +202,9 @@ class Schema(base.SchemaBase):
     def __init__(self, target_ns):
         super(Schema, self).__init__(None)
 
-        self.target_ns = target_ns
-        self.prefix = None
         self.filename = None
+        self.prefix = None
+        self.target_ns = target_ns
 
         # Member imports references other schemata elements from which
         # are used in this schema. It potentially can reference schemata
@@ -239,12 +242,13 @@ class SimpleType(base.SchemaBase):
         super(SimpleType, self).__init__(parent_schema)
 
         self.name = name
-        # Instance of Restriction.
-        self.restriction = None
+
         # List of instances of ListTypeCardinality with simple (which
         # includes unions and potentially lists) or native types inside.
         # Each of the list items is matched in the input string in order.
         self.listitems = []
+        # Instance of Restriction.
+        self.restriction = None
         # List of simple of native types. The first matching type for an
         # input string is assumed to be its type.
         self.union = []

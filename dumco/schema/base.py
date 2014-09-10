@@ -3,8 +3,6 @@
 import collections
 import sys
 
-import checks
-
 
 # Constants.
 XML_NAMESPACE = 'http://www.w3.org/XML/1998/namespace'
@@ -38,40 +36,15 @@ class SchemaBase(object):
         self.__dict__[name] = value
 
 
-# Utility class necessary for better traversing dumco model.
-ChildComponent = collections.namedtuple('ChildComponent',
-                                        ['parent', 'component'])
-
-
 class Compositor(SchemaBase):
     def __init__(self, parent_schema):
         super(Compositor, self).__init__(parent_schema)
 
         self.members = []
 
-    def traverse_with_parents(self, flatten=True):
-        for x in self.members:
-            assert ((checks.is_particle(x) and
-                     (checks.is_terminal(x.term) or
-                      checks.is_compositor(x.term)))
-                    or
-                    (checks.is_attribute_use(x) and
-                     (checks.is_attribute(x.attribute) or
-                      checks.is_any(x.attribute)))
-                    or
-                    checks.is_text(x)), \
-                'Unknown member in compositor'
-
-            if (checks.is_particle(x) and
-                    checks.is_compositor(x.term) and flatten):
-                for pair in x.term.traverse_with_parents(flatten=flatten):
-                    yield pair
-            else:
-                yield ChildComponent(self, x)
-
 
 class DataComponent(SchemaBase):
-    # Element of attribute.
+    # Element or attribute.
     def __init__(self, name, parent_schema):
         super(DataComponent, self).__init__(parent_schema)
 

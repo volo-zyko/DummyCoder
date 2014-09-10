@@ -30,7 +30,7 @@ class NamespaceConverter(object):
             value = uri[uri.index('!') + 1:]
 
             result[key] = self.common_namespaces + \
-                map(lambda n: self._normalize(n), value.split(','))
+                [self._normalize(n) for n in value.split(',')]
         return result
 
     def _find_ns_for_uri(self, uri):
@@ -40,8 +40,8 @@ class NamespaceConverter(object):
 
             result = self.common_namespaces + \
                 filter(lambda n: n is not None,
-                       map(lambda n: self._normalize(n),
-                           self._PATHSEP_MATCHER.split(uri[len(base):])))
+                       [self._normalize(n)
+                        for n in self._PATHSEP_MATCHER.split(uri[len(base):])])
             return result
 
         assert hasattr(self.ns_mapping, uri), \

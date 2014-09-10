@@ -20,7 +20,7 @@ import rng_value
 
 def is_name_class(value):
     if isinstance(value, rng_choice.RngChoiceName):
-        return all(map(lambda p: is_name_class(p), value.name_classes))
+        return all([is_name_class(p) for p in value.name_classes])
 
     return (isinstance(value, rng_name.RngName) or
             isinstance(value, rng_anyName.RngAnyName) or

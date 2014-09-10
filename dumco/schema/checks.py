@@ -27,39 +27,33 @@ def has_complex_content(schema_type):
     if not is_complex_type(schema_type):
         return False
 
-    has_particles = False
-    for _ in schema_type.particles(flatten=True):
-        has_particles = True
-        break
-
-    return (has_particles and schema_type.text().component is None)
+    for _ in schema_type.particles():
+        return schema_type.text() is None
+    else:
+        return False
 
 
 def has_empty_content(schema_type):
     if not is_complex_type(schema_type):
         return False
 
-    has_particles = False
-    for _ in schema_type.particles(flatten=True):
-        has_particles = True
-        break
-
-    return (not has_particles and schema_type.text().component is None)
+    for _ in schema_type.particles():
+        return False
+    else:
+        return schema_type.text() is None
 
 
 def has_simple_content(schema_type):
     if not is_complex_type(schema_type):
         return False
 
-    has_particles = False
-    for _ in schema_type.particles(flatten=True):
-        has_particles = True
-        break
-
-    return (not has_particles and schema_type.text().component is not None)
+    for _ in schema_type.particles():
+        return False
+    else:
+        return schema_type.text() is not None
 
 
-def is_attributed_complex_type(schema_type):
+def is_single_attribute_type(schema_type):
     return (has_empty_content(schema_type) and
             _attribute_count(schema_type) == 1)
 
@@ -102,6 +96,15 @@ def is_simple_type(schema_type):
 def is_simple_urtype(schema_type):
     return (is_simple_type(schema_type) and schema_type.schema is None and
             schema_type.name == 'anySimpleType')
+
+
+def is_single_valued_type(schema_type):
+    # A type with either single attribute or with text content only or
+    # empty complex type or simple type.
+    return (is_primitive_type(schema_type) or
+            is_empty_complex_type(schema_type) or
+            is_text_complex_type(schema_type) or
+            is_single_attribute_type(schema_type))
 
 
 def is_text_complex_type(schema_type):

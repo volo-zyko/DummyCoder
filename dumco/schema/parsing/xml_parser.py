@@ -1,7 +1,5 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
-from __future__ import print_function
-
 import collections
 import os.path
 import xml.dom.minidom
@@ -65,9 +63,9 @@ class XmlLoader(object):
     def __init__(self, element_factory):
         self.element_factory = element_factory
 
-    def load_xml(self, xml_path, dir_depth):
-        print('Loading XML files from {}...'.format(
-            os.path.realpath(xml_path)))
+    def load_xml(self, xml_path, dir_depth, horn):
+        horn.beep('Loading XML files from {}...',
+                  os.path.realpath(xml_path))
 
         documents = {
             os.path.realpath(filepath): None
@@ -75,7 +73,7 @@ class XmlLoader(object):
                                             self.element_factory.extension,
                                             max_depth=dir_depth)}
 
-        while any(map(lambda s: s is None, documents.itervalues())):
+        while any([s is None for s in documents.itervalues()]):
             for (filepath, document) in documents.items():
                 if document is not None:
                     continue

@@ -89,7 +89,7 @@ class XsdSimpleRestriction(xsd_restriction.XsdRestriction):
                                             self.schema, finalize=True)
 
         if simple_type is None:
-            base_type = base.text().component.type
+            base_type = base.text().type
             assert dumco.schema.checks.is_primitive_type(base_type), \
                 'Wrong base type of simple Restriction'
         else:

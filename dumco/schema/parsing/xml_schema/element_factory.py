@@ -144,7 +144,7 @@ class XsdElementFactory(object):
 
         def enum_schema_content_with_fixes(schema):
             def enum_with_substitute(particle):
-                for (_, p) in particle.term.traverse_with_parents():
+                for p in particle.traverse():
                     if not checks.is_particle(p):
                         continue
 
@@ -170,15 +170,15 @@ class XsdElementFactory(object):
             #         del schema.schema_element.elements[name]
 
             for ct in schema.schema_element.complex_types:
-                if (ct.mixed or checks.has_complex_content(ct)):
+                if ct.mixed or checks.has_complex_content(ct):
                     for t in enum_with_substitute(ct.structure):
                         yield t
 
-                for (_, u) in ct.attribute_uses():
+                for u in ct.attribute_uses():
                     yield u.attribute
 
                 if checks.has_simple_content(ct):
-                    yield ct.text().component.type
+                    yield ct.text().type
 
             for st in schema.schema_element.simple_types:
                 yield st

@@ -14,5 +14,5 @@ class GenerationDriver(object):
     def generate(self):
         for (schema_file, schema) in self.schemata.iteritems():
             for ct in schema.complex_types.itervalues():
-                if not self.om.is_opaque(ct):
+                if not self.om.is_opaque_ct(ct):
                     self._generate_for_complex_type(ct)

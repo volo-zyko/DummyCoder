@@ -1,5 +1,7 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
+import copy
+
 from dumco.utils.decorators import method_once
 
 import dumco.schema.checks
@@ -65,12 +67,16 @@ class XsdComplexExtension(xsd_base.XsdBase):
                                             self.schema, finalize=True)
 
         self.part = self._merge_content(base)
-        self.attr_uses.extend(map(lambda (_, x): x, base.attribute_uses()))
+        self.attr_uses.extend([x for x in base.attribute_uses()])
 
         return self
 
     def _merge_content(self, base):
-        base_part = _root_particle(base)
+        base_part = None
+        if base is not None:
+            base_part = copy.copy(base.structure)
+            base_part.term = copy.copy(base.structure.term)
+            base_part.term.members = list(base.particles())
 
         if self.part is None:
             return base_part
@@ -89,16 +95,3 @@ class XsdComplexExtension(xsd_base.XsdBase):
         new_elem.members.extend([copy_base, copy_self])
 
         return dumco.schema.uses.Particle(False, 1, 1, new_elem)
-
-
-def _root_particle(ct):
-    if ct.structure is None or len(ct.structure.term.members) == 0:
-        return None
-
-    if (dumco.schema.checks.is_attribute_use(ct.structure.term.members[0]) or
-            dumco.schema.checks.is_text(ct.structure.term.members[-1])):
-        roots = filter(lambda x: dumco.schema.checks.is_particle(x),
-                       ct.structure.term.members)
-        return roots[0] if len(roots) == 1 else None
-
-    return ct.structure

@@ -109,18 +109,16 @@ class XsdComplexType(xsd_base.XsdBase):
             return (-1, use.attribute.name)
         attr_uses.sort(key=attr_key)
 
-        if attr_uses or text is not None:
-            root = dumco.schema.uses.Particle(
+        if particle is None and (attr_uses or text is not None):
+            particle = dumco.schema.uses.Particle(
                 False, 1, 1,
                 dumco.schema.elements.Sequence(self.schema_element.schema))
-            root.term.members.extend(attr_uses)
-            if particle is not None:
-                root.term.members.append(particle)
-            if text is not None:
-                root.term.members.append(text)
-            self.schema_element.structure = root
-        else:
-            self.schema_element.structure = particle
+        if attr_uses:
+            particle.term.members[0:0] = attr_uses
+        if text is not None:
+            particle.term.members.append(text)
+
+        self.schema_element.structure = particle
 
         return self.schema_element
 
