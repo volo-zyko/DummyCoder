@@ -1,5 +1,7 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
+import copy
+
 from dumco.utils.decorators import method_once
 
 import dumco.schema.checks
@@ -109,10 +111,17 @@ class XsdComplexType(xsd_base.XsdBase):
             return (-1, use.attribute.name)
         attr_uses.sort(key=attr_key)
 
-        if particle is None and (attr_uses or text is not None):
-            particle = dumco.schema.uses.Particle(
-                False, 1, 1,
-                dumco.schema.elements.Sequence(self.schema_element.schema))
+        if attr_uses or text is not None:
+            if particle is None:
+                particle = dumco.schema.uses.Particle(
+                    False, 1, 1,
+                    dumco.schema.elements.Sequence(self.schema_element.schema))
+            else:
+                new_particle = copy.copy(particle)
+                new_particle.term = copy.copy(particle.term)
+                new_particle.term.members = copy.copy(particle.term.members)
+                particle = new_particle
+
         if attr_uses:
             particle.term.members[0:0] = attr_uses
         if text is not None:

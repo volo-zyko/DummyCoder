@@ -35,10 +35,6 @@ def xml_attributes():
     return attrs
 
 
-class Interleave(base.Compositor):
-    pass
-
-
 class Any(base.DataComponent):
     # Any can have type and a list of constraints. If the list of constraints
     # is empty then Any accepts any name in any namespace. Otherwise list
@@ -168,6 +164,15 @@ class Element(base.DataComponent):
 
 
 EnumerationValue = collections.namedtuple('EnumerationValue', ['value', 'doc'])
+
+
+class Interleave(base.Compositor):
+    def equal_content(self, other):
+        if (not checks.is_interleave(other) or
+                len(self.members) != len(other.members)):
+            return False
+
+        return True
 
 
 class Restriction(base.SchemaBase):

@@ -122,10 +122,6 @@ def is_xsd_native_type(schema_type):
 
 
 # Element checks.
-def is_interleave(interleave):
-    return isinstance(interleave, elements.Interleave)
-
-
 def is_any(schema_any):
     return isinstance(schema_any, elements.Any)
 
@@ -148,6 +144,10 @@ def is_compositor(compositor):
 
 def is_element(element):
     return isinstance(element, elements.Element)
+
+
+def is_interleave(interleave):
+    return isinstance(interleave, elements.Interleave)
 
 
 def is_particle(particle):

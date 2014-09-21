@@ -158,4 +158,4 @@ if __name__ == '__main__':
 
         gd.generate()
 
-    horn.honk('Done in {0:f} seconds!'.format(time.time() - start_time))
+    horn.beep('Done in {0:f} seconds!'.format(time.time() - start_time))

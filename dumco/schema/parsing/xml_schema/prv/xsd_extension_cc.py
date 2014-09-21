@@ -63,20 +63,22 @@ class XsdComplexExtension(xsd_base.XsdBase):
             else:  # pragma: no cover
                 assert False, 'Wrong content of complex Extension'
 
-        base = factory.resolve_complex_type(self.attr('base'),
-                                            self.schema, finalize=True)
+        base_ct = factory.resolve_complex_type(self.attr('base'),
+                                               self.schema, finalize=True)
 
-        self.part = self._merge_content(base)
-        self.attr_uses.extend([x for x in base.attribute_uses()])
+        self.part = self._merge_content(base_ct)
+        self.attr_uses.extend([x for x in base_ct.attribute_uses()])
 
         return self
 
-    def _merge_content(self, base):
+    def _merge_content(self, base_ct):
         base_part = None
-        if base is not None:
-            base_part = copy.copy(base.structure)
-            base_part.term = copy.copy(base.structure.term)
-            base_part.term.members = list(base.particles())
+        if base_ct is not None:
+            base_part = copy.copy(base_ct.structure)
+        if base_ct.structure is not None:
+            base_part.term = copy.copy(base_ct.structure.term)
+            base_part.term.members = [m for m in base_ct.structure.term.members
+                                      if dumco.schema.checks.is_particle(m)]
 
         if self.part is None:
             return base_part

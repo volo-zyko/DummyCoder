@@ -36,10 +36,10 @@ class OpacityManager(object):
             return self.is_opaque_anything()
 
     def is_opaque_ct_member(self, ct, member):
-        if dumco.schema.checks.is_any(member):
-            return True
-        elif not self.is_opaque_anything():
+        if not self.is_opaque_anything():
             return False
+        elif dumco.schema.checks.is_any(member):
+            return True
 
         try:
             member_set = self.supported_cts[ct.schema.target_ns][ct.name]

@@ -5,7 +5,7 @@ def enum_flat(ct):
     for u in ct.attribute_uses():
         yield u
 
-    if ct.mixed:
+    if ct.text() is not None:
         yield ct.text()
 
     for p in ct.particles():
@@ -16,7 +16,7 @@ def enum_hierarchy(ct):
     for u in ct.attribute_uses(flatten=False):
         yield u
 
-    if ct.mixed:
+    if ct.text() is not None:
         yield ct.text(flatten=False)
 
     for p in ct.particles(flatten=False):
@@ -28,7 +28,7 @@ def enum_supported_flat(ct, om):
         if not om.is_opaque_ct_member(ct, u.attribute):
             yield u
 
-    if ct.mixed:
+    if ct.text() is not None:
         if not om.is_opaque_ct_member(ct, ct.text()):
             yield ct.text()
 
