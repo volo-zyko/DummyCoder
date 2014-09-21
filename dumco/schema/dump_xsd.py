@@ -135,6 +135,8 @@ def _qname(name, own_schema, other_schema, context, prefix=_XSD_PREFIX):
         if own_schema is not None:
             context.store_import_namespace(own_schema.prefix,
                                            own_schema.target_ns)
+        elif prefix == _XML_PREFIX:
+            context.store_import_namespace(None, base.XML_NAMESPACE)
         return '{}:{}'.format(
             own_schema.prefix if own_schema is not None else prefix, name)
     return name
@@ -329,9 +331,11 @@ def _dump_attribute_use(attr_use, schema, context):
         else:
             _dump_attribute_attributes(attribute, schema, context)
 
-        context.add_attribute(
-            'form',
-            'qualified' if attr_use.qualified else 'unqualified')
+        if not checks.is_xml_attribute(attribute):
+            # Attribute declaration cannot have both ref and form attributes.
+            context.add_attribute(
+                'form',
+                'qualified' if attr_use.qualified else 'unqualified')
 
         if attr_use.constraint.fixed:
             assert attr_use.constraint.value is not None, \
@@ -548,7 +552,6 @@ class _SchemaDumpContext(_XmlWriter):
             for (prefix, uri) in sorted_namespaces:
                 sub_schema = next((s for s in self.schemata
                                    if s.target_ns == uri), None)
-                assert sub_schema is not None
 
                 with _TagGuard('import', self):
                     if uri == schema.target_ns:
@@ -559,6 +562,7 @@ class _SchemaDumpContext(_XmlWriter):
                         self.add_attribute('schemaLocation', _XML_XSD_URI)
                         continue
 
+                    assert sub_schema is not None
                     self.add_attribute('namespace', uri)
                     self.add_attribute('schemaLocation',
                                        '{}.xsd'.format(sub_schema.filename))
@@ -613,28 +617,30 @@ def _ctypes_adder(ctypes, t):
 def _do_for_single_valued_type(t, do_ctypes, do_stypes):
     # This function traverses single-valued types and invokes given
     # handlers for found types.
-    if checks.is_single_valued_type(t):
-        if checks.is_simple_type(t):
-            do_stypes(t)
+    if not checks.is_single_valued_type(t):
+        return
 
-            if checks.is_restriction_type(t):
-                base = t.restriction.base
-                _do_for_single_valued_type(base, do_ctypes, do_stypes)
-            elif checks.is_list_type(t):
-                for i in t.listitems:
-                    _do_for_single_valued_type(i.type, do_ctypes, do_stypes)
-            elif checks.is_union_type(t):
-                for u in t.union:
-                    _do_for_single_valued_type(u, do_ctypes, do_stypes)
-        elif checks.is_complex_type(t):
-            do_ctypes(t)
+    if checks.is_simple_type(t):
+        do_stypes(t)
 
-            if checks.is_text_complex_type(t):
-                _do_for_single_valued_type(t.text().type, do_ctypes, do_stypes)
-            elif checks.is_single_attribute_type(t):
-                attr = next(t.attribute_uses()).attribute
-                _do_for_single_valued_type(attr.type, do_ctypes, do_stypes)
-        # If the type is native type then we don't need to process it.
+        if checks.is_restriction_type(t):
+            base = t.restriction.base
+            _do_for_single_valued_type(base, do_ctypes, do_stypes)
+        elif checks.is_list_type(t):
+            for i in t.listitems:
+                _do_for_single_valued_type(i.type, do_ctypes, do_stypes)
+        elif checks.is_union_type(t):
+            for u in t.union:
+                _do_for_single_valued_type(u, do_ctypes, do_stypes)
+    elif checks.is_complex_type(t):
+        do_ctypes(t)
+
+        if checks.is_text_complex_type(t):
+            _do_for_single_valued_type(t.text().type, do_ctypes, do_stypes)
+        elif checks.is_single_attribute_type(t):
+            attr = next(t.attribute_uses()).attribute
+            _do_for_single_valued_type(attr.type, do_ctypes, do_stypes)
+    # If the type is native type then we don't need to process it.
 
 
 def _select_top_elements(schemata, opacity_manager, ctypes, stypes):
@@ -777,8 +783,6 @@ def _collect_element_groups(schemata, opacity_manager):
             assert checks.is_element(p.term)
 
             group_name = 'ElementGroup{}'.format(group_count)
-            # if group_name == 'ElementGroup7':
-            #     from pudb import set_trace; set_trace()
             groups = egroups.setdefault(p.term.schema, {})
             groups.setdefault(particle.term,
                               ElementGroup(ct, group_name, particle))
@@ -801,30 +805,3 @@ def _collect_element_groups(schemata, opacity_manager):
                                           schema, group_count)
 
     return egroups
-
-
-# def _collect_imports(ctypes, stypes, opacity_manager):
-#     imports = {}
-#     for (schema, complex_types) in list(ctypes.iteritems()):
-#         def imports_adder(x):
-#             if x.schema != schema:
-#                 schema_imports = imports.setdefault(schema, set())
-#                 schema_imports.add(x.schema)
-
-#         for ct in complex_types.itervalues():
-#             for x in enums.enum_supported_flat(ct, opacity_manager):
-#                 if checks.is_particle(x):
-#                     imports_adder(x.term)
-
-#                     _do_for_single_valued_type(
-#                         x.term.type, imports_adder, imports_adder)
-#                 elif checks.is_attribute_use(x):
-#                     imports_adder(x.attribute)
-
-#                     _do_for_single_valued_type(
-#                         x.attribute.type, imports_adder, imports_adder)
-#                 elif checks.is_text(x):
-#                     _do_for_single_valued_type(
-#                         x.type, imports_adder, imports_adder)
-
-#     return imports

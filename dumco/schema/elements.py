@@ -97,7 +97,7 @@ class ComplexType(base.SchemaBase):
     def attribute_uses(self, flatten=True):
         for x in self.traverse_structure(flatten=flatten):
             if ((flatten and checks.is_attribute_use(x)) or
-                    (not flatten and checks.is_attribute(x.component))):
+                    (not flatten and checks.is_attribute_use(x.component))):
                 yield x
 
     def text(self, flatten=True):

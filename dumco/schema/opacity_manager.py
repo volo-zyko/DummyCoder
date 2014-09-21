@@ -18,10 +18,12 @@ class OpacityManager(object):
         self._load_list_file(supported_elements_file)
 
     def is_opaque_anything(self):
-        return len(self.supported_cts) != 0
+        return len(self.supported_cts) != 0 or len(self.toplevel_elems) != 0
 
     def is_opaque_ns(self, ns):
-        return not ns in self.supported_cts and self.is_opaque_anything()
+        return (not ns in self.supported_cts and
+                not ns in self.toplevel_elems and
+                self.is_opaque_anything())
 
     def is_opaque_top_element(self, elem):
         try:
@@ -83,6 +85,9 @@ class OpacityManager(object):
                     continue
 
                 if self.is_opaque_ct(elem.type):
+                    horn.honk('ComplexType {}:{} is required by {}:{} '
+                              'but is opaque', elem.type.schema.target_ns,
+                              elem.type.name, elem.schema.target_ns, elem.name)
                     consistent = False
 
             for ct in schema.complex_types:
@@ -114,9 +119,17 @@ class OpacityManager(object):
                                   ct.name, x.term.name)
                         consistent = False
                     elif (checks.is_attribute_use(x) and x.required and
-                            self.is_opaque_ct_member(ct, x)):
+                            self.is_opaque_ct_member(ct, x.attribute)):
                         horn.honk('Attribute {} in {}:{} is required but is '
                                   'opaque', x.attribute.name,
+                                  ct.schema.target_ns, ct.name)
+                        consistent = False
+                    elif (checks.is_text(x) and
+                            self.is_opaque_ct_member(ct, x) and
+                            checks.has_simple_content(ct) and
+                            checks.is_simple_type(x.type)):
+                        horn.honk('Text content in non-opaque ComplexType '
+                                  '{}:{} with simple content is opaque',
                                   ct.schema.target_ns, ct.name)
                         consistent = False
 

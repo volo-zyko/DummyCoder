@@ -105,9 +105,6 @@ def process_arguments():
 if __name__ == '__main__':
     start_time = time.time()
 
-    # Change to script's directory.
-    os.chdir(os.path.dirname(os.path.realpath(sys.argv[0])))
-
     args = process_arguments()
 
     if not os.path.exists(args.input_path):
