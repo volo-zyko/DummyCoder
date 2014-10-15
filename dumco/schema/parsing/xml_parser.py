@@ -7,7 +7,7 @@ import xml.sax
 import xml.sax.handler
 
 from dumco.utils.file_utils import enumerate_files
-
+from dumco.utils.horn import horn
 
 class _XmlContentHandler(xml.sax.handler.ContentHandler):
     NamespacePair = collections.namedtuple('NamespacePair', ['prefix', 'uri'])
@@ -63,7 +63,7 @@ class XmlLoader(object):
     def __init__(self, element_factory):
         self.element_factory = element_factory
 
-    def load_xml(self, xml_path, dir_depth, horn):
+    def load_xml(self, xml_path, dir_depth):
         horn.beep('Loading XML files from {}...',
                   os.path.realpath(xml_path))
 

@@ -6,12 +6,22 @@ import sys
 
 
 class Horn(object):
-    def __init__(self, verbose=True):
-        self.verbose = verbose
+    _verbosity = None
+
+    def set_verbosity(self, verbosity):
+        if Horn._verbosity is None:
+            Horn._verbosity = verbosity
+
+    def peep(self, format, *args):
+        if self._verbosity >= 2:
+            print(format.format(*[str(a) for a in args]), file=sys.stdout)
 
     def beep(self, format, *args):
-        if self.verbose:
+        if self._verbosity >= 1:
             print(format.format(*[str(a) for a in args]), file=sys.stdout)
 
     def honk(self, format, *args):
         print(format.format(*[str(a) for a in args]), file=sys.stderr)
+
+
+horn = Horn()

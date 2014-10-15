@@ -113,15 +113,12 @@ function single_run()
     case "$mode" in
         dumpxsd)
             syntax="$3"
-            namer="$4"
 
-            out="${out}-${syntax}-${namer}"
+            out="${out}-${syntax}"
 
             cmd=("$run")
             cmd+=('-s')
             cmd+=("$syntax")
-            cmd+=('-n')
-            cmd+=("$namer")
             cmd+=('-i')
             cmd+=("$inp")
             cmd+=("$mode")
@@ -208,28 +205,21 @@ $COVERAGE_APPEND_COMMAND "$PWD/dumco.py" dumpxsd --help
 $COVERAGE_APPEND_COMMAND "$PWD/dumco.py" rfilter --help
 $COVERAGE_APPEND_COMMAND "$PWD/dumco.py" --version
 
-syntaxes=('rng')
+syntaxes=('xsd')
 if [ -n "$COVERAGE_BEGIN_COMMAND" ]; then
     syntaxes+=('xsd')
-fi
-namers=('oxml')
-if [ -n "$COVERAGE_BEGIN_COMMAND" ]; then
-    namers+=('fb2')
 fi
 
 for syntax in "${syntaxes[@]}"
 do
-    for namer in "${namers[@]}"
+    echo '###'
+    echo "### Doing schema dump tests for syntax='$syntax'"
+    echo '###'
+    find "$PWD/UT/schemata" -mindepth 1 -maxdepth 1 -type d | while read dir
     do
-        echo '###'
-        echo "### Doing schema dump tests for syntax='$syntax' with namer='$namer'"
-        echo '###'
-        find "$PWD/UT/schemata" -mindepth 1 -maxdepth 1 -type d | while read dir
-        do
-            if [ -n "$(find $dir -maxdepth 1 -name "*.$syntax")" ]; then
-                single_run "$dir" dumpxsd "$syntax" "$namer"
-            fi
-        done
+        if [ -n "$(find $dir -maxdepth 1 -name "*.$syntax")" ]; then
+            single_run "$dir" dumpxsd "$syntax"
+        fi
     done
 done
 

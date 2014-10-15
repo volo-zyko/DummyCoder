@@ -11,7 +11,7 @@ import prv.xsd_schema
 
 
 class XsdElementFactory(object):
-    def __init__(self, arguments, element_namer):
+    def __init__(self, arguments, namer):
         # Reset internals of this factory.
         self.reset()
 
@@ -23,7 +23,7 @@ class XsdElementFactory(object):
 
         # This is part of the factory's interface.
         self.arguments = arguments
-        self.namer = element_namer
+        self.namer = namer
         self.extension = '.xsd'
 
     def reset(self):

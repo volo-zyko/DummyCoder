@@ -4,6 +4,7 @@ import re
 
 import dumco.schema.checks
 import dumco.schema.enums
+from dumco.utils.horn import horn
 import dumco.utils.string_utils
 
 
@@ -58,7 +59,7 @@ class OpacityManager(object):
             assert False
         return (name not in member_set)
 
-    def ensure_consistency(self, schemata, horn):
+    def ensure_consistency(self, schemata):
         if not self.is_opaque_anything():
             return True
 

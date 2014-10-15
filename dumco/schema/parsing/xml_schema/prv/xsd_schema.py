@@ -7,7 +7,7 @@ from dumco.utils.decorators import method_once
 
 import dumco.schema.checks
 import dumco.schema.elements
-import dumco.schema.namer
+import dumco.schema.namer as namer
 import dumco.schema.xsd_types
 
 import dumco.schema.parsing.xml_parser
@@ -90,27 +90,30 @@ class XsdSchema(xsd_base.XsdBase):
 
     @method_once
     def finalize(self, all_schemata, factory):
-        forged_names = dumco.schema.namer.ValidatingNameSet()
         schema_element = self.schema_element
 
         for name in sorted(self.simple_types.iterkeys()):
             schema_st = self.simple_types[name].finalize(factory)
-            schema_st.nameit([self], factory.namer, forged_names)
+            factory.namer.learn_naming(schema_st.name, namer.NAME_HINT_ST)
             schema_element.simple_types.append(schema_st)
 
         for name in sorted(self.complex_types.iterkeys()):
             schema_ct = self.complex_types[name].finalize(factory)
-            schema_ct.nameit([self], factory.namer, forged_names)
+            factory.namer.learn_naming(schema_ct.name, namer.NAME_HINT_CT)
             schema_element.complex_types.append(schema_ct)
 
         for (parents, t) in sorted(self.unnamed_types,
                                    key=lambda x: len(x[0])):
             schema_type = t.finalize(factory)
-            schema_type.nameit(parents, factory.namer, forged_names)
-
             if dumco.schema.checks.is_complex_type(schema_type):
+                schema_type.name = factory.namer.name_ct(
+                    schema_type.name, schema_type.schema.target_ns, parents[-1])
+
                 schema_element.complex_types.append(schema_type)
             elif dumco.schema.checks.is_simple_type(schema_type):
+                schema_type.name = factory.namer.name_st(
+                    schema_type.name, schema_type.schema.target_ns, parents[-1])
+
                 schema_element.simple_types.append(schema_type)
 
         for elem in self.elements.itervalues():

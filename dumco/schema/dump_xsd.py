@@ -2,9 +2,12 @@
 
 import collections
 import functools
+import itertools
 import os.path
 import shutil
 import StringIO
+
+from dumco.utils.horn import horn
 
 import base
 import checks
@@ -43,8 +46,9 @@ class _FakeSchemaTagGuard(object):
 
 
 class _SchemaDumpContext(XmlWriter):
-    def __init__(self, filename, opacity_manager, elements,
+    def __init__(self, filename, namer, opacity_manager, elements,
                  ctypes, stypes, agroups, egroups, schemata):
+        self.namer = namer
         self.om = opacity_manager
 
         # We track here elements, complex types, simple types, attribute groups
@@ -242,7 +246,97 @@ def _do_for_single_valued_type(t, do_ctypes, do_stypes):
     # If the type is native type then we don't need to process it.
 
 
-def _select_top_elements(schemata, opacity_manager, ctypes, stypes):
+def _collect_attribute_groups(schemata, namer, opacity_manager):
+    # This function finds all attributes referenced from other schemata
+    # and later these attributes are dumped as xsd:attributeGroup elements.
+    agroups = {}
+
+    AttributeGroup = collections.namedtuple('AttributeGroup',
+                                            ['name', 'attr_use'])
+
+    def find_groups(ct, attr_use, schema):
+        # This function should do checks similar to those in
+        # function _dump_attribute_use().
+        attribute = attr_use.attribute
+
+        if (opacity_manager.is_opaque_ct_member(ct, attribute) or
+                checks.is_xml_attribute(attribute) or
+                checks.is_any(attribute) or attribute.schema == schema):
+            return
+
+        group_name = namer.name_agroup(
+            None, attribute.schema.target_ns, attribute)
+        groups = agroups.setdefault(attribute.schema, {})
+        groups.setdefault(attribute, AttributeGroup(group_name, attr_use))
+
+    for schema in schemata:
+        for ct in schema.complex_types:
+            if opacity_manager.is_opaque_ct(ct):
+                continue
+
+            for u in ct.attribute_uses():
+                find_groups(ct, u, schema)
+
+    return agroups
+
+
+def _find_element_groups(ct, particle, schema, egroups, namer, opacity_manager):
+    ElementGroup = collections.namedtuple('ElementGroup',
+                                          ['ct', 'name', 'particle'])
+
+    compositors = []
+
+    # First check elements.
+    for p in particle.term.members:
+        if not checks.is_particle(p):
+            continue
+        elif checks.is_compositor(p.term):
+            compositors.append(p)
+            continue
+        elif opacity_manager.is_opaque_ct_member(ct, p.term):
+            continue
+        elif checks.is_any(p.term):
+            continue
+        elif p.term.schema == schema:
+            continue
+        elif p.term in [e for e in p.term.schema.elements]:
+            continue
+
+        assert checks.is_element(p.term)
+
+        group_name = namer.name_egroup(None, p.term.schema.target_ns, p.term)
+        groups = egroups.setdefault(p.term.schema, {})
+        groups.setdefault(particle.term,
+                          ElementGroup(ct, group_name, particle))
+        return
+
+    # Then recurse into compositors.
+    for c in compositors:
+        _find_element_groups(ct, c, schema, egroups, namer, opacity_manager)
+
+
+def _collect_element_groups(schemata, namer, opacity_manager):
+    # This function finds all particles referenced from other schemata
+    # and later these particles are dumped as xsd:group element.
+    # In case we have anything opaque we assume that particle is equally
+    # opaque across all its uses in different CTs and thus it doesn't
+    # matter with which CT we add it to resulting groups.
+    egroups = {}
+
+    for schema in schemata:
+        for ct in schema.complex_types:
+            if opacity_manager.is_opaque_ct(ct):
+                continue
+
+            if ct.mixed or checks.has_complex_content(ct):
+                _find_element_groups(ct, ct.structure, schema,
+                                     egroups, namer, opacity_manager)
+
+    return egroups
+
+
+def _select_top_elements(schemata, namer, opacity_manager,
+                         egroups, ctypes, stypes):
     elements = {}
     for schema in schemata:
         if opacity_manager.is_opaque_ns(schema.target_ns):
@@ -262,7 +356,7 @@ def _select_top_elements(schemata, opacity_manager, ctypes, stypes):
     return elements
 
 
-def _select_complex_types(schemata, opacity_manager, ctypes, stypes):
+def _select_complex_types(schemata, namer, opacity_manager, ctypes, stypes):
     for schema in schemata:
         if opacity_manager.is_opaque_ns(schema.target_ns):
             continue
@@ -288,13 +382,23 @@ def _select_complex_types(schemata, opacity_manager, ctypes, stypes):
                         x.type, functools.partial(_ctypes_adder, ctypes),
                         functools.partial(_stypes_adder, stypes))
 
+    return ctypes
 
-def _approximate_simple_types(stypes, opacity_manager):
+
+def _approximate_simple_types(stypes, namer, opacity_manager):
     # SimpleType simplification is necessary in some cases for RelaxNG schemas.
     for (schema, simple_types) in stypes.iteritems():
         for st in list(simple_types.itervalues()):
             if len(st.listitems) > 1:
-                union_st = elements.SimpleType(st.name + '-union', st.schema)
+                union_name = st.name + '-union'
+                if union_name in simple_types:
+                    for (n, i) in itertools.izip(itertools.repeat(union_name),
+                                                 itertools.count()):
+                        if n not in simple_types:
+                            union_name = n + str(i)
+                            break
+
+                union_st = elements.SimpleType(union_name, st.schema)
                 union_st.union = st.listitems
 
                 min_occurs = 0
@@ -304,116 +408,27 @@ def _approximate_simple_types(stypes, opacity_manager):
                         min_occurs = i.min_occurs
                     elif i.max_occurs > max_occurs:
                         max_occurs = i.max_occurs
+
                 new_st = elements.SimpleType(st.name, st.schema)
                 new_st.listitems.append(
                     uses.ListTypeCardinality(union_st, min_occurs, max_occurs))
 
-                assert new_st.name not in simple_types
                 simple_types[new_st.name] = new_st
 
     return stypes
 
 
-def _collect_attribute_groups(schemata, opacity_manager):
-    # This function finds all attributes referenced from other schemata
-    # and later these attributes are dumped as xsd:attributeGroup elements.
-    agroups = {}
-
-    AttributeGroup = collections.namedtuple('AttributeGroup',
-                                            ['name', 'attr_use'])
-
-    def find_groups(ct, attr_use, schema, group_count):
-        # This function should do checks similar to those in
-        # function _dump_attribute_use().
-        attribute = attr_use.attribute
-
-        if (opacity_manager.is_opaque_ct_member(ct, attribute) or
-                checks.is_xml_attribute(attribute) or
-                checks.is_any(attribute) or attribute.schema == schema):
-            return group_count
-
-        group_name = 'AttributeGroup{}'.format(group_count)
-        groups = agroups.setdefault(attribute.schema, {})
-        groups.setdefault(attribute, AttributeGroup(group_name, attr_use))
-        return group_count + 1
-
-    group_count = 1
-    for schema in schemata:
-        for ct in schema.complex_types:
-            if opacity_manager.is_opaque_ct(ct):
-                continue
-
-            for u in ct.attribute_uses():
-                group_count = find_groups(ct, u, schema, group_count)
-
-    return agroups
-
-
-def _collect_element_groups(schemata, opacity_manager):
-    # This function finds all particles referenced from other schemata
-    # and later these particles are dumped as xsd:group element.
-    # In case we have anything opaque we assume that particle is equally
-    # opaque across all its uses in different CTs and thus it doesn't
-    # matter with which CT we add it to resulting groups.
-    egroups = {}
-
-    ElementGroup = collections.namedtuple('ElementGroup',
-                                          ['ct', 'name', 'particle'])
-
-    def find_groups(ct, particle, schema, group_count):
-        compositors = []
-
-        # First check elements.
-        for p in particle.term.members:
-            if not checks.is_particle(p):
-                continue
-            elif checks.is_compositor(p.term):
-                compositors.append(p)
-                continue
-            elif opacity_manager.is_opaque_ct_member(ct, p.term):
-                continue
-            elif checks.is_any(p.term):
-                continue
-            elif p.term.schema == schema:
-                continue
-            elif p.term in [e for e in p.term.schema.elements]:
-                continue
-
-            assert checks.is_element(p.term)
-
-            group_name = 'ElementGroup{}'.format(group_count)
-            groups = egroups.setdefault(p.term.schema, {})
-            groups.setdefault(particle.term,
-                              ElementGroup(ct, group_name, particle))
-            return group_count + 1
-
-        # Then recurse into compositors.
-        for c in compositors:
-            group_count = find_groups(ct, c, schema, group_count)
-
-        return group_count
-
-    group_count = 1
-    for schema in schemata:
-        for ct in schema.complex_types:
-            if opacity_manager.is_opaque_ct(ct):
-                continue
-
-            if ct.mixed or checks.has_complex_content(ct):
-                group_count = find_groups(ct, ct.structure,
-                                          schema, group_count)
-
-    return egroups
-
-
-def dump_xsd(schemata, output_dir, opacity_manager, horn):
+def dump_xsd(schemata, output_dir, namer, opacity_manager):
     ctypes = {}
     stypes = {}
-    elements = _select_top_elements(schemata, opacity_manager, ctypes, stypes)
-    _select_complex_types(schemata, opacity_manager, ctypes, stypes)
-    _approximate_simple_types(stypes, opacity_manager)
-    agroups = _collect_attribute_groups(schemata, opacity_manager)
-    egroups = _collect_element_groups(schemata, opacity_manager)
+
+    agroups = _collect_attribute_groups(schemata, namer, opacity_manager)
+    egroups = _collect_element_groups(schemata, namer, opacity_manager)
+    elements = _select_top_elements(schemata, namer, opacity_manager,
+                                    egroups, ctypes, stypes)
+    ctypes = _select_complex_types(schemata, namer, opacity_manager,
+                                   ctypes, stypes)
+    stypes = _approximate_simple_types(stypes, namer, opacity_manager)
 
     horn.beep('Dumping XML Schema files to {}...',
               os.path.realpath(output_dir))
@@ -429,7 +444,7 @@ def dump_xsd(schemata, output_dir, opacity_manager, horn):
 
         file_path = os.path.join(output_dir, '{}.xsd'.format(schema.filename))
 
-        dumper = _SchemaDumpContext(file_path, opacity_manager, elements,
+        dumper = _SchemaDumpContext(file_path, namer, opacity_manager, elements,
                                     ctypes, stypes, agroups, egroups, schemata)
 
         dumper.dump_schema(schema)

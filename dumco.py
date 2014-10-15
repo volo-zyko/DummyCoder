@@ -5,13 +5,11 @@
 import argparse
 import os
 import os.path
-import sys
 import time
 
 # import dumco.cxx.rfilter.gendriver
 
-import dumco.schema.fb2_namer
-import dumco.schema.oxml_namer
+import dumco.schema.namer
 from dumco.schema.parsing.relaxng.element_factory import RelaxElementFactory
 from dumco.schema.parsing.xml_parser import XmlLoader
 from dumco.schema.parsing.xml_schema.element_factory import XsdElementFactory
@@ -20,7 +18,25 @@ from dumco.schema.opacity_manager import OpacityManager
 
 from dumco.utils.ns_converter import NamespaceConverter
 from dumco.utils.file_utils import PathNotExists
-from dumco.utils.horn import Horn
+from dumco.utils.horn import horn
+
+
+def name_patterns(text_patterns):
+    problem_pattern = text_patterns
+    result = None
+
+    try:
+        result = dumco.schema.namer.parse_name_patterns(text_patterns)
+    except dumco.schema.namer.PatternParseException as ex:
+        problem_pattern = ex.pattern
+    except:
+        pass
+
+    if result is None:
+        raise argparse.ArgumentTypeError(
+            'Can\'t parse pattern \'{}\''.format(problem_pattern))
+
+    return result
 
 
 def process_arguments():
@@ -34,9 +50,9 @@ def process_arguments():
         default='xsd', help='assume input schema files use one of 3 '
         'supported serializations {default: %(default)s}')
     parser.add_argument(
-        '-n', '--element-namer', choices=['oxml', 'fb2'],
-        default='oxml', help='name anonymous schema entities according '
-        'to 1 of predefined policies {default: %(default)s}')
+        '-n', '--naming-patterns', default=([], [], [], []), type=name_patterns,
+        help='name anonymous or new schema entities according '
+        'to these naming rules {default: %(default)s}')
     parser.add_argument(
         '-i', '--input-path', required=True,
         help='directory with schema files or single schema file')
@@ -106,16 +122,12 @@ if __name__ == '__main__':
     start_time = time.time()
 
     args = process_arguments()
+    horn.set_verbosity(1)
 
     if not os.path.exists(args.input_path):
         raise PathNotExists()
 
-    horn = Horn()
-
-    if args.element_namer == 'oxml':
-        namer = dumco.schema.oxml_namer.OxmlNamer()
-    elif args.element_namer == 'fb2':
-        namer = dumco.schema.fb2_namer.Fb2Namer()
+    namer = dumco.schema.namer.Namer(args.naming_patterns)
 
     if args.input_syntax == 'xsd':
         factory = XsdElementFactory(args, namer)
@@ -129,7 +141,7 @@ if __name__ == '__main__':
     elif args.input_syntax == 'rnc':
         assert False, 'Not implemented'
 
-    all_schemata = loader.load_xml(args.input_path, args.max_dir_depth, horn)
+    all_schemata = loader.load_xml(args.input_path, args.max_dir_depth)
 
     if args.mode == 'dumpxsd' or args.mode == 'rdumpxsd':
         elements_file = None
@@ -138,8 +150,8 @@ if __name__ == '__main__':
 
         opacity_manager = OpacityManager(elements_file)
 
-        if opacity_manager.ensure_consistency(all_schemata, horn):
-            dump_xsd(all_schemata, args.output_dir, opacity_manager, horn)
+        if opacity_manager.ensure_consistency(all_schemata):
+            dump_xsd(all_schemata, args.output_dir, namer, opacity_manager)
     elif args.mode == 'rfilter' or args.mode == 'dom':
         ns_converter = NamespaceConverter(args.root_namespaces.split(),
                                           args.uri_to_namespaces,
