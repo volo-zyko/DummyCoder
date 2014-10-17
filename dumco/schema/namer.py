@@ -63,17 +63,19 @@ NAME_HINT_ATTR = 5
 
 class Namer(object):
     SCHEMA_NAMING_NONE = 0
-    # Camel-case.
-    SCHEMA_NAMING_CC = 1
+    # Camel-case with first lower letter.
+    SCHEMA_NAMING_LCC = 1
+    # Camel-case with first upper letter.
+    SCHEMA_NAMING_UCC = 2
     # With underscores.
-    SCHEMA_NAMING_WU = 2
+    SCHEMA_NAMING_WU = 4
     # With hyphens.
-    SCHEMA_NAMING_WH = 4
+    SCHEMA_NAMING_WH = 8
     # With dots.
-    SCHEMA_NAMING_WD = 8
+    SCHEMA_NAMING_WD = 16
 
     _NamingStats = collections.namedtuple(
-        '_NamingStats', ['ct', 'st', 'eg', 'ag'])
+        '_NamingStats', ['ct', 'st', 'eg', 'ag', 'elem', 'attr'])
 
     def __init__(self, naming_patterns):
         assert isinstance(naming_patterns, tuple) and len(naming_patterns) == 4
@@ -101,41 +103,53 @@ class Namer(object):
     def name_ct(self, name, ns, parent):
         c = self.ctypes_counters.setdefault(ns, {})
         if not self.ctype_patterns:
-            return self._generate_uniq_name(c, parent, NAME_HINT_CT)
+            return self._generate_uniq_name(c, parent, [NAME_HINT_CT])
 
         return self._apply_patterns(name, c, self.ctype_patterns, NAME_HINT_CT)
 
     def name_st(self, name, ns, parent):
         c = self.stypes_counters.setdefault(ns, {})
         if not self.stype_patterns:
-            return self._generate_uniq_name(c, parent, NAME_HINT_ST)
+            return self._generate_uniq_name(c, parent, [NAME_HINT_ST])
 
         return self._apply_patterns(name, c, self.stype_patterns, NAME_HINT_ST)
 
     def name_egroup(self, name, ns, parent):
         c = self.egroups_counters.setdefault(ns, {})
         if not self.egroup_patterns:
-            return self._generate_uniq_name(c, parent, NAME_HINT_EG)
+            return self._generate_uniq_name(
+                c, parent, [NAME_HINT_EG, NAME_HINT_ELEM])
 
         return self._apply_patterns(name, c, self.egroup_patterns, NAME_HINT_EG)
 
     def name_agroup(self, name, ns, parent):
         c = self.agroups_counters.setdefault(ns, {})
         if not self.agroup_patterns:
-            return self._generate_uniq_name(c, parent, NAME_HINT_AG)
+            return self._generate_uniq_name(
+                c, parent, [NAME_HINT_AG, NAME_HINT_ATTR])
 
         return self._apply_patterns(name, c, self.agroup_patterns, NAME_HINT_AG)
 
-    def _generate_uniq_name(self, counters, parent, hint):
+    def _generate_uniq_name(self, counters, parent, hints):
         assert parent.name is not None
 
-        words = _get_name_words(parent.name, hint)
+        words = _get_name_words(parent.name, hints[0])
 
-        style = max(self.naming_stats[hint].iteritems(), key=lambda x: x[1])[0]
-        if style & Namer.SCHEMA_NAMING_CC:
-            words = map(lambda x: x.capitalize(), words)
+        stats = []
+        for hint in hints:
+            stats = list(self.naming_stats[hint].iteritems())
 
-        name = _get_join_char().join(words)
+        if stats:
+            style = max(stats, key=lambda x: x[1])[0]
+        else:
+            style = Namer.SCHEMA_NAMING_UCC
+
+        if style & Namer.SCHEMA_NAMING_UCC or style & Namer.SCHEMA_NAMING_LCC:
+            words[1:] = map(lambda x: x.capitalize(), words[1:])
+        if not style & Namer.SCHEMA_NAMING_LCC:
+            words[0] = words[0].capitalize()
+
+        name = _get_join_char(style).join(words)
 
         return _finalize_name(name, counters)
 
@@ -170,21 +184,37 @@ def _get_name_words(name, hint):
 
 def _get_join_char(style):
     join_char_map = {
-        1: '',          # cc
-        2: '_',         # wu
-        3: '',          # cc|wu
-        4: '-',         # wh
-        5: '',          # cc|wh
-        6: '-',         # wu|wh
-        7: '-',         # cc|wu|wh
-        8: '.',         # wd
-        9: '',          # cc|wd
-        10: '-',        # wu|wd
-        11: '-',        # cc|wu|wd
-        12: '-',        # wh|wd
-        13: '-',        # cc|wh|wd
-        14: '-',        # wu|wh|wd
-        15: '-',        # cc|wu|wh|wd
+        1: '',          # ucc
+        2: '',          # lcc
+        3: None,        # ucc|lcc
+        4: '_',         # wu
+        5: '',          # ucc|wu
+        6: '',          # lcc|wu
+        7: None,        # ucc|lcc|wu
+        8: '-',         # wh
+        9: '',          # ucc|wh
+        10: '',         # lcc|wh
+        11: None,       # ucc|lcc|wh
+        12: '-',        # wu|wh
+        13: '-',        # ucc|wu|wh
+        14: '-',        # lcc|wu|wh
+        15: None,       # ucc|lcc|wu|wh
+        16: '.',        # wd
+        17: '',         # ucc|wd
+        18: '',         # lcc|wd
+        19: None,       # ucc|lcc|wd
+        20: '-',        # wu|wd
+        21: '-',        # ucc|wu|wd
+        22: '-',        # lcc|wu|wd
+        23: None,       # ucc|lcc|wu|wd
+        24: '-',        # wh|wd
+        25: '-',        # ucc|wh|wd
+        26: '-',        # lcc|wh|wd
+        27: None,       # ucc|lcc|wh|wd
+        28: '-',        # wu|wh|wd
+        29: '-',        # ucc|wu|wh|wd
+        30: '-',        # lcc|wu|wh|wd
+        31: None,       # ucc|lcc|wu|wh|wd
     }
 
     return join_char_map[style]
@@ -215,27 +245,38 @@ def _guess_naming(name):
             prev_char = x
             continue
         elif x.isupper() or x.isdigit():
-            if (prev_char.isupper() or prev_char.isdigit() or
+            if prev_char is None:
+                current_word.append(x)
+                prev_char = x
+                continue
+            elif (prev_char.isupper() or prev_char.isdigit() or
                     (prev_char.islower() and x.isdigit())):
                 # Looks like abbreviation.
                 current_word.append(x)
                 prev_char = x
                 continue
             elif prev_char.islower():
-                style |= Namer.SCHEMA_NAMING_CC
+                style |= Namer.SCHEMA_NAMING_UCC | Namer.SCHEMA_NAMING_LCC
                 add_word = True
+        elif x.islower():
+            current_word.append(x)
+            prev_char = x
+            continue
         elif x == '_':
             assert len(current_word) > 0
             style |= Namer.SCHEMA_NAMING_WU
             add_word = True
+            x = None
         elif x == '-':
             assert len(current_word) > 0
             style |= Namer.SCHEMA_NAMING_WH
             add_word = True
+            x = None
         elif x == '.':
             assert len(current_word) > 0
             style |= Namer.SCHEMA_NAMING_WD
             add_word = True
+            x = None
         else:
             if ((prev_char.isupper() or prev_char.isdigit()) and
                     len(current_word) > 2):
@@ -248,8 +289,29 @@ def _guess_naming(name):
 
         if add_word:
             words.append(''.join(current_word))
-            current_word = [x]
-            prev_char = x
+            if x is None:
+                current_word = []
+                prev_char = None
+            else:
+                current_word = [x]
+                prev_char = x
             add_word = False
+
+    if current_word:
+        words.append(''.join(current_word))
+
+    cc = Namer.SCHEMA_NAMING_UCC | Namer.SCHEMA_NAMING_LCC
+    if (style & cc) == cc:
+        if words[0][0].isupper() and not words[0].isupper():
+            # Remains UCC
+            style &= ~Namer.SCHEMA_NAMING_LCC
+        else:
+            # Remains LCC
+            style &= ~Namer.SCHEMA_NAMING_UCC
+    elif style == Namer.SCHEMA_NAMING_NONE:
+        if name[0].isupper():
+            style = Namer.SCHEMA_NAMING_UCC
+        else:
+            style = Namer.SCHEMA_NAMING_LCC
 
     return (style, words)
