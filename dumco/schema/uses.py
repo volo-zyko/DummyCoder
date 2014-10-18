@@ -20,6 +20,12 @@ class AttributeUse(object):
         # attribute = Attribute/Any.
         self.attribute = attribute
 
+    def equal_content(self, other):
+        return (self.constraint == other.constraint and
+                self.qualified == other.qualified and
+                self.required == other.required and
+                self.attribute.equal_content(other.attribute))
+
     def append_doc(self, doc):
         self.attribute.append_doc(doc)
 
@@ -96,6 +102,12 @@ class Particle(object):
             if checks.is_compositor(p.term):
                 p.nameit(parents + [self], factory, names)
                 assert p.name is not None, 'Name cannot be None'
+
+    def equal_content(self, other):
+        return (self.qualified == other.qualified and
+                self.min_occurs == other.min_occurs and
+                self.max_occurs == other.max_occurs and
+                self.term.equal_content(other.term))
 
 
 class SchemaText(object):
