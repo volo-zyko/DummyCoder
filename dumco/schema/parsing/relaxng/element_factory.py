@@ -22,7 +22,7 @@ import prv.rng_to_model
 
 
 class RelaxElementFactory(object):
-    def __init__(self, arguments, element_namer, extension):
+    def __init__(self, arguments, namer, extension):
         # Reset internals of this factory.
         self.reset()
 
@@ -34,7 +34,7 @@ class RelaxElementFactory(object):
 
         # Part of the factorie's interface.
         self.arguments = arguments
-        self.namer = element_namer
+        self.namer = namer
         self.extension = extension
 
     def reset(self):
@@ -167,8 +167,7 @@ class RelaxElementFactory(object):
                 with open(path, 'w') as f:
                     f.write(stream.getvalue())
 
-        sorted_all_schemata = filter(lambda s: not _is_schema_empty(s),
-                                     all_schemata.itervalues())
+        sorted_all_schemata = [s for s in all_schemata.itervalues()]
         sorted_all_schemata.sort(key=lambda s: s.target_ns)
         return sorted_all_schemata
 

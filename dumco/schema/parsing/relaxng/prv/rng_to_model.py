@@ -5,6 +5,8 @@ from dumco.utils.decorators import method_once
 import dumco.schema.base as base
 import dumco.schema.checks as checks
 import dumco.schema.elements as elements
+import dumco.schema.enums as enums
+import dumco.schema.namer as namer
 import dumco.schema.uses as uses
 import dumco.schema.xsd_types as xsd_types
 
@@ -28,13 +30,9 @@ import rng_value
 class Rng2Model(object):
     def __init__(self, all_schemata, factory):
         self.all_schemata = all_schemata
-        self.factory = factory
+        self.namer = factory.namer
+
         self.untyped_elements = {}
-        self.unique_type_names = set()
-        self.unique_type_counter = 0
-        self.simple_types = {}
-        self.complex_types = {}
-        # self.elements_per_schema = {s: {} for s in all_schemata}
 
     def convert(self, grammar):
         assert isinstance(grammar, rng_grammar.RngGrammar)
@@ -49,20 +47,62 @@ class Rng2Model(object):
 
         for (pattern, (element, _)) in self.untyped_elements.iteritems():
             if _is_complex_pattern(pattern.pattern):
-                if not checks.is_any(element):
-                    element.type = self._convert_complex_type(
-                        pattern.pattern, pattern.define_name, element.schema)
+                if checks.is_any(element):
+                    continue
+
+                element.type = \
+                    self._convert_complex_type(pattern.pattern, element.schema)
             else:
-                element.type = self._convert_simple_type(
-                    pattern.pattern, pattern.define_name, element.schema)
+                element.type = \
+                    self._convert_simple_type(pattern.pattern, element.schema)
 
-        for ((_, schema), st) in self.simple_types.iteritems():
-            assert schema == st.schema
-            schema.simple_types.append(st)
+        def traverse_complex_type(ct, parent, vcts):
+            if ct in vcts:
+                return
 
-        for ((_, schema), ct) in self.complex_types.iteritems():
-            assert schema == ct.schema
-            schema.complex_types.append(ct)
+            ct.name = self.namer.name_ct(None, ct.schema.target_ns, parent)
+            ct.schema.complex_types.append(ct)
+            vcts.add(ct)
+
+            for child in enums.enum_flat(ct):
+                if checks.is_attribute_use(child):
+                    if checks.is_any(child.attribute):
+                        continue
+                    traverse_simple_type(child.attribute.type, child.attribute)
+                elif checks.is_particle(child):
+                    if checks.is_any(child.term):
+                        continue
+
+                    if checks.is_complex_type(child.term.type):
+                        traverse_complex_type(child.term.type, child.term, vcts)
+                    elif checks.is_complex_type(child.term.type):
+                        traverse_simple_type(child.term.type, child.term)
+                elif checks.is_text(child):
+                    traverse_simple_type(child.type, child)
+
+        def traverse_simple_type(st, parent):
+            if (checks.is_native_type(st) or
+                    st.schema is None and st.name is not None):
+                return
+
+            st.name = self.namer.name_st(None, st.schema.target_ns, parent)
+            st.schema.simple_types.append(st)
+
+            if checks.is_list_type(st):
+                for item in st.listitems:
+                    traverse_simple_type(item.type, st)
+            elif checks.is_union_type(st):
+                for member in st.union:
+                    traverse_simple_type(member, st)
+
+        # Now we can name types.
+        visited_cts = set()
+        for schema in self.all_schemata.itervalues():
+            for elem in schema.elements:
+                if checks.is_complex_type(elem.type):
+                    traverse_complex_type(elem.type, elem, visited_cts)
+                elif checks.is_simple_type(elem.type):
+                    traverse_simple_type(elem.type, elem)
 
         for schema in self.all_schemata.itervalues():
             schema.simple_types.sort(key=lambda s: s.name)
@@ -71,13 +111,16 @@ class Rng2Model(object):
     def _convert_start(self, start_pattern, added_elements):
         def convert_root_element(pattern, ns, name, qualified, excpt=None):
             assert name is not None, 'Any is not allowed as top-level element'
+            assert pattern not in self.untyped_elements
+
             added_elements.add(pattern)
 
             schema = self.all_schemata[ns]
             elem = elements.Element(name, None, False, schema)
-            assert pattern not in self.untyped_elements
-            self.untyped_elements[pattern] = (elem, qualified)
             schema.elements.append(elem)
+
+            self.namer.learn_naming(name, namer.NAME_HINT_ELEM)
+            self.untyped_elements[pattern] = (elem, qualified)
             # No need to return anything as we've already
             # done all what we needed.
 
@@ -92,33 +135,31 @@ class Rng2Model(object):
 
     def _convert_element(self, elem_pattern):
         def convert_local_element(pattern, ns, name, qualified, excpt=None):
+            assert pattern not in self.untyped_elements
             if name is None and ns is None:
                 any_elem = elements.Any([], None)
-                assert pattern not in self.untyped_elements
                 self.untyped_elements[pattern] = (any_elem, False)
             elif name is None:
                 constraint = elements.Any.Name(ns, None)
                 any_elem = elements.Any([constraint], None)
-                assert pattern not in self.untyped_elements
                 self.untyped_elements[pattern] = (any_elem, False)
             else:
                 elem_schema = self.all_schemata[ns]
                 elem = elements.Element(name, None, False, elem_schema)
-                assert pattern not in self.untyped_elements
+
+                self.namer.learn_naming(name, namer.NAME_HINT_ELEM)
                 self.untyped_elements[pattern] = (elem, qualified)
             # No need to return anything as we don't use it here.
 
         _convert_named_component(elem_pattern, convert_local_element)
 
-    def _convert_simple_type(self, type_pattern, component_name, schema):
-        type_name = self._get_next_name('{}-type'.format(component_name))
-
+    def _convert_simple_type(self, type_pattern, schema):
         if isinstance(type_pattern, rng_empty.RngEmpty):
             t = self._forge_empty_simple_type(schema)
         elif isinstance(type_pattern, rng_value.RngValue):
             assert type_pattern.value is not None
 
-            t = elements.SimpleType(type_name, schema)
+            t = elements.SimpleType(None, schema)
             t.restriction = elements.Restriction(schema)
             t.restriction.base = type_pattern.type
             t.restriction.enumeration.append(
@@ -129,7 +170,7 @@ class Rng2Model(object):
             if not type_pattern.params and type_pattern.except_pattern is None:
                 return type_pattern.type
 
-            t = elements.SimpleType(type_name, schema)
+            t = elements.SimpleType(None, schema)
             t.restriction = elements.Restriction(schema)
             t.restriction.base = type_pattern.type
             if not _set_restriction_params(type_pattern, t.restriction):
@@ -137,29 +178,31 @@ class Rng2Model(object):
             # if type_pattern.except_pattern is not None:
             #     assert False, 'Not implemented'
         elif isinstance(type_pattern, rng_list.RngList):
-            t = elements.SimpleType(type_name, schema)
-            self._convert_list_type(t, type_pattern.data_pattern, schema)
+            t = elements.SimpleType(None, schema)
+            self._convert_list_type(type_pattern.data_pattern, t, schema)
         elif isinstance(type_pattern, rng_choice.RngChoicePattern):
-            t = self._convert_union_type(type_name, type_pattern, schema)
+            t = elements.SimpleType(None, schema)
+            self._convert_union_type(type_pattern, t, schema)
+
+            if len(t.union) == 1:
+                t = t.union[0]
         else:
             assert False, 'Unexpected pattern for simple type'
 
-        self.simple_types[(type_name, schema)] = t
         return t
 
     @method_once
     def _forge_empty_simple_type(self, schema):
-        empty_type = elements.SimpleType(
-            self._get_next_name('empty-type'), schema)
+        empty_type = elements.SimpleType(None, schema)
         empty_type.restriction = elements.Restriction(schema)
         empty_type.restriction.base = xsd_types.xsd_builtin_types()['string']
         empty_type.restriction.length = '0'
-
-        self.simple_types[(empty_type.name, schema)] = empty_type
         return empty_type
 
-    def _convert_list_type(self, t, type_pattern, schema):
-        item_name = self._get_next_name('{}-li'.format(t.name))
+    def _convert_list_type(self, type_pattern, parent_type, schema):
+        def append_list_item(item_type, min_occurs, max_occurs):
+            parent_type.listitems.append(
+                uses.ListTypeCardinality(item_type, min_occurs, max_occurs))
 
         if isinstance(type_pattern, rng_choice.RngChoicePattern):
             item_type = None
@@ -173,120 +216,97 @@ class Rng2Model(object):
                     assert item_type is None
 
                     multiple = True
-                    item_type = self._convert_simple_type(
-                        p.patterns[0], item_name, schema)
+                    item_type = self._convert_simple_type(p.patterns[0], schema)
                 else:
                     assert item_type is None
 
-                    item_type = self._convert_simple_type(p, item_name, schema)
+                    item_type = self._convert_simple_type(p, schema)
 
             assert item_type is not None
 
             min_occurs = 0 if has_empty else 1
             max_occurs = base.UNBOUNDED if multiple else 1
-            t.listitems.append(
-                uses.ListTypeCardinality(item_type, min_occurs, max_occurs))
-        elif isinstance(type_pattern, rng_oneOrMore.RngOneOrMore):
-            item_type = self._convert_simple_type(
-                type_pattern.patterns[0], item_name, schema)
 
-            t.listitems.append(
-                uses.ListTypeCardinality(item_type, 1, base.UNBOUNDED))
+            append_list_item(item_type, min_occurs, max_occurs)
+        elif isinstance(type_pattern, rng_oneOrMore.RngOneOrMore):
+            p = type_pattern.patterns[0]
+            item_type = self._convert_simple_type(p, schema)
+
+            append_list_item(item_type, 1, base.UNBOUNDED)
         elif isinstance(type_pattern, rng_group.RngGroup):
             for p in type_pattern.patterns:
-                item_type = self._convert_simple_type(p, item_name, schema)
+                item_type = self._convert_simple_type(p, schema)
 
-                t.listitems.append(
-                    uses.ListTypeCardinality(item_type, 1, 1))
+                append_list_item(item_type, 1, 1)
         else:
-            item_type = self._convert_simple_type(
-                type_pattern.data_pattern, item_name, schema)
+            p = type_pattern.data_pattern
+            item_type = self._convert_simple_type(p, schema)
 
-            t.listitems.append(
-                uses.ListTypeCardinality(item_type, 0, base.UNBOUNDED))
+            append_list_item(item_type, 0, base.UNBOUNDED)
 
-    def _convert_union_type(self, type_name, type_pattern, schema):
-        choice_types = []
+    def _convert_union_type(self, type_pattern, parent_type, schema):
         enum_types = {}
-
         for p in type_pattern.patterns:
-            item_name = self._get_next_name('{}-um'.format(type_name))
-
-            if isinstance(p, rng_empty.RngEmpty):
-                choice_types.append(self._forge_empty_simple_type(schema))
-            elif isinstance(p, rng_value.RngValue):
+            if isinstance(p, rng_value.RngValue):
                 enum_type = enum_types.get((p.datatypes_uri, p.type))
                 if enum_type is None:
-                    enum_type = \
-                        elements.SimpleType(item_name, schema)
+                    enum_type = elements.SimpleType(None, schema)
                     enum_type.restriction = elements.Restriction(schema)
                     enum_type.restriction.base = p.type
+
                     enum_types[(p.datatypes_uri, p.type)] = enum_type
-                    self.simple_types[(item_name, schema)] = enum_type
-                    choice_types.append(enum_type)
+
+                    parent_type.union.append(enum_type)
 
                 enum_type.restriction.enumeration.append(
                     elements.EnumerationValue(p.value, ''))
-            elif isinstance(p, rng_data.RngData):
-                choice_types.append(
-                    self._convert_simple_type(p, item_name, schema))
-            elif isinstance(p, rng_list.RngList):
-                item_type = elements.SimpleType(item_name, schema)
-                self._convert_list_type(item_type, p.data_pattern, schema)
-                choice_types.append(item_type)
-            elif isinstance(p, rng_choice.RngChoicePattern):
-                choice_types.append(
-                    self._convert_simple_type(p, item_name, schema))
+            elif (isinstance(p, rng_empty.RngEmpty) or
+                    isinstance(p, rng_data.RngData) or
+                    isinstance(p, rng_list.RngList) or
+                    isinstance(p, rng_text.RngText) or
+                    isinstance(p, rng_choice.RngChoicePattern)):
+                parent_type.union.append(
+                    self._convert_simple_type(p, schema))
+            elif isinstance(p, rng_oneOrMore.RngOneOrMore):
+                pass
             else:
                 assert False, 'Unexpected pattern for simple type'
 
-        if len(choice_types) == 1:
-            item_type = choice_types[0]
-            if (item_type.name, schema) in self.simple_types:
-                del self.simple_types[(item_type.name, schema)]
-            item_type.name = type_name
-            return item_type
-
-        t = elements.SimpleType(type_name, schema)
-        t.union = choice_types
-        return t
-
-    def _convert_complex_type(self, type_pattern, element_name, schema):
-        type_name = self._get_next_name('{}-type'.format(element_name))
-        t = elements.ComplexType(type_name, schema)
-        schema.complex_types.append(t)
+    def _convert_complex_type(self, type_pattern, schema):
+        t = elements.ComplexType(None, schema)
 
         max_occurs = 1
         if isinstance(type_pattern, rng_empty.RngEmpty):
             struct = None
         elif isinstance(type_pattern, rng_oneOrMore.RngOneOrMore):
             assert len(type_pattern.patterns) == 1
-            struct = self._convert_type_structure(type_pattern.patterns[0],
-                                                  element_name,
-                                                  schema)
-            max_occurs = base.UNBOUNDED
-        else:
-            struct = self._convert_type_structure(type_pattern,
-                                                  element_name,
-                                                  schema)
 
-        if ((checks.is_particle(struct) and
-                not checks.is_compositor(struct.term)) or
-                checks.is_attribute_use(struct)):
+            max_occurs = base.UNBOUNDED
+
+            p = type_pattern.patterns[0]
+            struct = self._convert_type_structure(p, schema)
+        else:
+            struct = self._convert_type_structure(type_pattern, schema)
+
+        if ((checks.is_particle(struct) and checks.is_element(struct.term)) or
+                checks.is_attribute_use(struct) or checks.is_text(struct)):
+            # Struct is either single element or attribute or text,
+            # thus we have to wrap struct in a compositor.
             sequence = elements.Sequence(schema)
             sequence.members.append(struct)
             t.structure = uses.Particle(False, 1, 1, sequence)
-        elif checks.is_particle(struct):
-            t.structure = struct
         elif struct is None:
             t.structure = None
-        else:
-            struct.max_occurs = max_occurs
+        elif checks.is_particle(struct):
+            struct.max_occurs = \
+                _update_max_occurs(struct.max_occurs, max_occurs)
             t.structure = struct
+        else:
+            assert False, 'Unknown complex type structure'
 
         return t
 
-    def _convert_type_structure(self, type_pattern, element_name, schema):
+    def _convert_type_structure(self, type_pattern, schema):
         def convert_compositor(compositor):
             min_occurs = 1
             max_occurs = 1
@@ -300,7 +320,7 @@ class Rng2Model(object):
                     max_occurs = base.UNBOUNDED
                     p = p.patterns[0]
 
-                struct = self._convert_type_structure(p, element_name, schema)
+                struct = self._convert_type_structure(p, schema)
 
                 if checks.is_particle(struct):
                     struct.min_occurs = min_occurs
@@ -310,42 +330,47 @@ class Rng2Model(object):
                     struct.required = min_occurs > 0
                     compositor.members.append(struct)
 
-            if len(compositor.members) == 1:
-                result = compositor.members[0]
-                if checks.is_particle(result):
-                    result.min_occurs *= min_occurs
-                    result.max_occurs *= max_occurs
-                elif checks.is_attribute_use(result):
-                    result.required = result.required or min_occurs > 0
-                return result
+            assert len(compositor.members) != 0
 
-            return uses.Particle(False, 1, 1, compositor)
+            if len(compositor.members) != 1:
+                return uses.Particle(False, 1, 1, compositor)
+
+            result = compositor.members[0]
+            if checks.is_particle(result):
+                result.min_occurs *= min_occurs
+                result.max_occurs = \
+                    _update_max_occurs(result.max_occurs, max_occurs)
+            elif checks.is_attribute_use(result):
+                result.required = result.required or min_occurs > 0
+
+            return result
 
         if isinstance(type_pattern, rng_attribute.RngAttribute):
             def convert_attribute(pattern, ns, name, qualified, excpt=None):
                 if name is None and ns is None:
-                    any_attr = elements.Any([], schema)
-                    return uses.AttributeUse(
-                        None, False, False, False, any_attr)
+                    attr = elements.Any([], schema)
+                    qualified = False
                 elif name is None:
                     name_constraint = elements.Any.Name(ns, None)
-                    any_attr = elements.Any([name_constraint], schema)
-                    return uses.AttributeUse(
-                        None, False, False, False, any_attr)
+                    attr = elements.Any([name_constraint], schema)
+                    qualified = False
                 else:
                     if checks.is_xml_namespace(ns):
                         return elements.xml_attributes()[name]
 
+                    self.namer.learn_naming(name, namer.NAME_HINT_ATTR)
+
                     if ns == '':
-                        a_schema = schema
+                        attr_schema = schema
                     else:
-                        a_schema = self.all_schemata[ns]
-                        qualified = qualified if a_schema == schema else False
-                    attr = elements.Attribute(name, a_schema)
-                    attr.type = self._convert_simple_type(
-                        pattern.pattern, name, a_schema)
-                    return uses.AttributeUse(
-                        None, False, qualified, False, attr)
+                        attr_schema = self.all_schemata[ns]
+                    qualified = qualified if attr_schema == schema else False
+
+                    attr = elements.Attribute(name, attr_schema)
+                    attr.type = \
+                        self._convert_simple_type(pattern.pattern, attr_schema)
+
+                return uses.AttributeUse(None, False, qualified, False, attr)
 
             return _convert_named_component(type_pattern, convert_attribute)
         elif isinstance(type_pattern, rng_element.RngElement):
@@ -355,19 +380,17 @@ class Rng2Model(object):
             return uses.Particle(qualified, 1, 1, elem)
         elif isinstance(type_pattern, rng_text.RngText):
             return uses.SchemaText(xsd_types.xsd_builtin_types()['string'])
-        elif isinstance(type_pattern, rng_data.RngData):
-            data_type_name = \
-                self._get_next_name('{}-simple-type'.format(element_name))
-            return uses.SchemaText(self._convert_simple_type(
-                type_pattern, data_type_name, schema))
-        elif isinstance(type_pattern, rng_value.RngValue):
-            value_type_name = \
-                self._get_next_name('{}-simple-type'.format(element_name))
-            return uses.SchemaText(self._convert_simple_type(
-                type_pattern, value_type_name, schema))
+        elif (isinstance(type_pattern, rng_data.RngData) or
+                isinstance(type_pattern, rng_value.RngValue)):
+            t = self._convert_simple_type(type_pattern, schema)
+            return uses.SchemaText(t)
         elif isinstance(type_pattern, rng_choice.RngChoicePattern):
-            choice = elements.Choice(schema)
-            return convert_compositor(choice)
+            if _is_complex_pattern(type_pattern):
+                choice = elements.Choice(schema)
+                return convert_compositor(choice)
+            else:
+                t = self._convert_simple_type(type_pattern, schema)
+                return uses.SchemaText(t)
         elif isinstance(type_pattern, rng_group.RngGroup):
             sequence = elements.Sequence(schema)
             return convert_compositor(sequence)
@@ -376,16 +399,6 @@ class Rng2Model(object):
             return convert_compositor(interleave)
         else:
             assert False
-
-    def _get_next_name(self, name):
-        if name in self.unique_type_names:
-            self.unique_type_counter += 1
-            new_name = '{}{}'.format(name, self.unique_type_counter)
-            self.unique_type_names.add(new_name)
-            return new_name
-
-        self.unique_type_names.add(name)
-        return name
 
 
 def _convert_named_component(elem_or_attr_pattern, convert_func):
@@ -461,3 +474,9 @@ def _set_restriction_params(data, restriction):
                 'in XML Schema'.format(p.name)
 
     return bool(data.params)
+
+
+def _update_max_occurs(old, new):
+    if old * new > base.UNBOUNDED:
+        return base.UNBOUNDED
+    return old * new
