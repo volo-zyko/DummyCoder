@@ -7,6 +7,7 @@ from dumco.utils.decorators import method_once
 
 import dumco.schema.checks
 import dumco.schema.elements
+import dumco.schema.enums
 import dumco.schema.namer as namer
 import dumco.schema.xsd_types
 
@@ -95,12 +96,24 @@ class XsdSchema(xsd_base.XsdBase):
         for name in sorted(self.simple_types.iterkeys()):
             schema_st = self.simple_types[name].finalize(factory)
             factory.namer.learn_naming(schema_st.name, namer.NAME_HINT_ST)
+            schema_st.name = factory.namer.name_st(
+                schema_st.name, schema_st.schema.target_ns, None)
             schema_element.simple_types.append(schema_st)
 
         for name in sorted(self.complex_types.iterkeys()):
             schema_ct = self.complex_types[name].finalize(factory)
             factory.namer.learn_naming(schema_ct.name, namer.NAME_HINT_CT)
+            schema_ct.name = factory.namer.name_ct(
+                schema_ct.name, schema_ct.schema.target_ns, None)
             schema_element.complex_types.append(schema_ct)
+
+            for m in dumco.schema.enums.enum_flat(schema_ct):
+                if dumco.schema.checks.is_particle(m):
+                    factory.namer.learn_naming(m.term.name,
+                                               namer.NAME_HINT_ELEM)
+                elif dumco.schema.checks.is_attribute_use(m):
+                    factory.namer.learn_naming(m.attribute.name,
+                                               namer.NAME_HINT_ATTR)
 
         for (parents, t) in sorted(self.unnamed_types,
                                    key=lambda x: len(x[0])):

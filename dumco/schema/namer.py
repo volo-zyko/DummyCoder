@@ -182,6 +182,18 @@ def _get_name_words(name, hint):
     return words
 
 
+def _finalize_name(name, counters):
+    c = counters.get(name, 0)
+
+    while True:
+        new_name = name if c == 0 else name + str(c)
+        c += 1
+
+        if new_name not in counters:
+            counters[name] = c
+            return new_name
+
+
 def _get_join_char(style):
     join_char_map = {
         1: '',          # ucc
@@ -218,18 +230,6 @@ def _get_join_char(style):
     }
 
     return join_char_map[style]
-
-
-def _finalize_name(name, counters):
-    c = counters.get(name, 0)
-
-    while True:
-        new_name = name if c == 0 else name + str(c)
-        c += 1
-
-        if new_name not in counters:
-            counters[name] = c
-            return new_name
 
 
 def _guess_naming(name):
