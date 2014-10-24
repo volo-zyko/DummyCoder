@@ -2,11 +2,8 @@
 
 import collections
 
-from dumco.utils.decorators import method_once
-
 import base
 import checks
-import namer
 
 
 class AttributeUse(object):
@@ -19,12 +16,6 @@ class AttributeUse(object):
         self.required = required
         # attribute = Attribute/Any.
         self.attribute = attribute
-
-    def equal_content(self, other):
-        return (self.constraint == other.constraint and
-                self.qualified == other.qualified and
-                self.required == other.required and
-                self.attribute.equal_content(other.attribute))
 
     def append_doc(self, doc):
         self.attribute.append_doc(doc)
@@ -51,7 +42,6 @@ class Particle(object):
         self.max_occurs = max_occurs
         # term = Element/Sequence/Choice/All/Any.
         self.term = term
-        self.name = None
 
     def append_doc(self, doc):
         self.term.append_doc(doc)
@@ -88,27 +78,6 @@ class Particle(object):
                 else:
                     yield ChildComponent([self] + parents, x)
 
-    @method_once
-    def nameit(self, parents, factory, names):
-        namer.forge_name(self, parents, factory, names)
-
-        assert checks.is_compositor(self.term), \
-            'Trying to name non-compositor'
-
-        for p in self.term.members:
-            if not checks.is_particle(p):
-                continue
-
-            if checks.is_compositor(p.term):
-                p.nameit(parents + [self], factory, names)
-                assert p.name is not None, 'Name cannot be None'
-
-    def equal_content(self, other):
-        return (self.qualified == other.qualified and
-                self.min_occurs == other.min_occurs and
-                self.max_occurs == other.max_occurs and
-                self.term.equal_content(other.term))
-
 
 class SchemaText(object):
     # In case of mixed content in complex type SchemaText represents
@@ -116,3 +85,16 @@ class SchemaText(object):
     # AttributeUses.
     def __init__(self, simple_type):
         self.type = simple_type
+
+
+def min_occurs_op(occurs1, occurs2, op):
+    res = op(occurs1, occurs2)
+    assert res < base.UNBOUNDED
+    return res
+
+
+def max_occurs_op(occurs1, occurs2, op):
+    res = op(occurs1, occurs2)
+    if res > base.UNBOUNDED:
+        return base.UNBOUNDED
+    return res

@@ -53,11 +53,6 @@ def has_simple_content(schema_type):
         return schema_type.text() is not None
 
 
-def is_single_attribute_type(schema_type):
-    return (has_empty_content(schema_type) and
-            _attribute_count(schema_type) == 1)
-
-
 def is_complex_type(schema_type):
     return isinstance(schema_type, elements.ComplexType)
 
@@ -70,6 +65,11 @@ def is_complex_urtype(schema_type):
 def is_empty_complex_type(schema_type):
     return (has_empty_content(schema_type) and
             _attribute_count(schema_type) == 0)
+
+
+def is_enumeration_type(schema_type):
+    return (is_restriction_type(schema_type) and
+            len(schema_type.restriction.enumeration) > 0)
 
 
 def is_list_type(schema_type):
@@ -96,6 +96,11 @@ def is_simple_type(schema_type):
 def is_simple_urtype(schema_type):
     return (is_simple_type(schema_type) and schema_type.schema is None and
             schema_type.name == 'anySimpleType')
+
+
+def is_single_attribute_type(schema_type):
+    return (has_empty_content(schema_type) and
+            _attribute_count(schema_type) == 1)
 
 
 def is_single_valued_type(schema_type):

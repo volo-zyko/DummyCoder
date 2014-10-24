@@ -236,7 +236,7 @@ class XsdElementFactory(object):
         try:
             # Add to parent schema only top-level components or types.
             if isinstance(self.element, prv.xsd_schema.XsdSchema) or is_type:
-                name = self.get_attribute(attrs, 'name')
+                name = self.get_attribute(attrs, 'name').strip()
                 assert name is not None, 'Name cannot be None'
 
                 elements = getattr(schema, fieldname)

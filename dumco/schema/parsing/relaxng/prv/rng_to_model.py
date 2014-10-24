@@ -1,8 +1,11 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
+import operator
+
 from dumco.utils.decorators import method_once
 
 import dumco.schema.base as base
+import dumco.schema.check_eq as check_eq
 import dumco.schema.checks as checks
 import dumco.schema.elements as elements
 import dumco.schema.enums as enums
@@ -33,6 +36,11 @@ class Rng2Model(object):
         self.namer = factory.namer
 
         self.untyped_elements = {}
+
+        self.unique_simple_types = []
+        self.unique_complex_types = []
+        self.unique_attributes = []
+        self.unique_elements = []
 
     def convert(self, grammar):
         assert isinstance(grammar, rng_grammar.RngGrammar)
@@ -168,28 +176,53 @@ class Rng2Model(object):
             return xsd_types.xsd_builtin_types()['string']
         elif isinstance(type_pattern, rng_data.RngData):
             if not type_pattern.params and type_pattern.except_pattern is None:
-                return type_pattern.type
-
-            t = elements.SimpleType(None, schema)
-            t.restriction = elements.Restriction(schema)
-            t.restriction.base = type_pattern.type
-            if not _set_restriction_params(type_pattern, t.restriction):
                 t = type_pattern.type
-            # if type_pattern.except_pattern is not None:
-            #     assert False, 'Not implemented'
+            else:
+                t = elements.SimpleType(None, schema)
+                t.restriction = elements.Restriction(schema)
+                t.restriction.base = type_pattern.type
+                if not _set_restriction_params(type_pattern, t.restriction):
+                    t = type_pattern.type
+                # if type_pattern.except_pattern is not None:
+                #     assert False, 'Not implemented'
         elif isinstance(type_pattern, rng_list.RngList):
             t = elements.SimpleType(None, schema)
             self._convert_list_type(type_pattern.data_pattern, t, schema)
+
+            def fold_listitems(acc, x):
+                if not acc:
+                    return acc + [x]
+
+                if check_eq.equal_primitive_types(x.type, acc[-1].type):
+                    min_occurs = uses.min_occurs_op(acc[-1].min_occurs,
+                                                    x.min_occurs, operator.add)
+                    max_occurs = uses.max_occurs_op(acc[-1].max_occurs,
+                                                    x.max_occurs, operator.add)
+                    acc[-1] = uses.ListTypeCardinality(acc[-1].type,
+                                                       min_occurs, max_occurs)
+                    return acc
+
+                return acc + [x]
+
+            t.listitems = reduce(fold_listitems, t.listitems, [])
+            assert len(t.listitems) > 0
         elif isinstance(type_pattern, rng_choice.RngChoicePattern):
             t = elements.SimpleType(None, schema)
             self._convert_union_type(type_pattern, t, schema)
 
+            def fold_members(acc, x):
+                found = any([check_eq.equal_primitive_types(x, y) for y in acc])
+                return acc if found else acc + [x]
+
+            t.union = reduce(fold_members, t.union, [])
+
+            assert len(t.union) > 0
             if len(t.union) == 1:
                 t = t.union[0]
         else:
             assert False, 'Unexpected pattern for simple type'
 
-        return t
+        return _get_unique_entity(self.unique_simple_types, t)
 
     @method_once
     def _forge_empty_simple_type(self, schema):
@@ -284,9 +317,9 @@ class Rng2Model(object):
             max_occurs = base.UNBOUNDED
 
             p = type_pattern.patterns[0]
-            struct = self._convert_type_structure(p, schema)
+            (_, struct) = self._convert_type_structure(p, schema)
         else:
-            struct = self._convert_type_structure(type_pattern, schema)
+            (_, struct) = self._convert_type_structure(type_pattern, schema)
 
         if ((checks.is_particle(struct) and checks.is_element(struct.term)) or
                 checks.is_attribute_use(struct) or checks.is_text(struct)):
@@ -298,8 +331,11 @@ class Rng2Model(object):
         elif struct is None:
             t.structure = None
         elif checks.is_particle(struct):
+            if len(struct.term.members) == 1:
+                struct = struct.term.members[0]
+
             struct.max_occurs = \
-                _update_max_occurs(struct.max_occurs, max_occurs)
+                uses.max_occurs_op(struct.max_occurs, max_occurs, operator.mul)
             t.structure = struct
         else:
             assert False, 'Unknown complex type structure'
@@ -320,30 +356,41 @@ class Rng2Model(object):
                     max_occurs = base.UNBOUNDED
                     p = p.patterns[0]
 
-                struct = self._convert_type_structure(p, schema)
+                (assign_occurs, struct) = \
+                    self._convert_type_structure(p, schema)
 
-                if checks.is_particle(struct):
-                    struct.min_occurs = min_occurs
-                    struct.max_occurs = max_occurs
+                if (checks.is_particle(struct) and
+                        type(compositor) == type(struct.term) and
+                        min_occurs == 1 and max_occurs == 1):
+                    compositor.members.extend(struct.term.members)
+                elif checks.is_particle(struct):
+                    if assign_occurs:
+                        struct.min_occurs = min_occurs
+                        struct.max_occurs = max_occurs
                     compositor.members.append(struct)
                 elif checks.is_attribute_use(struct):
-                    struct.required = min_occurs > 0
+                    if assign_occurs and checks.is_attribute(struct.attribute):
+                        struct.required = min_occurs > 0
+                        struct = self._merge_attribute_enum_types(struct)
+                    compositor.members.append(struct)
+                elif checks.is_text(struct):
                     compositor.members.append(struct)
 
             assert len(compositor.members) != 0
 
             if len(compositor.members) != 1:
-                return uses.Particle(False, 1, 1, compositor)
+                return (True, uses.Particle(False, 1, 1, compositor))
 
             result = compositor.members[0]
             if checks.is_particle(result):
-                result.min_occurs *= min_occurs
-                result.max_occurs = \
-                    _update_max_occurs(result.max_occurs, max_occurs)
+                result.min_occurs = uses.min_occurs_op(result.min_occurs,
+                                                       min_occurs, operator.mul)
+                result.max_occurs = uses.max_occurs_op(result.max_occurs,
+                                                       max_occurs, operator.mul)
             elif checks.is_attribute_use(result):
                 result.required = result.required or min_occurs > 0
 
-            return result
+            return (False, result)
 
         if isinstance(type_pattern, rng_attribute.RngAttribute):
             def convert_attribute(pattern, ns, name, qualified, excpt=None):
@@ -356,7 +403,7 @@ class Rng2Model(object):
                     qualified = False
                 else:
                     if checks.is_xml_namespace(ns):
-                        return elements.xml_attributes()[name]
+                        return (True, elements.xml_attributes()[name])
 
                     self.namer.learn_naming(name, namer.NAME_HINT_ATTR)
 
@@ -364,33 +411,34 @@ class Rng2Model(object):
                         attr_schema = schema
                     else:
                         attr_schema = self.all_schemata[ns]
-                    qualified = qualified if attr_schema == schema else False
 
                     attr = elements.Attribute(name, attr_schema)
                     attr.type = \
                         self._convert_simple_type(pattern.pattern, attr_schema)
 
-                return uses.AttributeUse(None, False, qualified, False, attr)
+                return (True,
+                        uses.AttributeUse(None, False, qualified, False, attr))
 
             return _convert_named_component(type_pattern, convert_attribute)
         elif isinstance(type_pattern, rng_element.RngElement):
             (elem, qualified) = self.untyped_elements[type_pattern]
             if checks.is_any(elem):
                 elem.schema = schema
-            return uses.Particle(qualified, 1, 1, elem)
+            return (True, uses.Particle(qualified, 1, 1, elem))
         elif isinstance(type_pattern, rng_text.RngText):
-            return uses.SchemaText(xsd_types.xsd_builtin_types()['string'])
+            return (False,
+                    uses.SchemaText(xsd_types.xsd_builtin_types()['string']))
         elif (isinstance(type_pattern, rng_data.RngData) or
                 isinstance(type_pattern, rng_value.RngValue)):
             t = self._convert_simple_type(type_pattern, schema)
-            return uses.SchemaText(t)
+            return (False, uses.SchemaText(t))
         elif isinstance(type_pattern, rng_choice.RngChoicePattern):
             if _is_complex_pattern(type_pattern):
                 choice = elements.Choice(schema)
                 return convert_compositor(choice)
             else:
                 t = self._convert_simple_type(type_pattern, schema)
-                return uses.SchemaText(t)
+                return (False, uses.SchemaText(t))
         elif isinstance(type_pattern, rng_group.RngGroup):
             sequence = elements.Sequence(schema)
             return convert_compositor(sequence)
@@ -399,6 +447,36 @@ class Rng2Model(object):
             return convert_compositor(interleave)
         else:
             assert False
+
+    def _merge_attribute_enum_types(self, use):
+        if checks.is_enumeration_type(use.attribute.type):
+            for u in self.unique_attributes:
+                if (u.attribute.type == use.attribute.type or
+                        not check_eq.equal_attribute_uses(u, use,
+                                                          check_type=False) or
+                        not checks.is_enumeration_type(u.attribute.type)):
+                    continue
+
+                oldr = u.attribute.type.restriction
+                newr = use.attribute.type.restriction
+
+                enums = {x.value: x for x in oldr.enumeration}
+                enums.update({x.value: x for x in newr.enumeration})
+                oldr.enumeration = list(enums.itervalues())
+
+                def check_old_type(t):
+                    for e in self.unique_elements:
+                        if e.term.type == t:
+                            # We need this type as element references it.
+                            return True
+                    return t != use.attribute.type
+
+                self.unique_simple_types = \
+                    filter(check_old_type, self.unique_simple_types)
+
+                return u
+
+        return _get_unique_entity(self.unique_attributes, use)
 
 
 def _convert_named_component(elem_or_attr_pattern, convert_func):
@@ -476,7 +554,14 @@ def _set_restriction_params(data, restriction):
     return bool(data.params)
 
 
-def _update_max_occurs(old, new):
-    if old * new > base.UNBOUNDED:
-        return base.UNBOUNDED
-    return old * new
+def _get_unique_entity(unique_entities, new_entity):
+    for entity in unique_entities:
+        if checks.is_primitive_type(new_entity):
+            if check_eq.equal_primitive_types(entity, new_entity):
+                return entity
+        elif checks.is_attribute_use(new_entity):
+            if check_eq.equal_attribute_uses(entity, new_entity):
+                return entity
+
+    unique_entities.append(new_entity)
+    return new_entity

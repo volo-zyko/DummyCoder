@@ -2,7 +2,6 @@
 
 import collections
 import functools
-import itertools
 import os.path
 import shutil
 import StringIO
@@ -386,34 +385,24 @@ def _select_complex_types(schemata, namer, opacity_manager, ctypes, stypes):
 
 
 def _approximate_simple_types(stypes, namer, opacity_manager):
-    # SimpleType simplification is necessary in some cases for RelaxNG schemas.
+    # SimpleType simplification is necessary for complex cases that
+    # can be represented in our DOM.
     for (schema, simple_types) in stypes.iteritems():
         for st in list(simple_types.itervalues()):
-            if len(st.listitems) > 1:
-                union_name = st.name + '-union'
-                if union_name in simple_types:
-                    for (n, i) in itertools.izip(itertools.repeat(union_name),
-                                                 itertools.count()):
-                        if n not in simple_types:
-                            union_name = n + str(i)
-                            break
+            if not checks.is_list_type(st) or len(st.listitems) == 1:
+                continue
 
-                union_st = elements.SimpleType(union_name, st.schema)
-                union_st.union = st.listitems
+            union_st = elements.SimpleType(st.name, st.schema)
+            for item in st.listitems:
+                new_name = namer.name_st(st.name + '-list',
+                                         st.schema.target_ns, union_st)
+                new_st = elements.SimpleType(new_name, st.schema)
+                new_st.listitems.append(item)
+                simple_types[new_name] = new_st
 
-                min_occurs = 0
-                max_occurs = 1
-                for i in st.listitems:
-                    if i.min_occurs > min_occurs:
-                        min_occurs = i.min_occurs
-                    elif i.max_occurs > max_occurs:
-                        max_occurs = i.max_occurs
+                union_st.union.append(new_st)
 
-                new_st = elements.SimpleType(st.name, st.schema)
-                new_st.listitems.append(
-                    uses.ListTypeCardinality(union_st, min_occurs, max_occurs))
-
-                simple_types[new_st.name] = new_st
+            simple_types[st.name] = union_st
 
     return stypes
 

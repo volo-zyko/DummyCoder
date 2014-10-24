@@ -82,6 +82,11 @@ class RelaxElementFactory(object):
             self.datatypes_stack.append(None)
 
         try:
+            text_name = self.get_attribute(attrs, 'name').strip()
+        except LookupError:
+            text_name = ''
+
+        try:
             self.ns_attribute_stack.append(self.get_attribute(attrs, 'ns'))
 
             # If namespace is present but there is no prefix for
@@ -94,7 +99,8 @@ class RelaxElementFactory(object):
                         self.all_namespace_prefixes[new_ns] = prefix
                         break
         except LookupError:
-            self.ns_attribute_stack.append(None)
+            (ns, _) = self.parse_qname(text_name)
+            self.ns_attribute_stack.append(ns)
 
         assert self.dispatcher is None or name[1] in self.dispatcher, \
             '"{}" is not supported in {}'.format(

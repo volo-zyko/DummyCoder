@@ -1,13 +1,11 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
 import collections
-import itertools
 
-from dumco.utils.decorators import method_once, function_once
+from dumco.utils.decorators import function_once
 
 import base
 import checks
-import namer
 import uses
 import xsd_types
 
@@ -70,12 +68,7 @@ class Attribute(base.DataComponent):
 
 
 class Choice(base.Compositor):
-    def equal_content(self, other):
-        if (not checks.is_choice(other) or
-                len(self.members) != len(other.members)):
-            return False
-
-        return True
+    pass
 
 
 class ComplexType(base.SchemaBase):
@@ -153,22 +146,6 @@ class ComplexType(base.SchemaBase):
         urtype.structure = root_seqpart
         return urtype
 
-    def equal_content(self, other):
-        # No need to call parent's equal_content() since types must not
-        # necessarily belong to one schema.
-        if self.structure is None and other.structure is None:
-            return True
-
-        return self.structure.equal_content(other.structure)
-
-    @method_once
-    def nameit(self, parents, factory, names):
-        namer.forge_name(self, parents, factory, names)
-
-        if self.structure is not None:
-            self.structure.nameit(parents + [self], factory, names)
-            assert self.structure.name is not None, 'Name cannot be None'
-
 
 class Element(base.DataComponent):
     def __init__(self, name, default, fixed, parent_schema):
@@ -176,22 +153,12 @@ class Element(base.DataComponent):
 
         self.constraint = base.ValueConstraint(fixed, default)
 
-    def equal_content(self, other):
-        eq = super(Element, self).equal_content(other)
-
-        return eq and self.constraint == other.constraint
-
 
 EnumerationValue = collections.namedtuple('EnumerationValue', ['value', 'doc'])
 
 
 class Interleave(base.Compositor):
-    def equal_content(self, other):
-        if (not checks.is_interleave(other) or
-                len(self.members) != len(other.members)):
-            return False
-
-        return True
+    pass
 
 
 class Restriction(base.SchemaBase):
@@ -220,42 +187,6 @@ class Restriction(base.SchemaBase):
         self.pattern = None
         self.total_digits = None
         self.white_space = None
-
-    def equal_content(self, other):
-        def enums_equal(e1, e2):
-            return e1.value == e2.value
-
-        if other is None:
-            return False
-        if not self.base.equal_content(other.base):
-            return False
-        elif not equal_permutations(
-                self.enumeration, other.enumeration, enums_equal):
-            return False
-        elif self.fraction_digits != other.fraction_digits:
-            return False
-        elif self.length != other.length:
-            return False
-        elif self.max_exclusive != other.max_exclusive:
-            return False
-        elif self.max_inclusive != other.max_inclusive:
-            return False
-        elif self.max_length != other.max_length:
-            return False
-        elif self.min_exclusive != other.min_exclusive:
-            return False
-        elif self.min_inclusive != other.min_inclusive:
-            return False
-        elif self.min_length != other.min_length:
-            return False
-        elif self.pattern != other.pattern:
-            return False
-        elif self.total_digits != other.total_digits:
-            return False
-        elif self.white_space != other.white_space:
-            return False
-
-        return True
 
 
 class Schema(base.SchemaBase):
@@ -294,16 +225,7 @@ class Schema(base.SchemaBase):
 
 
 class Sequence(base.Compositor):
-    def equal_content(self, other):
-        if (not checks.is_sequence(other) or
-                len(self.members) != len(other.members)):
-            return False
-
-        for (m1, m2) in zip(self.members):
-            if not m1.equal_content(m2):
-                return False
-
-        return True
+    pass
 
 
 class SimpleType(base.SchemaBase):
@@ -332,40 +254,3 @@ class SimpleType(base.SchemaBase):
         urtype.restriction = restr
 
         return urtype
-
-    def equal_content(self, other):
-        def union_members_equal(e1, e2):
-            return e1.equal_content(e2)
-
-        # No need to call parent's equal_content() since types must not
-        # necessarily belong to one schema.
-        if (self.restriction is not None and
-                self.restriction.equal_content(other.restriction)):
-            return True
-        elif len(self.listitems) == len(other.listitems):
-            for (li1, li2) in zip(self.listitems, other.listitems):
-                if (li1.min_occurs != li2.min_occurs or
-                        li1.max_occurs != li2.max_occurs or
-                        not li1.type.equal_content(li2.type)):
-                    return False
-            return True
-        elif equal_permutations(self.union, other.union, union_members_equal):
-            return True
-
-        return False
-
-    @method_once
-    def nameit(self, parents, factory, names):
-        namer.forge_name(self, parents, factory, names)
-
-
-def equal_permutations(list1, list2, items_equal):
-    if len(list1) != len(list2):
-        return False
-
-    # The first permutation is equal to list2.
-    for permutation in itertools.permutation(list2):
-        if all([items_equal(x, y) for (x, y) in zip(list1, permutation)]):
-            return True
-
-    return False
