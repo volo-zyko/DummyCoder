@@ -3,16 +3,17 @@
 import checks
 
 
-def equal_attribute_uses(u1, u2, check_type=True):
-    if type(u1) != type(u2) or not checks.is_attribute_use(u1):
+def equal_attributes(a1, a2, check_type=True):
+    if type(a1) != type(a2) or not checks.is_attribute(a1):
         return False
 
-    def equal_attributes(a1, a2):
-        if type(a1) != type(a2) or not checks.is_attribute(a1):
-            return False
+    return (a1.schema == a2.schema and a1.name == a2.name and
+            (not check_type or equal_primitive_types(a1.type, a2.type)))
 
-        return (a1.schema == a2.schema and a1.name == a2.name and
-                (not check_type or equal_primitive_types(a1.type, a2.type)))
+
+def equal_attribute_uses(u1, u2):
+    if type(u1) != type(u2) or not checks.is_attribute_use(u1):
+        return False
 
     return (u1.constraint == u2.constraint and
             u1.qualified == u2.qualified and
@@ -32,20 +33,54 @@ def equal_complex_types(ct1, ct2):
     return equal_particles(ct1.structure, ct2.structure)
 
 
+def equal_elements(e1, e2, check_type=True):
+    if type(e1) != type(e2) or not checks.is_element(e1):
+        return False
+
+    return (e1.schema == e2.schema and e1.name == e2.name and
+            e1.constraint == e2.constraint and
+            (not check_type or
+             (checks.is_complex_type(e1.type) and
+              checks.is_complex_type(e2.type) and
+              equal_particles(e1.type.structure, e2.type.structure)) or
+             (checks.is_primitive_type(e1.type) and
+              checks.is_primitive_type(e2.type) and
+              equal_primitive_types(e1.type, e2.type))))
+
+
 def equal_particles(p1, p2):
     if type(p1) != type(p2) or not checks.is_particle(p1):
         return False
 
-    def equal_elements(e1, e2):
-        if type(e1) != type(e2) or not checks.is_element(e1):
+    def equal_choices(c1, c2):
+        if (type(c1) != type(c2) or not checks.is_choice(c1) or
+                len(c1.members) != len(c2.members)):
             return False
 
-        return e1.schema == e2.schema and e1.constraint == e2.constraint
+        return _equal_lists(c1.members, c2.members, equal_particles)
+
+    def equal_interleaves(i1, i2):
+        if (type(i1) != type(i2) or not checks.is_choice(i1) or
+                len(i1.members) != len(i2.members)):
+            return False
+
+        return _equal_lists(i1.members, i2.members, equal_particles)
+
+    def equal_sequences(s1, s2):
+        if (type(s1) != type(s2) or not checks.is_choice(s1) or
+                len(s1.members) != len(s2.members)):
+            return False
+
+        return all([equal_particles(m1, m2)
+                    for (m1, m2) in zip(s1.members, s2.members)])
 
     return (p1.qualified == p2.qualified and
             p1.min_occurs == p2.min_occurs and
             p1.max_occurs == p2.max_occurs and
-            equal_terms(p1.term, p2.term))
+            (equal_elements(p1.term, p2.term) or
+             equal_sequences(p1.term, p2.term) or
+             equal_choices(p1.term, p2.term) or
+             equal_interleaves(p1.term, p2.term)))
 
 
 def equal_primitive_types(st1, st2):
@@ -118,38 +153,6 @@ def equal_primitive_types(st1, st2):
         return True
 
     return False
-
-
-def equal_terms(t1, t2):
-    def equal_choices(c1, c2):
-        if (not checks.is_choice(c2) or
-                not checks.is_choice(c2) or
-                len(c1.members) != len(c2.members)):
-            return False
-
-        return True
-
-    def equal_interleaves(i1, i2):
-        if (not checks.is_interleave(i1) or
-                not checks.is_interleave(i2) or
-                len(i1.members) != len(i2.members)):
-            return False
-
-        return True
-
-    def equal_sequences(s1, s2):
-        if (not checks.is_sequence(s1) or
-                not checks.is_sequence(s2) or
-                len(s1.members) != len(s2.members)):
-            return False
-
-        for (m1, m2) in zip(s1.members):
-            if not equal_particles(m1, m2):
-                return False
-
-        return True
-
-    return True
 
 
 def _equal_lists(list1, list2, items_equal):

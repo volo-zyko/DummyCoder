@@ -1,5 +1,6 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
+import copy
 import operator
 
 from dumco.utils.decorators import method_once
@@ -39,8 +40,8 @@ class Rng2Model(object):
 
         self.unique_simple_types = []
         self.unique_complex_types = []
-        self.unique_attributes = []
-        self.unique_elements = []
+        self.unique_attribute_uses = []
+        self.unique_element_uses = []
 
     def convert(self, grammar):
         assert isinstance(grammar, rng_grammar.RngGrammar)
@@ -181,8 +182,10 @@ class Rng2Model(object):
                 t = elements.SimpleType(None, schema)
                 t.restriction = elements.Restriction(schema)
                 t.restriction.base = type_pattern.type
+
                 if not _set_restriction_params(type_pattern, t.restriction):
                     t = type_pattern.type
+
                 # if type_pattern.except_pattern is not None:
                 #     assert False, 'Not implemented'
         elif isinstance(type_pattern, rng_list.RngList):
@@ -190,10 +193,7 @@ class Rng2Model(object):
             self._convert_list_type(type_pattern.data_pattern, t, schema)
 
             def fold_listitems(acc, x):
-                if not acc:
-                    return acc + [x]
-
-                if check_eq.equal_primitive_types(x.type, acc[-1].type):
+                if acc and check_eq.equal_primitive_types(x.type, acc[-1].type):
                     min_occurs = uses.min_occurs_op(acc[-1].min_occurs,
                                                     x.min_occurs, operator.add)
                     max_occurs = uses.max_occurs_op(acc[-1].max_occurs,
@@ -222,7 +222,8 @@ class Rng2Model(object):
         else:
             assert False, 'Unexpected pattern for simple type'
 
-        return _get_unique_entity(self.unique_simple_types, t)
+        return _get_unique_entity(self.unique_simple_types, t,
+                                  check_eq.equal_primitive_types)
 
     @method_once
     def _forge_empty_simple_type(self, schema):
@@ -327,20 +328,26 @@ class Rng2Model(object):
             # thus we have to wrap struct in a compositor.
             sequence = elements.Sequence(schema)
             sequence.members.append(struct)
-            t.structure = uses.Particle(False, 1, 1, sequence)
+            t.structure = uses.Particle(False, 1, max_occurs, sequence)
         elif struct is None:
             t.structure = None
         elif checks.is_particle(struct):
-            if len(struct.term.members) == 1:
-                struct = struct.term.members[0]
-
-            struct.max_occurs = \
+            max_occurs = \
                 uses.max_occurs_op(struct.max_occurs, max_occurs, operator.mul)
+
+            if len(struct.term.members) == 1:
+                first_part = struct.term.members[0]
+                max_occurs = uses.max_occurs_op(first_part.max_occurs,
+                                                max_occurs, operator.mul)
+                struct = first_part
+
+            struct.max_occurs = max_occurs
             t.structure = struct
         else:
             assert False, 'Unknown complex type structure'
 
-        return t
+        return _get_unique_entity(self.unique_complex_types, t,
+                                  check_eq.equal_complex_types)
 
     def _convert_type_structure(self, type_pattern, schema):
         def convert_compositor(compositor):
@@ -367,6 +374,8 @@ class Rng2Model(object):
                     if assign_occurs:
                         struct.min_occurs = min_occurs
                         struct.max_occurs = max_occurs
+                    if checks.is_element(struct.term):
+                        struct = self._merge_element_enum_types(struct)
                     compositor.members.append(struct)
                 elif checks.is_attribute_use(struct):
                     if assign_occurs and checks.is_attribute(struct.attribute):
@@ -376,21 +385,37 @@ class Rng2Model(object):
                 elif checks.is_text(struct):
                     compositor.members.append(struct)
 
+            def fold_particles(acc, x):
+                if (acc and checks.is_particle(x) and
+                        checks.is_particle(acc[-1]) and
+                        check_eq.equal_particles(x.term, acc[-1].term)):
+                    acc[-1].min_occurs = uses.min_occurs_op(acc[-1].min_occurs,
+                                                            x.min_occurs,
+                                                            operator.add)
+                    acc[-1].max_occurs = uses.max_occurs_op(acc[-1].max_occurs,
+                                                            x.max_occurs,
+                                                            operator.add)
+                    return acc
+
+                return acc + [x]
+
+            compositor.members = reduce(fold_particles, compositor.members, [])
+
             assert len(compositor.members) != 0
 
             if len(compositor.members) != 1:
                 return (True, uses.Particle(False, 1, 1, compositor))
 
-            result = compositor.members[0]
-            if checks.is_particle(result):
-                result.min_occurs = uses.min_occurs_op(result.min_occurs,
+            struct = compositor.members[0]
+            if checks.is_particle(struct):
+                struct.min_occurs = uses.min_occurs_op(struct.min_occurs,
                                                        min_occurs, operator.mul)
-                result.max_occurs = uses.max_occurs_op(result.max_occurs,
+                struct.max_occurs = uses.max_occurs_op(struct.max_occurs,
                                                        max_occurs, operator.mul)
-            elif checks.is_attribute_use(result):
-                result.required = result.required or min_occurs > 0
+            elif checks.is_attribute_use(struct):
+                struct.required = struct.required or min_occurs > 0
 
-            return (False, result)
+            return (False, struct)
 
         if isinstance(type_pattern, rng_attribute.RngAttribute):
             def convert_attribute(pattern, ns, name, qualified, excpt=None):
@@ -450,33 +475,113 @@ class Rng2Model(object):
 
     def _merge_attribute_enum_types(self, use):
         if checks.is_enumeration_type(use.attribute.type):
-            for u in self.unique_attributes:
-                if (u.attribute.type == use.attribute.type or
-                        not check_eq.equal_attribute_uses(u, use,
-                                                          check_type=False) or
-                        not checks.is_enumeration_type(u.attribute.type)):
-                    continue
+            (type_merge_candidates, type_referring_entities) = \
+                self._collect_enum_type_users(use.attribute)
 
-                oldr = u.attribute.type.restriction
-                newr = use.attribute.type.restriction
+            if type_merge_candidates:
+                old_type = type_merge_candidates[0].attribute.type
 
-                enums = {x.value: x for x in oldr.enumeration}
-                enums.update({x.value: x for x in newr.enumeration})
-                oldr.enumeration = list(enums.itervalues())
+                if type_referring_entities:
+                    new_type = copy.copy(old_type)
+                    new_type.restriction = copy.copy(old_type.restriction)
+                    new_type.restriction.enumeration = \
+                        copy.copy(old_type.restriction.enumeration)
 
-                def check_old_type(t):
-                    for e in self.unique_elements:
-                        if e.term.type == t:
-                            # We need this type as element references it.
-                            return True
-                    return t != use.attribute.type
+                    new_type = _get_unique_entity(
+                        self.unique_simple_types, new_type,
+                        check_eq.equal_primitive_types)
 
-                self.unique_simple_types = \
-                    filter(check_old_type, self.unique_simple_types)
+                    for entity in type_referring_entities:
+                        entity.type = new_type
 
-                return u
+                use.attribute.type = self._merge_enum_types(
+                    use.attribute.type, old_type)
 
-        return _get_unique_entity(self.unique_attributes, use)
+                for entity in type_merge_candidates:
+                    entity.type = use.attribute.type
+
+        return _get_unique_entity(self.unique_attribute_uses, use,
+                                  check_eq.equal_attribute_uses)
+
+    def _merge_element_enum_types(self, part):
+        if checks.is_enumeration_type(part.term.type):
+            (type_merge_candidates, type_referring_entities) = \
+                self._collect_enum_type_users(part.term)
+
+            if type_merge_candidates:
+                old_type = type_merge_candidates[0].term.type
+
+                if type_referring_entities:
+                    new_type = copy.copy(old_type)
+                    new_type.restriction = copy.copy(old_type.restriction)
+                    new_type.restriction.enumeration = \
+                        copy.copy(old_type.restriction.enumeration)
+
+                    new_type = _get_unique_entity(
+                        self.unique_simple_types, new_type,
+                        check_eq.equal_primitive_types)
+
+                    for entity in type_referring_entities:
+                        entity.type = new_type
+
+                part.term.type = self._merge_enum_types(
+                    part.term.type, old_type)
+
+                for entity in type_merge_candidates:
+                    entity.type = part.term.type
+
+        return _get_unique_entity(self.unique_element_uses, part,
+                                  check_eq.equal_particles)
+
+    def _collect_enum_type_users(self, entity):
+        # There can be many, say attributes, with same name/ns but with
+        # different constraints (fixed/default, optional/required, etc) and
+        # which still have enumeration type. However, if logic for enumeration
+        # merging works fine then all candidates found here should have the
+        # same type.
+        type_merge_candidates = []
+        # There can be both attributes and elements that use the same type.
+        type_referring_entities = []
+        # There is no intersection between entities in the lists above.
+
+        for u in self.unique_attribute_uses:
+            if check_eq.equal_attributes(u.attribute, entity):
+                if (u.attribute.type != entity.type and
+                        checks.is_enumeration_type(u.attribute.type)):
+                    type_merge_candidates.append(u)
+            elif u.attribute.type == entity.type:
+                type_referring_entities.append(u.attribute)
+
+        for u in self.unique_element_uses:
+            if check_eq.equal_elements(u.term, entity):
+                if (u.term.type != entity.type and
+                        checks.is_enumeration_type(u.term.type)):
+                    type_merge_candidates.append(u)
+            elif u.term.type == entity.type:
+                type_referring_entities.append(u.term)
+
+        assert (not type_merge_candidates or
+                (type_merge_candidates and
+                 all([type_merge_candidates[0].type == u.type
+                      for u in type_merge_candidates[1:]])))
+
+        return (type_merge_candidates, type_referring_entities)
+
+    def _merge_enum_types(self, changing_enum_type, redundant_enum_type):
+        assert changing_enum_type != redundant_enum_type
+
+        enums = {x.value: x for x in changing_enum_type.restriction.enumeration}
+        enums.update(
+            {x.value: x for x in redundant_enum_type.restriction.enumeration})
+        changing_enum_type.restriction.enumeration = list(enums.itervalues())
+
+        # Remove redundant_enum_type if there are no referring entities.
+        self.unique_simple_types = filter(
+            lambda t: t == redundant_enum_type, self.unique_simple_types)
+
+        return _get_unique_entity(
+            self.unique_simple_types, changing_enum_type,
+            check_eq.equal_primitive_types)
 
 
 def _convert_named_component(elem_or_attr_pattern, convert_func):
@@ -554,14 +659,10 @@ def _set_restriction_params(data, restriction):
     return bool(data.params)
 
 
-def _get_unique_entity(unique_entities, new_entity):
+def _get_unique_entity(unique_entities, new_entity, check_equality):
     for entity in unique_entities:
-        if checks.is_primitive_type(new_entity):
-            if check_eq.equal_primitive_types(entity, new_entity):
-                return entity
-        elif checks.is_attribute_use(new_entity):
-            if check_eq.equal_attribute_uses(entity, new_entity):
-                return entity
+        if check_equality(entity, new_entity):
+            return entity
 
     unique_entities.append(new_entity)
     return new_entity
