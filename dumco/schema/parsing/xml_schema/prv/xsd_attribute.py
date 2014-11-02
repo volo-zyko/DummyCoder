@@ -2,7 +2,7 @@
 
 from dumco.utils.decorators import method_once
 
-import dumco.schema.elements
+import dumco.schema.model
 import dumco.schema.uses
 
 import xsd_base
@@ -32,7 +32,7 @@ class XsdAttribute(xsd_base.XsdBase):
              parent_schema is not None and
              parent_schema.attributes_qualified))
 
-        attribute = dumco.schema.elements.Attribute(
+        attribute = dumco.schema.model.Attribute(
             self.attr('name'), parent_schema.schema_element)
 
         default = self.attr('default')
@@ -59,7 +59,7 @@ class XsdAttribute(xsd_base.XsdBase):
                 factory.resolve_simple_type(self.attr('type'), self.schema)
         else:
             self.schema_element.attribute.type = \
-                dumco.schema.elements.SimpleType.urtype()
+                dumco.schema.model.SimpleType.urtype()
             for t in self.children:
                 assert isinstance(t, xsd_simple_type.XsdSimpleType), \
                     'Attribute can contain only its type'

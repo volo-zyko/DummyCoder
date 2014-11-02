@@ -2,7 +2,7 @@
 
 from dumco.utils.decorators import method_once
 
-import dumco.schema.elements
+import dumco.schema.model
 import dumco.schema.uses
 
 import xsd_any
@@ -34,7 +34,7 @@ class XsdChoice(xsd_base.XsdBase):
             False,
             factory.particle_min_occurs(attrs),
             factory.particle_max_occurs(attrs),
-            dumco.schema.elements.Choice(parent_schema.schema_element))
+            dumco.schema.model.Choice(parent_schema.schema_element))
 
     @method_once
     def finalize(self, factory):

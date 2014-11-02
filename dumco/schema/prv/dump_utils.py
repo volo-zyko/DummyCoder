@@ -2,7 +2,7 @@
 
 import dumco.schema.base as base
 import dumco.schema.checks as checks
-import dumco.schema.elements as elements
+import dumco.schema.model as model
 import dumco.schema.xsd_types as xsd_types
 import dumco.utils.string_utils
 
@@ -160,11 +160,11 @@ def dump_restriction(restriction, schema, context):
             with TagGuard('totalDigits', context):
                 context.add_attribute('value', restriction.total_digits)
         if restriction.white_space is not None:
-            if restriction.white_space == elements.Restriction.WS_PRESERVE:
+            if restriction.white_space == model.Restriction.WS_PRESERVE:
                 value = 'preserve'
-            elif restriction.white_space == elements.Restriction.WS_REPLACE:
+            elif restriction.white_space == model.Restriction.WS_REPLACE:
                 value = 'replace'
-            elif restriction.white_space == elements.Restriction.WS_COLLAPSE:
+            elif restriction.white_space == model.Restriction.WS_COLLAPSE:
                 value = 'collapse'
             with TagGuard('whiteSpace', context):
                 context.add_attribute('value', value)
@@ -366,13 +366,13 @@ def _dump_any(elem, schema, context):
     if not elem.constraints:
         val = '##any'
     elif (len(elem.constraints) == 1 and
-          isinstance(elem.constraints[0], elements.Any.Not) and
-          isinstance(elem.constraints[0].name, elements.Any.Name) and
+          isinstance(elem.constraints[0], model.Any.Not) and
+          isinstance(elem.constraints[0].name, model.Any.Name) and
           elem.constraints[0].name.ns == schema.target_ns and
           elem.constraints[0].name.tag is None):
         val = '##other'
     elif (len(elem.constraints) > 1 and
-          all([isinstance(x, elements.Any.Name) and x.tag is None
+          all([isinstance(x, model.Any.Name) and x.tag is None
                for x in elem.constraints])):
         val = ' '.join([x.ns for x in elem.constraints])
     else:

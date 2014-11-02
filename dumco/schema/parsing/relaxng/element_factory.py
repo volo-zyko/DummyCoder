@@ -6,7 +6,7 @@ import StringIO
 
 import dumco.schema.base
 import dumco.schema.checks
-import dumco.schema.elements
+import dumco.schema.model
 from dumco.schema.rng_types import RNG_NAMESPACE, rng_builtin_types
 from dumco.schema.xsd_types import xsd_builtin_types
 
@@ -143,7 +143,7 @@ class RelaxElementFactory(object):
             if dumco.schema.checks.is_xml_namespace(uri):
                 continue
 
-            schema = dumco.schema.elements.Schema(uri)
+            schema = dumco.schema.model.Schema(uri)
             schema.set_prefix(self.all_namespace_prefixes)
             schema.filename = 'ns' if schema.prefix is None else schema.prefix
 

@@ -10,9 +10,8 @@ from dumco.utils.horn import horn
 
 import base
 import checks
-import elements
 import enums
-import uses
+import model
 import xsd_types
 
 from prv.dump_utils import XSD_PREFIX, TagGuard, XmlWriter, \
@@ -392,11 +391,11 @@ def _approximate_simple_types(stypes, namer, opacity_manager):
             if not checks.is_list_type(st) or len(st.listitems) == 1:
                 continue
 
-            union_st = elements.SimpleType(st.name, st.schema)
+            union_st = model.SimpleType(st.name, st.schema)
             for item in st.listitems:
                 new_name = namer.name_st(st.name + '-list',
                                          st.schema.target_ns, union_st)
-                new_st = elements.SimpleType(new_name, st.schema)
+                new_st = model.SimpleType(new_name, st.schema)
                 new_st.listitems.append(item)
                 simple_types[new_name] = new_st
 

@@ -6,7 +6,7 @@ import StringIO
 from dumco.utils.decorators import method_once
 
 import dumco.schema.checks
-import dumco.schema.elements
+import dumco.schema.model
 import dumco.schema.enums
 import dumco.schema.namer as namer
 import dumco.schema.xsd_types
@@ -58,7 +58,7 @@ class XsdSchema(xsd_base.XsdBase):
         self.elements_qualified = \
             self.attr('elementFormDefault') == 'qualified'
 
-        self.schema_element = dumco.schema.elements.Schema(
+        self.schema_element = dumco.schema.model.Schema(
             self.attr('targetNamespace'))
         assert schema_path.endswith('.xsd')
         self.schema_element.filename = \

@@ -3,7 +3,7 @@
 from dumco.utils.decorators import method_once
 
 import dumco.schema.base
-import dumco.schema.elements
+import dumco.schema.model
 import dumco.schema.uses
 
 import xsd_base
@@ -31,7 +31,7 @@ class XsdSimpleType(xsd_base.XsdBase):
     def __init__(self, attrs, parent_schema):
         super(XsdSimpleType, self).__init__(attrs)
 
-        self.schema_element = dumco.schema.elements.SimpleType(
+        self.schema_element = dumco.schema.model.SimpleType(
             self.attr('name'), parent_schema.schema_element)
 
     @method_once

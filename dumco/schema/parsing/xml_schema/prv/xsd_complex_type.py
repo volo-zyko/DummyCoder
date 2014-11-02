@@ -5,7 +5,7 @@ import copy
 from dumco.utils.decorators import method_once
 
 import dumco.schema.checks
-import dumco.schema.elements
+import dumco.schema.model
 import dumco.schema.uses
 import dumco.schema.xsd_types
 
@@ -46,7 +46,7 @@ class XsdComplexType(xsd_base.XsdBase):
     def __init__(self, attrs, parent_schema):
         super(XsdComplexType, self).__init__(attrs)
 
-        self.schema_element = dumco.schema.elements.ComplexType(
+        self.schema_element = dumco.schema.model.ComplexType(
             self.attr('name'), parent_schema.schema_element)
 
         self.abstract = (self.attr('abstract') == 'true' or
@@ -93,7 +93,7 @@ class XsdComplexType(xsd_base.XsdBase):
             if particle is None:
                 particle = dumco.schema.uses.Particle(
                     False, 1, 1,
-                    dumco.schema.elements.Sequence(self.schema_element.schema))
+                    dumco.schema.model.Sequence(self.schema_element.schema))
 
             text = dumco.schema.uses.SchemaText(
                 dumco.schema.xsd_types.xsd_builtin_types()['string'])
@@ -115,7 +115,7 @@ class XsdComplexType(xsd_base.XsdBase):
             if particle is None:
                 particle = dumco.schema.uses.Particle(
                     False, 1, 1,
-                    dumco.schema.elements.Sequence(self.schema_element.schema))
+                    dumco.schema.model.Sequence(self.schema_element.schema))
             else:
                 new_particle = copy.copy(particle)
                 new_particle.term = copy.copy(particle.term)

@@ -3,7 +3,7 @@
 from dumco.utils.decorators import method_once
 
 import dumco.schema.checks
-import dumco.schema.elements
+import dumco.schema.model
 
 import xsd_any
 import xsd_attribute
@@ -50,7 +50,7 @@ class XsdSimpleRestriction(xsd_restriction.XsdRestriction):
 
         # Should have been named schema_element but it's already defined
         # in the base class.
-        self.simple_type = dumco.schema.elements.SimpleType(
+        self.simple_type = dumco.schema.model.SimpleType(
             None, parent_schema.schema_element)
         self.attr_uses = []
 
@@ -71,7 +71,7 @@ class XsdSimpleRestriction(xsd_restriction.XsdRestriction):
             if isinstance(c, xsd_simple_type.XsdSimpleType):
                 simple_type = c.finalize(factory)
             elif isinstance(c, xsd_enumeration.XsdEnumeration):
-                enum = dumco.schema.elements.EnumerationValue(
+                enum = dumco.schema.model.EnumerationValue(
                     c.value, c.schema_element.doc)
                 self.schema_element.enumeration.append(enum)
             elif isinstance(c, xsd_attribute_group.XsdAttributeGroup):

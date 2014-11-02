@@ -2,7 +2,7 @@
 
 from dumco.utils.decorators import method_once
 
-import dumco.schema.elements
+import dumco.schema.model
 import dumco.schema.uses
 
 import xsd_base
@@ -32,7 +32,7 @@ class XsdAny(xsd_base.XsdBase):
         super(XsdAny, self).__init__(attrs)
 
         constraints = []
-        Any = dumco.schema.elements.Any
+        Any = dumco.schema.model.Any
 
         if self.attr('namespace') is not None:
             value = self.attr('namespace').strip()

@@ -7,8 +7,8 @@ from dumco.utils.decorators import method_once
 
 import dumco.schema.base as base
 import dumco.schema.checks as checks
-import dumco.schema.elements as elements
 import dumco.schema.enums as enums
+import dumco.schema.model as model
 import dumco.schema.namer as namer
 import dumco.schema.tuples as tuples
 import dumco.schema.uses as uses
@@ -123,7 +123,7 @@ class Rng2Model(object):
             added_elements.add(pattern)
 
             schema = self.all_schemata[ns]
-            elem = elements.Element(name, None, False, schema)
+            elem = model.Element(name, None, False, schema)
             schema.elements.append(elem)
 
             self.namer.learn_naming(name, namer.NAME_HINT_ELEM)
@@ -144,15 +144,15 @@ class Rng2Model(object):
         def convert_local_element(pattern, ns, name, qualified, excpt=None):
             assert pattern not in self.untyped_elements
             if name is None and ns is None:
-                any_elem = elements.Any([], None)
+                any_elem = model.Any([], None)
                 self.untyped_elements[pattern] = (any_elem, False)
             elif name is None:
-                constraint = elements.Any.Name(ns, None)
-                any_elem = elements.Any([constraint], None)
+                constraint = model.Any.Name(ns, None)
+                any_elem = model.Any([constraint], None)
                 self.untyped_elements[pattern] = (any_elem, False)
             else:
                 elem_schema = self.all_schemata[ns]
-                elem = elements.Element(name, None, False, elem_schema)
+                elem = model.Element(name, None, False, elem_schema)
 
                 self.namer.learn_naming(name, namer.NAME_HINT_ELEM)
                 self.untyped_elements[pattern] = (elem, qualified)
@@ -166,19 +166,19 @@ class Rng2Model(object):
         elif isinstance(type_pattern, rng_value.RngValue):
             assert type_pattern.value is not None
 
-            t = elements.SimpleType(None, schema)
-            t.restriction = elements.Restriction(schema)
+            t = model.SimpleType(None, schema)
+            t.restriction = model.Restriction(schema)
             t.restriction.base = type_pattern.type
             t.restriction.enumeration.append(
-                elements.EnumerationValue(type_pattern.value, ''))
+                model.EnumerationValue(type_pattern.value, ''))
         elif isinstance(type_pattern, rng_text.RngText):
             return xsd_types.xsd_builtin_types()['string']
         elif isinstance(type_pattern, rng_data.RngData):
             if not type_pattern.params and type_pattern.except_pattern is None:
                 t = type_pattern.type
             else:
-                t = elements.SimpleType(None, schema)
-                t.restriction = elements.Restriction(schema)
+                t = model.SimpleType(None, schema)
+                t.restriction = model.Restriction(schema)
                 t.restriction.base = type_pattern.type
 
                 if not _set_restriction_params(type_pattern, t.restriction):
@@ -187,7 +187,7 @@ class Rng2Model(object):
                 # if type_pattern.except_pattern is not None:
                 #     assert False, 'Not implemented'
         elif isinstance(type_pattern, rng_list.RngList):
-            t = elements.SimpleType(None, schema)
+            t = model.SimpleType(None, schema)
             self._convert_list_type(type_pattern.data_pattern, t, schema)
 
             def fold_listitems(acc, x):
@@ -206,7 +206,7 @@ class Rng2Model(object):
             t.listitems = reduce(fold_listitems, t.listitems, [])
             assert len(t.listitems) > 0
         elif isinstance(type_pattern, rng_choice.RngChoicePattern):
-            t = elements.SimpleType(None, schema)
+            t = model.SimpleType(None, schema)
             self._convert_union_type(type_pattern, t, schema)
 
             def fold_members(acc, x):
@@ -228,8 +228,8 @@ class Rng2Model(object):
 
     @method_once
     def _forge_empty_simple_type(self, schema):
-        empty_type = elements.SimpleType(None, schema)
-        empty_type.restriction = elements.Restriction(schema)
+        empty_type = model.SimpleType(None, schema)
+        empty_type.restriction = model.Restriction(schema)
         empty_type.restriction.base = xsd_types.xsd_builtin_types()['string']
         empty_type.restriction.length = '0'
         return empty_type
@@ -285,8 +285,8 @@ class Rng2Model(object):
             if isinstance(p, rng_value.RngValue):
                 enum_type = enum_types.get((p.datatypes_uri, p.type))
                 if enum_type is None:
-                    enum_type = elements.SimpleType(None, schema)
-                    enum_type.restriction = elements.Restriction(schema)
+                    enum_type = model.SimpleType(None, schema)
+                    enum_type.restriction = model.Restriction(schema)
                     enum_type.restriction.base = p.type
 
                     enum_types[(p.datatypes_uri, p.type)] = enum_type
@@ -294,7 +294,7 @@ class Rng2Model(object):
                     parent_type.union.append(enum_type)
 
                 enum_type.restriction.enumeration.append(
-                    elements.EnumerationValue(p.value, ''))
+                    model.EnumerationValue(p.value, ''))
             elif (isinstance(p, rng_empty.RngEmpty) or
                     isinstance(p, rng_data.RngData) or
                     isinstance(p, rng_list.RngList) or
@@ -308,7 +308,7 @@ class Rng2Model(object):
                 assert False, 'Unexpected pattern for simple type'
 
     def _convert_complex_type(self, type_pattern, schema):
-        t = elements.ComplexType(None, schema)
+        t = model.ComplexType(None, schema)
 
         max_occurs = 1
         if isinstance(type_pattern, rng_empty.RngEmpty):
@@ -327,7 +327,7 @@ class Rng2Model(object):
                 checks.is_attribute_use(struct) or checks.is_text(struct)):
             # Struct is either single element or attribute or text,
             # thus we have to wrap struct in a compositor.
-            sequence = elements.Sequence(schema)
+            sequence = model.Sequence(schema)
             sequence.members.append(struct)
             t.structure = uses.Particle(False, 1, max_occurs, sequence)
         elif struct is None:
@@ -424,15 +424,15 @@ class Rng2Model(object):
         if isinstance(type_pattern, rng_attribute.RngAttribute):
             def convert_attribute(pattern, ns, name, qualified, excpt=None):
                 if name is None and ns is None:
-                    attr = elements.Any([], schema)
+                    attr = model.Any([], schema)
                     qualified = False
                 elif name is None:
-                    name_constraint = elements.Any.Name(ns, None)
-                    attr = elements.Any([name_constraint], schema)
+                    name_constraint = model.Any.Name(ns, None)
+                    attr = model.Any([name_constraint], schema)
                     qualified = False
                 else:
                     if checks.is_xml_namespace(ns):
-                        return (True, elements.xml_attributes()[name])
+                        return (True, model.xml_attributes()[name])
 
                     self.namer.learn_naming(name, namer.NAME_HINT_ATTR)
 
@@ -441,7 +441,7 @@ class Rng2Model(object):
                     else:
                         attr_schema = self.all_schemata[ns]
 
-                    attr = elements.Attribute(name, attr_schema)
+                    attr = model.Attribute(name, attr_schema)
                     attr.type = \
                         self._convert_simple_type(pattern.pattern, attr_schema)
 
@@ -466,16 +466,16 @@ class Rng2Model(object):
             return (False, uses.SchemaText(t))
         elif isinstance(type_pattern, rng_choice.RngChoicePattern):
             if _is_complex_pattern(type_pattern):
-                choice = elements.Choice(schema)
+                choice = model.Choice(schema)
                 return convert_compositor(choice)
             else:
                 t = self._convert_simple_type(type_pattern, schema)
                 return (False, uses.SchemaText(t))
         elif isinstance(type_pattern, rng_group.RngGroup):
-            sequence = elements.Sequence(schema)
+            sequence = model.Sequence(schema)
             return convert_compositor(sequence)
         elif isinstance(type_pattern, rng_interleave.RngInterleave):
-            interleave = elements.Interleave(schema)
+            interleave = model.Interleave(schema)
             return convert_compositor(interleave)
         else:
             assert False

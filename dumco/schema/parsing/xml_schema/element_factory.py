@@ -2,8 +2,8 @@
 
 import dumco.schema.base
 import dumco.schema.checks
-import dumco.schema.elements
 import dumco.schema.enums
+import dumco.schema.model
 import dumco.schema.uses
 import dumco.schema.xsd_types
 
@@ -221,7 +221,7 @@ class XsdElementFactory(object):
 
         if head not in self.substitution_groups:
             self.substitution_groups[head] = \
-                dumco.schema.elements.Choice(head.schema)
+                dumco.schema.model.Choice(head.schema)
         substitution_group = self.substitution_groups[head]
 
         if not xsd_head.abstract and len(substitution_group.members) == 0:
@@ -289,7 +289,7 @@ class XsdElementFactory(object):
                     attr = attr.finalize(self)
                 return attr.schema_element
             except KeyError:
-                return dumco.schema.elements.xml_attributes()[localname]
+                return dumco.schema.model.xml_attributes()[localname]
 
     def resolve_attribute_group(self, qname, schema):
         (uri, localname) = qname
@@ -303,7 +303,7 @@ class XsdElementFactory(object):
         (uri, localname) = qname
         if (dumco.schema.checks.is_xsd_namespace(uri) and
                 localname == 'anyType'):
-            return dumco.schema.elements.ComplexType.urtype()
+            return dumco.schema.model.ComplexType.urtype()
 
         if uri is None or uri == schema.schema_element.target_ns:
             ct = schema.complex_types[localname]
@@ -334,7 +334,7 @@ class XsdElementFactory(object):
         (uri, localname) = qname
         if dumco.schema.checks.is_xsd_namespace(uri):
             if localname == 'anySimpleType':
-                return dumco.schema.elements.SimpleType.urtype()
+                return dumco.schema.model.SimpleType.urtype()
             else:
                 return dumco.schema.xsd_types.xsd_builtin_types()[localname]
 
