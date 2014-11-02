@@ -6,11 +6,11 @@ import operator
 from dumco.utils.decorators import method_once
 
 import dumco.schema.base as base
-import dumco.schema.check_eq as check_eq
 import dumco.schema.checks as checks
 import dumco.schema.elements as elements
 import dumco.schema.enums as enums
 import dumco.schema.namer as namer
+import dumco.schema.tuples as tuples
 import dumco.schema.uses as uses
 import dumco.schema.xsd_types as xsd_types
 
@@ -38,10 +38,10 @@ class Rng2Model(object):
 
         self.untyped_elements = {}
 
-        self.unique_simple_types = []
-        self.unique_complex_types = []
-        self.unique_attribute_uses = []
-        self.unique_element_uses = []
+        self.unique_simple_types = {}
+        self.unique_complex_types = {}
+        self.unique_attribute_uses = {}
+        self.unique_element_uses = {}
 
     def convert(self, grammar):
         assert isinstance(grammar, rng_grammar.RngGrammar)
@@ -55,15 +55,13 @@ class Rng2Model(object):
                 self._convert_element(e)
 
         for (pattern, (element, _)) in self.untyped_elements.iteritems():
-            if _is_complex_pattern(pattern.pattern):
-                if checks.is_any(element):
-                    continue
+            if checks.is_any(element) or element.type is not None:
+                # Simple content types we convert when we convert elements.
+                continue
 
-                element.type = \
-                    self._convert_complex_type(pattern.pattern, element.schema)
-            else:
-                element.type = \
-                    self._convert_simple_type(pattern.pattern, element.schema)
+            # Type is not defined only for complex types.
+            element.type = \
+                self._convert_complex_type(pattern.pattern, element.schema)
 
         def traverse_complex_type(ct, parent, vcts):
             if ct in vcts:
@@ -193,7 +191,8 @@ class Rng2Model(object):
             self._convert_list_type(type_pattern.data_pattern, t, schema)
 
             def fold_listitems(acc, x):
-                if acc and check_eq.equal_primitive_types(x.type, acc[-1].type):
+                if (acc and tuples.HashableSimpleType(x.type, None) ==
+                        tuples.HashableSimpleType(acc[-1].type, None)):
                     min_occurs = uses.min_occurs_op(acc[-1].min_occurs,
                                                     x.min_occurs, operator.add)
                     max_occurs = uses.max_occurs_op(acc[-1].max_occurs,
@@ -211,7 +210,8 @@ class Rng2Model(object):
             self._convert_union_type(type_pattern, t, schema)
 
             def fold_members(acc, x):
-                found = any([check_eq.equal_primitive_types(x, y) for y in acc])
+                found = any([tuples.HashableSimpleType(x, None) ==
+                             tuples.HashableSimpleType(y, None) for y in acc])
                 return acc if found else acc + [x]
 
             t.union = reduce(fold_members, t.union, [])
@@ -222,8 +222,9 @@ class Rng2Model(object):
         else:
             assert False, 'Unexpected pattern for simple type'
 
-        return _get_unique_entity(self.unique_simple_types, t,
-                                  check_eq.equal_primitive_types)
+        return _get_unique_entity(
+            self.unique_simple_types,
+            tuples.HashableSimpleType(t, self.unique_simple_types))
 
     @method_once
     def _forge_empty_simple_type(self, schema):
@@ -346,8 +347,9 @@ class Rng2Model(object):
         else:
             assert False, 'Unknown complex type structure'
 
-        return _get_unique_entity(self.unique_complex_types, t,
-                                  check_eq.equal_complex_types)
+        return _get_unique_entity(
+            self.unique_complex_types,
+            tuples.HashableComplexType(t, self.unique_complex_types))
 
     def _convert_type_structure(self, type_pattern, schema):
         def convert_compositor(compositor):
@@ -374,7 +376,8 @@ class Rng2Model(object):
                     if assign_occurs:
                         struct.min_occurs = min_occurs
                         struct.max_occurs = max_occurs
-                    if checks.is_element(struct.term):
+                    if (checks.is_element(struct.term) and
+                            struct.term.type is not None):
                         struct = self._merge_element_enum_types(struct)
                     compositor.members.append(struct)
                 elif checks.is_attribute_use(struct):
@@ -388,7 +391,8 @@ class Rng2Model(object):
             def fold_particles(acc, x):
                 if (acc and checks.is_particle(x) and
                         checks.is_particle(acc[-1]) and
-                        check_eq.equal_particles(x.term, acc[-1].term)):
+                        tuples.HashableParticle(x, None) ==
+                        tuples.HashableParticle(acc[-1], None)):
                     acc[-1].min_occurs = uses.min_occurs_op(acc[-1].min_occurs,
                                                             x.min_occurs,
                                                             operator.add)
@@ -449,6 +453,9 @@ class Rng2Model(object):
             (elem, qualified) = self.untyped_elements[type_pattern]
             if checks.is_any(elem):
                 elem.schema = schema
+            if not _is_complex_pattern(type_pattern.pattern):
+                elem.type = self._convert_simple_type(type_pattern.pattern,
+                                                      elem.schema)
             return (True, uses.Particle(qualified, 1, 1, elem))
         elif isinstance(type_pattern, rng_text.RngText):
             return (False,
@@ -475,8 +482,10 @@ class Rng2Model(object):
 
     def _merge_attribute_enum_types(self, use):
         if checks.is_enumeration_type(use.attribute.type):
+            hashable_use = tuples.HashableAttributeUse(
+                use, self.unique_attribute_uses)
             (type_merge_candidates, type_referring_entities) = \
-                self._collect_enum_type_users(use.attribute)
+                self._collect_enum_type_users(hashable_use)
 
             if type_merge_candidates:
                 old_type = type_merge_candidates[0].attribute.type
@@ -488,8 +497,9 @@ class Rng2Model(object):
                         copy.copy(old_type.restriction.enumeration)
 
                     new_type = _get_unique_entity(
-                        self.unique_simple_types, new_type,
-                        check_eq.equal_primitive_types)
+                        self.unique_simple_types,
+                        tuples.HashableSimpleType(new_type,
+                                                  self.unique_simple_types))
 
                     for entity in type_referring_entities:
                         entity.type = new_type
@@ -500,13 +510,16 @@ class Rng2Model(object):
                 for entity in type_merge_candidates:
                     entity.type = use.attribute.type
 
-        return _get_unique_entity(self.unique_attribute_uses, use,
-                                  check_eq.equal_attribute_uses)
+        return _get_unique_entity(
+            self.unique_attribute_uses,
+            tuples.HashableAttributeUse(use, self.unique_attribute_uses))
 
     def _merge_element_enum_types(self, part):
         if checks.is_enumeration_type(part.term.type):
+            hashable_part = tuples.HashableParticle(
+                part, self.unique_element_uses)
             (type_merge_candidates, type_referring_entities) = \
-                self._collect_enum_type_users(part.term)
+                self._collect_enum_type_users(hashable_part)
 
             if type_merge_candidates:
                 old_type = type_merge_candidates[0].term.type
@@ -518,8 +531,9 @@ class Rng2Model(object):
                         copy.copy(old_type.restriction.enumeration)
 
                     new_type = _get_unique_entity(
-                        self.unique_simple_types, new_type,
-                        check_eq.equal_primitive_types)
+                        self.unique_simple_types,
+                        tuples.HashableSimpleType(new_type,
+                                                  self.unique_simple_types))
 
                     for entity in type_referring_entities:
                         entity.type = new_type
@@ -530,10 +544,11 @@ class Rng2Model(object):
                 for entity in type_merge_candidates:
                     entity.type = part.term.type
 
-        return _get_unique_entity(self.unique_element_uses, part,
-                                  check_eq.equal_particles)
+        return _get_unique_entity(
+            self.unique_element_uses,
+            tuples.HashableParticle(part, self.unique_element_uses))
 
-    def _collect_enum_type_users(self, entity):
+    def _collect_enum_type_users(self, hashable_use):
         # There can be many, say attributes, with same name/ns but with
         # different constraints (fixed/default, optional/required, etc) and
         # which still have enumeration type. However, if logic for enumeration
@@ -545,19 +560,21 @@ class Rng2Model(object):
         # There is no intersection between entities in the lists above.
 
         for u in self.unique_attribute_uses:
-            if check_eq.equal_attributes(u.attribute, entity):
-                if (u.attribute.type != entity.type and
+            if u == hashable_use:
+                if (u.attribute.type != hashable_use.attribute.type and
                         checks.is_enumeration_type(u.attribute.type)):
                     type_merge_candidates.append(u)
-            elif u.attribute.type == entity.type:
+            elif (checks.is_attribute_use(hashable_use._component) and
+                    u.attribute.type == hashable_use.attribute.type):
                 type_referring_entities.append(u.attribute)
 
         for u in self.unique_element_uses:
-            if check_eq.equal_elements(u.term, entity):
-                if (u.term.type != entity.type and
+            if u == hashable_use:
+                if (u.term.type != hashable_use.term.type and
                         checks.is_enumeration_type(u.term.type)):
                     type_merge_candidates.append(u)
-            elif u.term.type == entity.type:
+            elif (checks.is_particle(hashable_use._component) and
+                    u.term.type == hashable_use.term.type):
                 type_referring_entities.append(u.term)
 
         assert (not type_merge_candidates or
@@ -580,8 +597,9 @@ class Rng2Model(object):
             lambda t: t == redundant_enum_type, self.unique_simple_types)
 
         return _get_unique_entity(
-            self.unique_simple_types, changing_enum_type,
-            check_eq.equal_primitive_types)
+            self.unique_simple_types,
+            tuples.HashableSimpleType(changing_enum_type,
+                                      self.unique_simple_types))
 
 
 def _convert_named_component(elem_or_attr_pattern, convert_func):
@@ -659,10 +677,5 @@ def _set_restriction_params(data, restriction):
     return bool(data.params)
 
 
-def _get_unique_entity(unique_entities, new_entity, check_equality):
-    for entity in unique_entities:
-        if check_equality(entity, new_entity):
-            return entity
-
-    unique_entities.append(new_entity)
-    return new_entity
+def _get_unique_entity(unique_entities, new_entity):
+    return unique_entities.setdefault(new_entity, new_entity._component)
