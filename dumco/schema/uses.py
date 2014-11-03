@@ -2,11 +2,8 @@
 
 import collections
 
-from dumco.utils.decorators import method_once
-
 import base
 import checks
-import namer
 
 
 class AttributeUse(object):
@@ -45,7 +42,6 @@ class Particle(object):
         self.max_occurs = max_occurs
         # term = Element/Sequence/Choice/All/Any.
         self.term = term
-        self.name = None
 
     def append_doc(self, doc):
         self.term.append_doc(doc)
@@ -82,21 +78,6 @@ class Particle(object):
                 else:
                     yield ChildComponent([self] + parents, x)
 
-    @method_once
-    def nameit(self, parents, factory, names):
-        namer.forge_name(self, parents, factory, names)
-
-        assert checks.is_compositor(self.term), \
-            'Trying to name non-compositor'
-
-        for p in self.term.members:
-            if not checks.is_particle(p):
-                continue
-
-            if checks.is_compositor(p.term):
-                p.nameit(parents + [self], factory, names)
-                assert p.name is not None, 'Name cannot be None'
-
 
 class SchemaText(object):
     # In case of mixed content in complex type SchemaText represents
@@ -104,3 +85,16 @@ class SchemaText(object):
     # AttributeUses.
     def __init__(self, simple_type):
         self.type = simple_type
+
+
+def min_occurs_op(occurs1, occurs2, op):
+    res = op(occurs1, occurs2)
+    assert res < base.UNBOUNDED
+    return res
+
+
+def max_occurs_op(occurs1, occurs2, op):
+    res = op(occurs1, occurs2)
+    if res > base.UNBOUNDED:
+        return base.UNBOUNDED
+    return res

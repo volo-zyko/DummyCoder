@@ -6,7 +6,7 @@ import StringIO
 
 import dumco.schema.base
 import dumco.schema.checks
-import dumco.schema.elements
+import dumco.schema.model
 from dumco.schema.rng_types import RNG_NAMESPACE, rng_builtin_types
 from dumco.schema.xsd_types import xsd_builtin_types
 
@@ -82,6 +82,11 @@ class RelaxElementFactory(object):
             self.datatypes_stack.append(None)
 
         try:
+            text_name = self.get_attribute(attrs, 'name').strip()
+        except LookupError:
+            text_name = ''
+
+        try:
             self.ns_attribute_stack.append(self.get_attribute(attrs, 'ns'))
 
             # If namespace is present but there is no prefix for
@@ -94,7 +99,8 @@ class RelaxElementFactory(object):
                         self.all_namespace_prefixes[new_ns] = prefix
                         break
         except LookupError:
-            self.ns_attribute_stack.append(None)
+            (ns, _) = self.parse_qname(text_name)
+            self.ns_attribute_stack.append(ns)
 
         assert self.dispatcher is None or name[1] in self.dispatcher, \
             '"{}" is not supported in {}'.format(
@@ -137,7 +143,7 @@ class RelaxElementFactory(object):
             if dumco.schema.checks.is_xml_namespace(uri):
                 continue
 
-            schema = dumco.schema.elements.Schema(uri)
+            schema = dumco.schema.model.Schema(uri)
             schema.set_prefix(self.all_namespace_prefixes)
             schema.filename = 'ns' if schema.prefix is None else schema.prefix
 

@@ -1,9 +1,11 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
+import operator
 import re
 
 import dumco.schema.checks
 import dumco.schema.enums
+import dumco.schema.uses as uses
 from dumco.utils.horn import horn
 import dumco.utils.string_utils
 
@@ -65,12 +67,13 @@ class OpacityManager(object):
 
         def cumulative_min_occurs(parents, particle):
             min_occurs = 1
-            for p in parents[0:-1]:
+            for p in parents + [particle]:
                 assert checks.is_compositor(p.term)
 
-                min_occurs = min_occurs * p.min_occurs
+                min_occurs = \
+                    uses.min_occurs_op(min_occurs, p.min_occurs, operator.mul)
 
-            return min_occurs * particle.min_occurs
+            return min_occurs
 
         consistent = True
         checks = dumco.schema.checks

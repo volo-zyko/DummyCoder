@@ -131,9 +131,13 @@ class Namer(object):
         return self._apply_patterns(name, c, self.agroup_patterns, NAME_HINT_AG)
 
     def _generate_uniq_name(self, counters, parent, hints):
-        assert parent.name is not None
+        if hasattr(parent, 'name'):
+            assert parent.name is not None
+            parent_name = parent.name
+        else:
+            parent_name = parent.__class__.__name__
 
-        words = _get_name_words(parent.name, hints[0])
+        words = _get_name_words(parent_name, hints[0])
 
         stats = []
         for hint in hints:

@@ -1,7 +1,7 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
 import base
-import elements
+import model
 import uses
 import xsd_types
 
@@ -53,13 +53,8 @@ def has_simple_content(schema_type):
         return schema_type.text() is not None
 
 
-def is_single_attribute_type(schema_type):
-    return (has_empty_content(schema_type) and
-            _attribute_count(schema_type) == 1)
-
-
 def is_complex_type(schema_type):
-    return isinstance(schema_type, elements.ComplexType)
+    return isinstance(schema_type, model.ComplexType)
 
 
 def is_complex_urtype(schema_type):
@@ -70,6 +65,11 @@ def is_complex_urtype(schema_type):
 def is_empty_complex_type(schema_type):
     return (has_empty_content(schema_type) and
             _attribute_count(schema_type) == 0)
+
+
+def is_enumeration_type(schema_type):
+    return (is_restriction_type(schema_type) and
+            len(schema_type.restriction.enumeration) > 0)
 
 
 def is_list_type(schema_type):
@@ -90,12 +90,17 @@ def is_restriction_type(schema_type):
 
 
 def is_simple_type(schema_type):
-    return isinstance(schema_type, elements.SimpleType)
+    return isinstance(schema_type, model.SimpleType)
 
 
 def is_simple_urtype(schema_type):
     return (is_simple_type(schema_type) and schema_type.schema is None and
             schema_type.name == 'anySimpleType')
+
+
+def is_single_attribute_type(schema_type):
+    return (has_empty_content(schema_type) and
+            _attribute_count(schema_type) == 1)
 
 
 def is_single_valued_type(schema_type):
@@ -123,11 +128,11 @@ def is_xsd_native_type(schema_type):
 
 # Element checks.
 def is_any(schema_any):
-    return isinstance(schema_any, elements.Any)
+    return isinstance(schema_any, model.Any)
 
 
 def is_attribute(attr):
-    return isinstance(attr, elements.Attribute)
+    return isinstance(attr, model.Attribute)
 
 
 def is_attribute_use(attr):
@@ -135,7 +140,7 @@ def is_attribute_use(attr):
 
 
 def is_choice(choice):
-    return isinstance(choice, elements.Choice)
+    return isinstance(choice, model.Choice)
 
 
 def is_compositor(compositor):
@@ -143,11 +148,11 @@ def is_compositor(compositor):
 
 
 def is_element(element):
-    return isinstance(element, elements.Element)
+    return isinstance(element, model.Element)
 
 
 def is_interleave(interleave):
-    return isinstance(interleave, elements.Interleave)
+    return isinstance(interleave, model.Interleave)
 
 
 def is_particle(particle):
@@ -155,11 +160,11 @@ def is_particle(particle):
 
 
 def is_sequence(sequence):
-    return isinstance(sequence, elements.Sequence)
+    return isinstance(sequence, model.Sequence)
 
 
 def is_schema(schema):
-    return isinstance(schema, elements.Schema)
+    return isinstance(schema, model.Schema)
 
 
 def is_terminal(term):

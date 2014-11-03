@@ -2,11 +2,10 @@
 
 import collections
 
-from dumco.utils.decorators import method_once, function_once
+from dumco.utils.decorators import function_once
 
 import base
 import checks
-import namer
 import uses
 import xsd_types
 
@@ -147,14 +146,6 @@ class ComplexType(base.SchemaBase):
         urtype.structure = root_seqpart
         return urtype
 
-    @method_once
-    def nameit(self, parents, factory, names):
-        namer.forge_name(self, parents, factory, names)
-
-        if self.structure is not None:
-            self.structure.nameit(parents + [self], factory, names)
-            assert self.structure.name is not None, 'Name cannot be None'
-
 
 class Element(base.DataComponent):
     def __init__(self, name, default, fixed, parent_schema):
@@ -167,12 +158,7 @@ EnumerationValue = collections.namedtuple('EnumerationValue', ['value', 'doc'])
 
 
 class Interleave(base.Compositor):
-    def equal_content(self, other):
-        if (not checks.is_interleave(other) or
-                len(self.members) != len(other.members)):
-            return False
-
-        return True
+    pass
 
 
 class Restriction(base.SchemaBase):
@@ -268,7 +254,3 @@ class SimpleType(base.SchemaBase):
         urtype.restriction = restr
 
         return urtype
-
-    @method_once
-    def nameit(self, parents, factory, names):
-        namer.forge_name(self, parents, factory, names)

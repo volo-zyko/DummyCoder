@@ -3,7 +3,7 @@
 from dumco.utils.decorators import method_once
 
 import dumco.schema.checks
-import dumco.schema.elements
+import dumco.schema.model
 
 import xsd_base
 import xsd_enumeration
@@ -38,7 +38,7 @@ class XsdRestriction(xsd_base.XsdBase):
 
         self.schema = parent_schema
         self.schema_element = \
-            dumco.schema.elements.Restriction(parent_schema.schema_element)
+            dumco.schema.model.Restriction(parent_schema.schema_element)
 
     @method_once
     def finalize(self, factory):
@@ -53,7 +53,7 @@ class XsdRestriction(xsd_base.XsdBase):
                 if isinstance(t, xsd_simple_type.XsdSimpleType):
                     base = t.finalize(factory)
                 elif isinstance(t, xsd_enumeration.XsdEnumeration):
-                    enum = dumco.schema.elements.EnumerationValue(
+                    enum = dumco.schema.model.EnumerationValue(
                         t.value, t.schema_element.doc)
                     self.schema_element.enumeration.append(enum)
         else:
@@ -62,7 +62,7 @@ class XsdRestriction(xsd_base.XsdBase):
             for x in self.children:
                 assert isinstance(x, xsd_enumeration.XsdEnumeration), \
                     'Expected only Enumerations'
-                enum = dumco.schema.elements.EnumerationValue(
+                enum = dumco.schema.model.EnumerationValue(
                     x.value, x.schema_element.doc)
                 self.schema_element.enumeration.append(enum)
 
@@ -166,13 +166,13 @@ class XsdRestriction(xsd_base.XsdBase):
         value = factory.get_attribute(attrs, 'value')
         if value == 'preserve':
             parent_element.schema_element.white_space = \
-                dumco.schema.elements.Restriction.WS_PRESERVE
+                dumco.schema.model.Restriction.WS_PRESERVE
         elif value == 'replace':
             parent_element.schema_element.white_space = \
-                dumco.schema.elements.Restriction.WS_REPLACE
+                dumco.schema.model.Restriction.WS_REPLACE
         elif value == 'collapse':
             parent_element.schema_element.white_space = \
-                dumco.schema.elements.Restriction.WS_COLLAPSE
+                dumco.schema.model.Restriction.WS_COLLAPSE
         else:  # pragma: no cover
             assert False
 

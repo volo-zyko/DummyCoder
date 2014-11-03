@@ -27,6 +27,9 @@ class SchemaBase(object):
     def doc(self):
         return ' '.join(self._docs)
 
+    def equal(self, other):
+        return self.schema == other.schema
+
     def __setattr__(self, name, value):
         if name not in self.__dict__:
             tb = sys._current_frames().values()[0]
@@ -42,6 +45,12 @@ class Compositor(SchemaBase):
 
         self.members = []
 
+    def equal(self, other):
+        # Compositors don't have to be from the same schema.
+        return (len(self.members) == len(other.members) and
+                all([x.equal(y)
+                     for (x, y) in zip(self.members, other.members)]))
+
 
 class DataComponent(SchemaBase):
     # Element or attribute.
@@ -51,6 +60,12 @@ class DataComponent(SchemaBase):
         self.name = name
         self.type = None
 
+    def equal(self, other):
+        eq = super(DataComponent, self).equal(other)
+
+        return (eq and self.name == other.name and
+                self.type is not None and self.type.equal(other.type))
+
 
 class NativeType(SchemaBase):
     # Represents native (predefined) named type in certain namespace/uri.
@@ -59,6 +74,10 @@ class NativeType(SchemaBase):
 
         self.uri = uri
         self.name = name
+
+    def equal(self, other):
+        # Nothing to check in the base class.
+        return (self.uri == other.uri and self.name == other.name)
 
 
 # Value constraint helps maintaining default/fixed values.

@@ -2,7 +2,7 @@
 
 from dumco.utils.decorators import method_once
 
-import dumco.schema.elements
+import dumco.schema.model
 import dumco.schema.uses
 
 import xsd_base
@@ -44,7 +44,7 @@ class XsdElement(xsd_base.XsdBase):
         assert default is None or fixed is None, \
             'Default and fixed can never be in effect at the same time'
 
-        element = dumco.schema.elements.Element(
+        element = dumco.schema.model.Element(
             self.attr('name'),
             default if fixed is None else fixed,
             fixed is not None,
@@ -72,7 +72,7 @@ class XsdElement(xsd_base.XsdBase):
                 factory.resolve_type(self.attr('type'), self.schema)
         else:
             self.schema_element.term.type = \
-                dumco.schema.elements.ComplexType.urtype()
+                dumco.schema.model.ComplexType.urtype()
             for t in self.children:
                 assert (isinstance(t, xsd_complex_type.XsdComplexType) or
                         isinstance(t, xsd_simple_type.XsdSimpleType)), \

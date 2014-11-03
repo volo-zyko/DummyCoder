@@ -5,7 +5,7 @@ import copy
 from dumco.utils.decorators import method_once
 
 import dumco.schema.checks
-import dumco.schema.elements
+import dumco.schema.model
 import dumco.schema.enums
 import dumco.schema.uses
 
@@ -85,7 +85,7 @@ class XsdComplexExtension(xsd_base.XsdBase):
         elif base_part is None:
             return self.part
 
-        new_elem = dumco.schema.elements.Sequence(self.schema.schema_element)
+        new_elem = dumco.schema.model.Sequence(self.schema.schema_element)
         copy_base = dumco.schema.uses.Particle(False,
                                                base_part.min_occurs,
                                                base_part.max_occurs,
