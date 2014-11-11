@@ -128,9 +128,8 @@ class XsdElementFactory(object):
 
             schema.finalize(all_schemata, self)
 
-        # Set imports in each DOM schema and fix substitution groups.
-        # There is no way to do it during schema finalization, so we traverse
-        # everything once again.
+        # Fix substitution groups. There is no way to do it during schema
+        # finalization, so we traverse everything once again.
         substituted = set()
         for schema in sorted_all_schemata:
             self._post_finalize(schema, substituted)
@@ -142,79 +141,34 @@ class XsdElementFactory(object):
     def _post_finalize(self, xsd_schema, substituted):
         checks = dumco.schema.checks
 
-        def enum_schema_content_with_fixes(schema):
-            def enum_with_substitute(particle):
-                for p in particle.traverse():
-                    if not checks.is_particle(p):
-                        continue
+        # for ct in xsd_schema.complex_types:
+        #     if ct.abstract:
+        #         # Remove abstract complex type.
+        #         name = ct.schema_element.name
+        #         del xsd_schema.schema_element.complex_types[name]
 
-                    if (p.term in self.substitution_groups and
-                            p.term not in substituted):
-                        substituted.add(p.term)
-                        p.term = self.substitution_groups[p.term]
-                        for t in enum_with_substitute(p):
-                            yield t
-                    else:
-                        yield p.term
+        # for elem in xsd_schema.elements:
+        #     if elem.abstract:
+        #         # Remove abstract element.
+        #         name = elem.schema_element.term.name
+        #         del xsd_schema.schema_element.elements[name]
 
-            # for ct in schema.complex_types:
-            #     if ct.abstract:
-            #         # Remove abstract complex type.
-            #         name = ct.schema_element.name
-            #         del schema.schema_element.complex_types[name]
+        def finalize_substitutions(particle):
+            for p in particle.traverse():
+                if (not checks.is_particle(p) and
+                        (p.term not in self.substitution_groups or
+                         p.term in substituted)):
+                    continue
 
-            # for elem in schema.elements:
-            #     if elem.abstract:
-            #         # Remove abstract element.
-            #         name = elem.schema_element.term.name
-            #         del schema.schema_element.elements[name]
+                substituted.add(p.term)
+                p.term = self.substitution_groups[p.term]
+                finalize_substitutions(p)
 
-            for ct in schema.schema_element.complex_types:
-                if ct.mixed or checks.has_complex_content(ct):
-                    for t in enum_with_substitute(ct.structure):
-                        yield t
-
-                for u in ct.attribute_uses():
-                    yield u.attribute
-
-                if checks.has_simple_content(ct):
-                    yield ct.text().type
-
-            for st in schema.schema_element.simple_types:
-                yield st
-
-            for elem in schema.schema_element.elements:
-                yield elem
-
-        def add_import_if_differ(own_schema, other_schema):
-            if own_schema != other_schema:
-                own_schema.add_import(other_schema)
-                return True
-            return False
-
-        # Traverse all schema components and add imports if necessary.
-        for c in enum_schema_content_with_fixes(xsd_schema):
-            if add_import_if_differ(xsd_schema.schema_element, c.schema):
-                if checks.is_attribute(c):
-                    add_import_if_differ(c.schema, c.type.schema)
-
+        for ct in xsd_schema.schema_element.complex_types:
+            if not checks.has_complex_content(ct):
                 continue
 
-            if checks.is_element(c) or checks.is_attribute(c):
-                add_import_if_differ(xsd_schema.schema_element,
-                                     c.type.schema)
-            elif checks.is_simple_type(c):
-                if c.restriction is not None:
-                    add_import_if_differ(xsd_schema.schema_element,
-                                         c.restriction.base.schema)
-                elif c.listitems:
-                    for s in c.listitems:
-                        add_import_if_differ(xsd_schema.schema_element,
-                                             s.type.schema)
-                elif c.union:
-                    for s in c.union:
-                        add_import_if_differ(xsd_schema.schema_element,
-                                             s.schema)
+            finalize_substitutions(ct.structure)
 
     def add_substitution_group(self, xsd_head, xsd_element):
         head = xsd_head.schema_element.term
@@ -347,9 +301,9 @@ class XsdElementFactory(object):
 
     def resolve_type(self, qname, schema, finalize=False):
         try:
-            return self.resolve_simple_type(qname, schema, finalize=finalize)
+            return self.resolve_simple_type(qname, schema, finalize)
         except KeyError:
-            return self.resolve_complex_type(qname, schema, finalize=finalize)
+            return self.resolve_complex_type(qname, schema, finalize)
 
     def get_attribute(self, attrs, localname):
         if localname not in attrs:

@@ -9,7 +9,6 @@ import dumco.schema.base as base
 import dumco.schema.checks as checks
 import dumco.schema.enums as enums
 import dumco.schema.model as model
-import dumco.schema.namer as namer
 import dumco.schema.tuples as tuples
 import dumco.schema.uses as uses
 import dumco.schema.xsd_types as xsd_types
@@ -67,7 +66,7 @@ class Rng2Model(object):
             if ct in vcts:
                 return
 
-            ct.name = self.namer.name_ct(None, ct.schema.target_ns, parent)
+            self.namer.name_ct(ct, parent)
             ct.schema.complex_types.append(ct)
             vcts.add(ct)
 
@@ -92,7 +91,7 @@ class Rng2Model(object):
                     st.schema is None and st.name is not None):
                 return
 
-            st.name = self.namer.name_st(None, st.schema.target_ns, parent)
+            self.namer.name_st(st, parent)
             st.schema.simple_types.append(st)
 
             if checks.is_list_type(st):
@@ -126,7 +125,7 @@ class Rng2Model(object):
             elem = model.Element(name, None, False, schema)
             schema.elements.append(elem)
 
-            self.namer.learn_naming(name, namer.NAME_HINT_ELEM)
+            self.namer.learn_naming(elem)
             self.untyped_elements[pattern] = (elem, qualified)
             # No need to return anything as we've already
             # done all what we needed.
@@ -154,7 +153,7 @@ class Rng2Model(object):
                 elem_schema = self.all_schemata[ns]
                 elem = model.Element(name, None, False, elem_schema)
 
-                self.namer.learn_naming(name, namer.NAME_HINT_ELEM)
+                self.namer.learn_naming(elem)
                 self.untyped_elements[pattern] = (elem, qualified)
             # No need to return anything as we don't use it here.
 
@@ -169,7 +168,7 @@ class Rng2Model(object):
             t = model.SimpleType(None, schema)
             t.restriction = model.Restriction(schema)
             t.restriction.base = type_pattern.type
-            t.restriction.enumeration.append(
+            t.restriction.enumerations.append(
                 model.EnumerationValue(type_pattern.value, ''))
         elif isinstance(type_pattern, rng_text.RngText):
             return xsd_types.xsd_builtin_types()['string']
@@ -293,7 +292,7 @@ class Rng2Model(object):
 
                     parent_type.union.append(enum_type)
 
-                enum_type.restriction.enumeration.append(
+                enum_type.restriction.enumerations.append(
                     model.EnumerationValue(p.value, ''))
             elif (isinstance(p, rng_empty.RngEmpty) or
                     isinstance(p, rng_data.RngData) or
@@ -434,8 +433,6 @@ class Rng2Model(object):
                     if checks.is_xml_namespace(ns):
                         return (True, model.xml_attributes()[name])
 
-                    self.namer.learn_naming(name, namer.NAME_HINT_ATTR)
-
                     if ns == '':
                         attr_schema = schema
                     else:
@@ -444,6 +441,8 @@ class Rng2Model(object):
                     attr = model.Attribute(name, attr_schema)
                     attr.type = \
                         self._convert_simple_type(pattern.pattern, attr_schema)
+
+                    self.namer.learn_naming(attr)
 
                 return (True,
                         uses.AttributeUse(None, False, qualified, False, attr))
@@ -493,8 +492,8 @@ class Rng2Model(object):
                 if type_referring_entities:
                     new_type = copy.copy(old_type)
                     new_type.restriction = copy.copy(old_type.restriction)
-                    new_type.restriction.enumeration = \
-                        copy.copy(old_type.restriction.enumeration)
+                    new_type.restriction.enumerations = \
+                        copy.copy(old_type.restriction.enumerations)
 
                     new_type = _get_unique_entity(
                         self.unique_simple_types,
@@ -527,8 +526,8 @@ class Rng2Model(object):
                 if type_referring_entities:
                     new_type = copy.copy(old_type)
                     new_type.restriction = copy.copy(old_type.restriction)
-                    new_type.restriction.enumeration = \
-                        copy.copy(old_type.restriction.enumeration)
+                    new_type.restriction.enumerations = \
+                        copy.copy(old_type.restriction.enumerations)
 
                     new_type = _get_unique_entity(
                         self.unique_simple_types,
@@ -587,10 +586,10 @@ class Rng2Model(object):
     def _merge_enum_types(self, changing_enum_type, redundant_enum_type):
         assert changing_enum_type != redundant_enum_type
 
-        enums = {x.value: x for x in changing_enum_type.restriction.enumeration}
+        enums = {x.value: x for x in changing_enum_type.restriction.enumerations}
         enums.update(
-            {x.value: x for x in redundant_enum_type.restriction.enumeration})
-        changing_enum_type.restriction.enumeration = list(enums.itervalues())
+            {x.value: x for x in redundant_enum_type.restriction.enumerations})
+        changing_enum_type.restriction.enumerations = list(enums.itervalues())
 
         # Remove redundant_enum_type if there are no referring entities.
         self.unique_simple_types = filter(

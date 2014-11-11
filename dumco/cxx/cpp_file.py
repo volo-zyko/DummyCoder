@@ -22,7 +22,7 @@ FileGuard = dumco.utils.source_file.FileGuard
 
 class CppSourceFile(dumco.utils.source_file.SourceFile):
     def __init__(self, filename, append=False):
-        super(CppSourceFile, self).__init__(filename, append=append)
+        super(CppSourceFile, self).__init__(filename, append)
 
         self.namespaces = []
 

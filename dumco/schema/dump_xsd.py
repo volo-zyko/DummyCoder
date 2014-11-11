@@ -106,7 +106,7 @@ class _SchemaDumpContext(XmlWriter):
 
                 if checks.has_simple_content(ct):
                     dump_simple_content(ct, schema, self)
-                elif ct.mixed or checks.has_complex_content(ct):
+                elif checks.has_complex_content(ct):
                     dump_particle(ct, ct.structure, schema, self, set())
 
                     dump_attribute_uses(ct, ct.attribute_uses(), schema, self)
@@ -262,8 +262,7 @@ def _collect_attribute_groups(schemata, namer, opacity_manager):
                 checks.is_any(attribute) or attribute.schema == schema):
             return
 
-        group_name = namer.name_agroup(
-            None, attribute.schema.target_ns, attribute)
+        group_name = namer.name_agroup(attribute)
         groups = agroups.setdefault(attribute.schema, {})
         groups.setdefault(attribute, AttributeGroup(group_name, attr_use))
 
@@ -302,7 +301,7 @@ def _find_element_groups(ct, particle, schema, egroups, namer, opacity_manager):
 
         assert checks.is_element(p.term)
 
-        group_name = namer.name_egroup(None, p.term.schema.target_ns, p.term)
+        group_name = namer.name_egroup(p.term)
         groups = egroups.setdefault(p.term.schema, {})
         groups.setdefault(particle.term,
                           ElementGroup(ct, group_name, particle))
@@ -326,7 +325,7 @@ def _collect_element_groups(schemata, namer, opacity_manager):
             if opacity_manager.is_opaque_ct(ct):
                 continue
 
-            if ct.mixed or checks.has_complex_content(ct):
+            if checks.has_complex_content(ct):
                 _find_element_groups(ct, ct.structure, schema,
                                      egroups, namer, opacity_manager)
 
@@ -385,7 +384,7 @@ def _select_complex_types(schemata, namer, opacity_manager, ctypes, stypes):
 
 def _approximate_simple_types(stypes, namer, opacity_manager):
     # SimpleType simplification is necessary for complex cases that
-    # can be represented in our DOM.
+    # can be represented in dumco DOM.
     for (schema, simple_types) in stypes.iteritems():
         for st in list(simple_types.itervalues()):
             if not checks.is_list_type(st) or len(st.listitems) == 1:
@@ -393,11 +392,10 @@ def _approximate_simple_types(stypes, namer, opacity_manager):
 
             union_st = model.SimpleType(st.name, st.schema)
             for item in st.listitems:
-                new_name = namer.name_st(st.name + '-list',
-                                         st.schema.target_ns, union_st)
-                new_st = model.SimpleType(new_name, st.schema)
+                new_st = model.SimpleType(None, st.schema)
+                namer.name_st(st, union_st)
                 new_st.listitems.append(item)
-                simple_types[new_name] = new_st
+                simple_types[new_st.name] = new_st
 
                 union_st.union.append(new_st)
 

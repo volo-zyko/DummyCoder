@@ -73,7 +73,7 @@ class XsdSimpleRestriction(xsd_restriction.XsdRestriction):
             elif isinstance(c, xsd_enumeration.XsdEnumeration):
                 enum = dumco.schema.model.EnumerationValue(
                     c.value, c.schema_element.doc)
-                self.schema_element.enumeration.append(enum)
+                self.schema_element.enumerations.append(enum)
             elif isinstance(c, xsd_attribute_group.XsdAttributeGroup):
                 self.attr_uses.extend(c.finalize(factory).attr_uses)
             elif isinstance(c, xsd_attribute.XsdAttribute):

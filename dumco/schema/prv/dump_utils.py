@@ -125,8 +125,8 @@ def dump_restriction(restriction, schema, context):
             'base', _qname(restriction.base.name, restriction.base.schema,
                            schema, context))
 
-        if restriction.enumeration:
-            for e in restriction.enumeration:
+        if restriction.enumerations:
+            for e in restriction.enumerations:
                 with TagGuard('enumeration', context):
                     context.add_attribute('value', e.value)
         if restriction.fraction_digits is not None:
@@ -153,9 +153,10 @@ def dump_restriction(restriction, schema, context):
         if restriction.min_length is not None:
             with TagGuard('minLength', context):
                 context.add_attribute('value', restriction.min_length)
-        if restriction.pattern is not None:
-            with TagGuard('pattern', context):
-                context.add_attribute('value', restriction.pattern)
+        if restriction.patterns:
+            for p in restriction.patterns:
+                with TagGuard('pattern', context):
+                    context.add_attribute('value', p)
         if restriction.total_digits is not None:
             with TagGuard('totalDigits', context):
                 context.add_attribute('value', restriction.total_digits)

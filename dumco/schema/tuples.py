@@ -105,9 +105,10 @@ def get_primitive_type_tuple(t):
     elif checks.is_restriction_type(t):
         r = t.restriction
         return (t.schema, r.fraction_digits, r.length, r.max_exclusive,
-                r.max_inclusive, r.max_length, r.min_exclusive, r.min_inclusive,
-                r.min_length, r.pattern, r.total_digits, r.white_space,
-                tuple(sorted([e.value for e in r.enumeration])),
+                r.max_inclusive, r.max_length, r.min_exclusive,
+                r.min_inclusive, r.min_length, r.total_digits,
+                r.white_space, tuple([p for p in r.patterns]),
+                tuple(sorted([e.value for e in r.enumerations])),
                 get_primitive_type_tuple(r.base))
     elif checks.is_list_type(t):
         l = t.listitems

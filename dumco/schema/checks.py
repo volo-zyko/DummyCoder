@@ -24,16 +24,19 @@ def is_xml_namespace(uri):
 
 # Type checks.
 def has_complex_content(schema_type):
+    # If CT has any particle then it has complex content.
     if not is_complex_type(schema_type):
         return False
 
     for _ in schema_type.particles():
-        return schema_type.text() is None
+        return True
     else:
         return False
 
 
 def has_empty_content(schema_type):
+    # If CT has neither particles nor text then it has empty content.
+    # Note: Attributes are not checked.
     if not is_complex_type(schema_type):
         return False
 
@@ -44,6 +47,8 @@ def has_empty_content(schema_type):
 
 
 def has_simple_content(schema_type):
+    # If CT has only text content then it has simple content.
+    # Note: Attributes are not checked.
     if not is_complex_type(schema_type):
         return False
 
@@ -69,7 +74,7 @@ def is_empty_complex_type(schema_type):
 
 def is_enumeration_type(schema_type):
     return (is_restriction_type(schema_type) and
-            len(schema_type.restriction.enumeration) > 0)
+            len(schema_type.restriction.enumerations) > 0)
 
 
 def is_list_type(schema_type):

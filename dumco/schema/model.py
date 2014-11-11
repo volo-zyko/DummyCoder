@@ -26,7 +26,7 @@ def xml_attributes():
     space_type = SimpleType('spaceType', None)
     space_type.restriction = Restriction(None)
     space_type.restriction.base = xsd_types.xsd_builtin_types()['NCName']
-    space_type.restriction.enumeration = [
+    space_type.restriction.enumerations = [
         EnumerationValue('default', ''), EnumerationValue('preserve', '')]
     attrs['space'].attribute.type = space_type
     attrs['space'].constraint = base.ValueConstraint(False, 'preserve')
@@ -94,20 +94,20 @@ class ComplexType(base.SchemaBase):
             return False
 
     def attribute_uses(self, flatten=True):
-        for x in self.traverse_structure(flatten=flatten):
+        for x in self.traverse_structure(flatten):
             if ((flatten and checks.is_attribute_use(x)) or
                     (not flatten and checks.is_attribute_use(x.component))):
                 yield x
 
     def text(self, flatten=True):
-        for x in self.traverse_structure(flatten=flatten):
+        for x in self.traverse_structure(flatten):
             if ((flatten and checks.is_text(x)) or
                     (not flatten and checks.is_text(x.component))):
                 return x
         return None
 
     def particles(self, flatten=True):
-        for x in self.traverse_structure(flatten=flatten):
+        for x in self.traverse_structure(flatten):
             if ((flatten and checks.is_particle(x)) or
                     (not flatten and checks.is_particle(x.component))):
                 yield x
@@ -175,7 +175,7 @@ class Restriction(base.SchemaBase):
         self.base = None
 
         # Facets.
-        self.enumeration = []
+        self.enumerations = []
         self.fraction_digits = None
         self.length = None
         self.max_exclusive = None
@@ -184,7 +184,7 @@ class Restriction(base.SchemaBase):
         self.min_exclusive = None
         self.min_inclusive = None
         self.min_length = None
-        self.pattern = None
+        self.patterns = []
         self.total_digits = None
         self.white_space = None
 
@@ -197,11 +197,6 @@ class Schema(base.SchemaBase):
         self.prefix = None
         self.target_ns = target_ns
 
-        # Member imports references other schemata elements from which
-        # are used in this schema. It potentially can reference schemata
-        # that are not directly used by this schema but which are necessary
-        # for correct dumping of attributes that belong to this schema.
-        self.imports = {}
         # Containers for elements in the schema.
         self.elements = []
         self.complex_types = []
@@ -210,18 +205,6 @@ class Schema(base.SchemaBase):
     def set_prefix(self, all_namespace_prefixes):
         if self.target_ns in all_namespace_prefixes:
             self.prefix = all_namespace_prefixes[self.target_ns]
-
-    def add_import(self, schema):
-        if schema is None or checks.is_xml_namespace(schema.target_ns):
-            # Schema can be None if it's predefined XML schema.
-            self.imports[base.XML_NAMESPACE] = None
-            return
-
-        assert (schema.target_ns not in self.imports or
-                self.imports[schema.target_ns] == schema), \
-            'Redefining namespace to a different schema'
-
-        self.imports[schema.target_ns] = schema
 
 
 class Sequence(base.Compositor):

@@ -3,6 +3,7 @@
 from dumco.utils.decorators import method_once
 
 import dumco.schema.base
+import dumco.schema.checks
 import dumco.schema.model
 import dumco.schema.uses
 
@@ -43,7 +44,11 @@ class XsdSimpleType(xsd_base.XsdBase):
                 'Wrong content of SimpleType'
 
             if isinstance(c, xsd_restriction.XsdRestriction):
-                self.schema_element.restriction = c.finalize(factory)
+                restriction_or_type = c.finalize(factory)
+                if dumco.schema.checks.is_list_type(restriction_or_type):
+                    return restriction_or_type
+                else:
+                    self.schema_element.restriction = restriction_or_type
             elif isinstance(c, xsd_list.XsdList):
                 listitem = dumco.schema.uses.ListTypeCardinality(
                     c.finalize(factory).itemtype,

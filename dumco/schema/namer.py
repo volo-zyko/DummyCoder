@@ -3,6 +3,8 @@
 import collections
 import re
 
+import checks
+
 
 class PatternParseException(BaseException):
     def __init__(self, pattern):
@@ -52,13 +54,11 @@ def parse_name_patterns(text_patterns):
     return (ct, st, eg, ag)
 
 
-NAME_HINT_NONE = -1
-NAME_HINT_CT = 0
-NAME_HINT_ST = 1
-NAME_HINT_EG = 2
-NAME_HINT_AG = 3
-NAME_HINT_ELEM = 4
-NAME_HINT_ATTR = 5
+_NAME_HINT_NONE = -1
+_NAME_HINT_CT = 0
+_NAME_HINT_ST = 1
+_NAME_HINT_ELEM = 2
+_NAME_HINT_ATTR = 3
 
 
 class Namer(object):
@@ -75,7 +75,7 @@ class Namer(object):
     SCHEMA_NAMING_WD = 16
 
     _NamingStats = collections.namedtuple(
-        '_NamingStats', ['ct', 'st', 'eg', 'ag', 'elem', 'attr'])
+        '_NamingStats', ['ct', 'st', 'elem', 'attr'])
 
     def __init__(self, naming_patterns):
         assert isinstance(naming_patterns, tuple) and len(naming_patterns) == 4
@@ -89,104 +89,135 @@ class Namer(object):
         self.egroups_counters = {}
         self.agroups_counters = {}
 
-        self.naming_stats = self._NamingStats({}, {}, {}, {}, {}, {})
+        self.naming_stats = self._NamingStats({}, {}, {}, {})
 
-    def learn_naming(self, assigned_name, hint):
-        assert assigned_name is not None
-        assert NAME_HINT_NONE < hint and hint <= NAME_HINT_ATTR
+    def learn_naming(self, component):
+        if checks.is_any(component):
+            return
 
-        (style, _) = _guess_naming(assigned_name)
+        (style, _) = _guess_naming(component.name)
 
-        c = self.naming_stats[hint].get(style, 0)
-        self.naming_stats[hint][style] = c + 1
-
-    def name_ct(self, name, ns, parent):
-        c = self.ctypes_counters.setdefault(ns, {})
-        if not self.ctype_patterns:
-            return self._generate_uniq_name(c, parent, [NAME_HINT_CT])
-
-        return self._apply_patterns(name, c, self.ctype_patterns, NAME_HINT_CT)
-
-    def name_st(self, name, ns, parent):
-        c = self.stypes_counters.setdefault(ns, {})
-        if not self.stype_patterns:
-            return self._generate_uniq_name(c, parent, [NAME_HINT_ST])
-
-        return self._apply_patterns(name, c, self.stype_patterns, NAME_HINT_ST)
-
-    def name_egroup(self, name, ns, parent):
-        c = self.egroups_counters.setdefault(ns, {})
-        if not self.egroup_patterns:
-            return self._generate_uniq_name(
-                c, parent, [NAME_HINT_EG, NAME_HINT_ELEM])
-
-        return self._apply_patterns(name, c, self.egroup_patterns, NAME_HINT_EG)
-
-    def name_agroup(self, name, ns, parent):
-        c = self.agroups_counters.setdefault(ns, {})
-        if not self.agroup_patterns:
-            return self._generate_uniq_name(
-                c, parent, [NAME_HINT_AG, NAME_HINT_ATTR])
-
-        return self._apply_patterns(name, c, self.agroup_patterns, NAME_HINT_AG)
-
-    def _generate_uniq_name(self, counters, parent, hints):
-        if hasattr(parent, 'name'):
-            assert parent.name is not None
-            parent_name = parent.name
+        if checks.is_simple_type(component):
+            c = self.naming_stats[_NAME_HINT_ST].get(style, 0)
+            self.naming_stats[_NAME_HINT_ST][style] = c + 1
+        elif checks.is_complex_type(component):
+            c = self.naming_stats[_NAME_HINT_CT].get(style, 0)
+            self.naming_stats[_NAME_HINT_CT][style] = c + 1
+        elif checks.is_element(component):
+            c = self.naming_stats[_NAME_HINT_ELEM].get(style, 0)
+            self.naming_stats[_NAME_HINT_ELEM][style] = c + 1
+        elif checks.is_attribute(component):
+            c = self.naming_stats[_NAME_HINT_ATTR].get(style, 0)
+            self.naming_stats[_NAME_HINT_ATTR][style] = c + 1
         else:
-            parent_name = parent.__class__.__name__
+            assert False, 'Unexpected component'
 
-        words = _get_name_words(parent_name, hints[0])
+    def name_ct(self, ct, parent):
+        c = self.ctypes_counters.setdefault(ct.schema.target_ns, {})
 
-        stats = []
-        for hint in hints:
-            stats = list(self.naming_stats[hint].iteritems())
+        if ct.name is not None and not self.ctype_patterns:
+            ct.name = _track_name(ct.name, c)
+            return
 
+        if ct.name is None:
+            assert checks.is_element(parent) and parent.name is not None
+            (style, words) = self._parse_name(parent.name, _NAME_HINT_CT)
+            words.extend(['complex', 'type'])
+        else:
+            (style, words) = self._parse_name(ct.name, _NAME_HINT_CT)
+
+        ct.name = self._apply_patterns(words, c, self.ctype_patterns, style)
+
+    def name_st(self, st, parent):
+        c = self.stypes_counters.setdefault(st.schema.target_ns, {})
+
+        if st.name is not None and not self.stype_patterns:
+            st.name = _track_name(st.name, c)
+            return
+
+        if st.name is None:
+            assert parent.name is not None
+            if checks.is_element(parent) or checks.is_attribute(parent):
+                (style, words) = self._parse_name(parent.name, _NAME_HINT_ST)
+                if checks.is_union_type(st):
+                    words.extend(['union', 'type'])
+                elif checks.is_list_type(st):
+                    words.extend(['list', 'type'])
+                else:
+                    words.extend(['simple', 'type'])
+            elif checks.is_complex_type(parent):
+                (style, words) = self._parse_name(parent.name, _NAME_HINT_ST)
+                words.extend(['simple', 'content'])
+            elif checks.is_union_type(parent):
+                (style, words) = self._parse_name(parent.name, _NAME_HINT_ST)
+                if checks.is_union_type(st):
+                    words.extend(['member', 'union', 'type'])
+                elif checks.is_list_type(st):
+                    words.extend(['member', 'list', 'type'])
+                else:
+                    words.extend(['member', 'simple', 'type'])
+            elif checks.is_list_type(parent):
+                (style, words) = self._parse_name(parent.name, _NAME_HINT_ST)
+                if checks.is_union_type(st):
+                    words.extend(['item', 'union', 'type'])
+                elif checks.is_list_type(st):
+                    words.extend(['item', 'list', 'type'])
+                else:
+                    words.extend(['item', 'simple', 'type'])
+            elif checks.is_restriction_type(parent):
+                (style, words) = self._parse_name(parent.name, _NAME_HINT_ST)
+            else:
+                assert False, 'Unexpected parent for simple type'
+        else:
+            (style, words) = self._parse_name(st.name, _NAME_HINT_ST)
+
+        st.name = self._apply_patterns(words, c, self.stype_patterns, style)
+
+    def name_egroup(self, elem_parent):
+        c = self.egroups_counters.setdefault(elem_parent.schema.target_ns, {})
+
+        assert elem_parent.name is not None
+        (style, words) = self._parse_name(elem_parent.name, _NAME_HINT_ELEM)
+
+        return self._apply_patterns(words, c, self.egroup_patterns, style)
+
+    def name_agroup(self, attr_parent):
+        c = self.agroups_counters.setdefault(attr_parent.schema.target_ns, {})
+
+        assert attr_parent.name is not None
+        (style, words) = self._parse_name(attr_parent.name, _NAME_HINT_ATTR)
+
+        return self._apply_patterns(words, c, self.agroup_patterns, style)
+
+    def _parse_name(self, name, hint):
+        (_, words) = _guess_naming(name)
+
+        stats = list(self.naming_stats[hint].iteritems())
         if stats:
             style = max(stats, key=lambda x: x[1])[0]
+            return (style, words)
+
+        return (Namer.SCHEMA_NAMING_UCC, words)
+
+    def _apply_patterns(self, words, counters, patterns, style):
+        if patterns:
+            new_name = '-'.join(words)
+
+            for (pattern, replace, g) in patterns:
+                new_name = pattern.sub(replace, new_name, count=0 if g else 1)
         else:
-            style = Namer.SCHEMA_NAMING_UCC
+            if (style & Namer.SCHEMA_NAMING_UCC or
+                    style & Namer.SCHEMA_NAMING_LCC):
+                words[1:] = map(lambda x: x.capitalize(), words[1:])
+            if not style & Namer.SCHEMA_NAMING_LCC:
+                words[0] = words[0].capitalize()
 
-        if style & Namer.SCHEMA_NAMING_UCC or style & Namer.SCHEMA_NAMING_LCC:
-            words[1:] = map(lambda x: x.capitalize(), words[1:])
-        if not style & Namer.SCHEMA_NAMING_LCC:
-            words[0] = words[0].capitalize()
+            new_name = _get_join_char(style).join(words)
 
-        name = _get_join_char(style).join(words)
-
-        return _finalize_name(name, counters)
-
-    def _apply_patterns(self, old_name, counters, patterns, hint):
-        assert old_name is not None
-
-        words = _get_name_words(old_name, hint)
-        name = '-'.join(words)
-
-        for (pattern, replace, g) in patterns:
-            name = pattern.sub(replace, name, count=0 if g else 1)
-
-        return _finalize_name(name, counters)
+        return _track_name(new_name, counters)
 
 
-def _get_name_words(name, hint):
-    assert NAME_HINT_NONE < hint and hint <= NAME_HINT_AG
-
-    (_, words) = _guess_naming(name)
-
-    if hint == NAME_HINT_CT:
-        words.extend(['complex', 'type'])
-    elif hint == NAME_HINT_ST:
-        words.extend(['simple', 'type'])
-    elif hint == NAME_HINT_EG:
-        words.extend(['element', 'group'])
-    elif hint == NAME_HINT_AG:
-        words.extend(['attribute', 'group'])
-
-    return words
-
-
-def _finalize_name(name, counters):
+def _track_name(name, counters):
     c = counters.get(name, 0)
 
     while True:
