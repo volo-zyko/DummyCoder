@@ -5,7 +5,7 @@ from dumco.utils.decorators import method_once
 import dumco.schema.model
 import dumco.schema.uses
 
-import xsd_base
+import base
 import xsd_element
 
 
@@ -19,7 +19,7 @@ def xsd_all(attrs, parent_element, factory, schema_path, all_schemata):
     })
 
 
-class XsdAll(xsd_base.XsdBase):
+class XsdAll(base.XsdBase):
     def __init__(self, attrs, parent_schema, factory):
         super(XsdAll, self).__init__(attrs)
 
@@ -27,7 +27,7 @@ class XsdAll(xsd_base.XsdBase):
             False,
             factory.particle_min_occurs(attrs),
             factory.particle_max_occurs(attrs),
-            dumco.schema.model.Interleave(parent_schema.schema_element))
+            dumco.schema.model.Interleave())
 
     @method_once
     def finalize(self, factory):

@@ -1,6 +1,6 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
-import xsd_base
+import base
 
 
 def xsd_enumeration(attrs, parent_element, factory, schema_path, all_schemata):
@@ -12,7 +12,7 @@ def xsd_enumeration(attrs, parent_element, factory, schema_path, all_schemata):
     })
 
 
-class XsdEnumeration(xsd_base.XsdBase):
+class XsdEnumeration(base.XsdBase):
     def __init__(self, attrs):
         super(XsdEnumeration, self).__init__(attrs)
 

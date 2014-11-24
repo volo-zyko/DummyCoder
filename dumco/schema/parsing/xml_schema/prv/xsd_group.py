@@ -5,8 +5,8 @@ from dumco.utils.decorators import method_once
 import dumco.schema.enums
 import dumco.schema.uses
 
+import base
 import xsd_all
-import xsd_base
 import xsd_choice
 import xsd_sequence
 
@@ -26,7 +26,7 @@ def xsd_group(attrs, parent_element, factory, schema_path, all_schemata):
     })
 
 
-class XsdGroup(xsd_base.XsdBase):
+class XsdGroup(base.XsdBase):
     def __init__(self, attrs, parent_schema, factory):
         super(XsdGroup, self).__init__(attrs)
 

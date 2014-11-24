@@ -63,7 +63,8 @@ def is_complex_type(schema_type):
 
 
 def is_complex_urtype(schema_type):
-    return (is_complex_type(schema_type) and schema_type.schema is None and
+    return (is_complex_type(schema_type) and
+            is_xsd_namespace(schema_type.schema.target_ns) and
             schema_type.name == 'anyType')
 
 
@@ -99,7 +100,8 @@ def is_simple_type(schema_type):
 
 
 def is_simple_urtype(schema_type):
-    return (is_simple_type(schema_type) and schema_type.schema is None and
+    return (is_simple_type(schema_type) and
+            is_xsd_namespace(schema_type.schema.target_ns) and
             schema_type.name == 'anySimpleType')
 
 
@@ -164,6 +166,10 @@ def is_particle(particle):
     return isinstance(particle, uses.Particle)
 
 
+def is_restriction(restriction):
+    return isinstance(restriction, model.Restriction)
+
+
 def is_sequence(sequence):
     return isinstance(sequence, model.Sequence)
 
@@ -181,4 +187,5 @@ def is_text(text):
 
 
 def is_xml_attribute(attr):
-    return is_attribute(attr) and attr.schema is None
+    return (is_attribute(attr) and
+            is_xml_namespace(attr.schema.target_ns))

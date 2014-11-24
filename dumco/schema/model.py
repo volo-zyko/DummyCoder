@@ -12,8 +12,11 @@ import xsd_types
 
 @function_once
 def xml_attributes():
+    xml_schema = Schema(base.XML_NAMESPACE)
+    xml_schema.prefix = 'xml'
+
     attrs = {name: uses.AttributeUse(None, False, False, False,
-                                     Attribute(name, None))
+                                     Attribute(name, xml_schema))
              for name in ['base', 'id', 'lang', 'space']}
 
     attrs['base'].attribute.type = xsd_types.xsd_builtin_types()['anyURI']
@@ -23,8 +26,8 @@ def xml_attributes():
     attrs['lang'].attribute.type = xsd_types.xsd_builtin_types()['language']
 
     # spaceType is an artificial name, it's not defined by any specs.
-    space_type = SimpleType('spaceType', None)
-    space_type.restriction = Restriction(None)
+    space_type = SimpleType('spaceType', xml_schema)
+    space_type.restriction = Restriction()
     space_type.restriction.base = xsd_types.xsd_builtin_types()['NCName']
     space_type.restriction.enumerations = [
         EnumerationValue('default', ''), EnumerationValue('preserve', '')]
@@ -131,18 +134,21 @@ class ComplexType(base.SchemaBase):
     @staticmethod
     @function_once
     def urtype():
-        seqpart = uses.Particle(False, 1, 1, Sequence(None))
+        seqpart = uses.Particle(False, 1, 1, Sequence())
         seqpart.term.members.append(
             uses.Particle(False, 1, base.UNBOUNDED, Any([], None)))
 
-        root_seqpart = uses.Particle(False, 1, 1, Sequence(None))
+        root_seqpart = uses.Particle(False, 1, 1, Sequence())
         root_seqpart.term.members.append(
             uses.AttributeUse(None, False, False, False, Any([], None)))
         root_seqpart.term.members.append(seqpart)
         root_seqpart.term.members.append(
             uses.SchemaText(xsd_types.xsd_builtin_types()['string']))
 
-        urtype = ComplexType('anyType', None)
+        xsd_schema = Schema(xsd_types.XSD_NAMESPACE)
+        xsd_schema.prefix = 'xsd'
+
+        urtype = ComplexType('anyType', xsd_schema)
         urtype.structure = root_seqpart
         return urtype
 
@@ -167,8 +173,8 @@ class Restriction(base.SchemaBase):
     WS_REPLACE = 2
     WS_COLLAPSE = 3
 
-    def __init__(self, parent_schema):
-        super(Restriction, self).__init__(parent_schema)
+    def __init__(self):
+        super(Restriction, self).__init__(None)
 
         # Base type is always a primitive type.
         # List is restricted in its own way.
@@ -230,9 +236,11 @@ class SimpleType(base.SchemaBase):
     @staticmethod
     @function_once
     def urtype():
-        urtype = SimpleType('anySimpleType', None)
+        ct_urtype = ComplexType.urtype()
 
-        restr = Restriction(None)
+        urtype = SimpleType('anySimpleType', ct_urtype.schema)
+
+        restr = Restriction()
         restr.base = ComplexType.urtype()
         urtype.restriction = restr
 

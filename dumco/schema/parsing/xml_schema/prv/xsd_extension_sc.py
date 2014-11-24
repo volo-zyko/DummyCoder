@@ -4,10 +4,11 @@ from dumco.utils.decorators import method_once
 
 import dumco.schema.checks
 
+import base
 import xsd_any
 import xsd_attribute
 import xsd_attribute_group
-import xsd_base
+import xsd_restriction
 
 
 def xsd_extension_in_simpleContent(attrs, parent_element, factory,
@@ -23,7 +24,7 @@ def xsd_extension_in_simpleContent(attrs, parent_element, factory,
     })
 
 
-class XsdSimpleExtension(xsd_base.XsdBase):
+class XsdSimpleExtension(base.XsdBase):
     def __init__(self, attrs, parent_schema):
         super(XsdSimpleExtension, self).__init__(attrs)
 

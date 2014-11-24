@@ -2,7 +2,7 @@
 
 from dumco.utils.decorators import method_once
 
-import xsd_base
+import base
 import xsd_extension_sc
 import xsd_restriction_sc
 
@@ -19,7 +19,7 @@ def xsd_simpleContent(attrs, parent_element, factory,
     })
 
 
-class XsdSimpleContent(xsd_base.XsdBase):
+class XsdSimpleContent(base.XsdBase):
     def __init__(self, attrs):
         super(XsdSimpleContent, self).__init__(attrs)
 

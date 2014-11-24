@@ -7,7 +7,6 @@ from dumco.utils.decorators import method_once
 
 import dumco.schema.base as base
 import dumco.schema.checks as checks
-import dumco.schema.enums as enums
 import dumco.schema.model as model
 import dumco.schema.tuples as tuples
 import dumco.schema.uses as uses
@@ -62,57 +61,7 @@ class Rng2Model(object):
             element.type = \
                 self._convert_complex_type(pattern.pattern, element.schema)
 
-        def traverse_complex_type(ct, parent, vcts):
-            if ct in vcts:
-                return
-
-            self.namer.name_ct(ct, parent)
-            ct.schema.complex_types.append(ct)
-            vcts.add(ct)
-
-            for child in enums.enum_flat(ct):
-                if checks.is_attribute_use(child):
-                    if checks.is_any(child.attribute):
-                        continue
-                    traverse_simple_type(child.attribute.type, child.attribute)
-                elif checks.is_particle(child):
-                    if checks.is_any(child.term):
-                        continue
-
-                    if checks.is_complex_type(child.term.type):
-                        traverse_complex_type(child.term.type, child.term, vcts)
-                    elif checks.is_complex_type(child.term.type):
-                        traverse_simple_type(child.term.type, child.term)
-                elif checks.is_text(child):
-                    traverse_simple_type(child.type, child)
-
-        def traverse_simple_type(st, parent):
-            if (checks.is_native_type(st) or
-                    st.schema is None and st.name is not None):
-                return
-
-            self.namer.name_st(st, parent)
-            st.schema.simple_types.append(st)
-
-            if checks.is_list_type(st):
-                for item in st.listitems:
-                    traverse_simple_type(item.type, st)
-            elif checks.is_union_type(st):
-                for member in st.union:
-                    traverse_simple_type(member, st)
-
-        # Now we can name types.
-        visited_cts = set()
-        for schema in self.all_schemata.itervalues():
-            for elem in schema.elements:
-                if checks.is_complex_type(elem.type):
-                    traverse_complex_type(elem.type, elem, visited_cts)
-                elif checks.is_simple_type(elem.type):
-                    traverse_simple_type(elem.type, elem)
-
-        for schema in self.all_schemata.itervalues():
-            schema.simple_types.sort(key=lambda s: s.name)
-            schema.complex_types.sort(key=lambda c: c.name)
+        self.namer.populate_schema_with_naming(self.all_schemata)
 
     def _convert_start(self, start_pattern, added_elements):
         def convert_root_element(pattern, ns, name, qualified, excpt=None):
@@ -166,7 +115,7 @@ class Rng2Model(object):
             assert type_pattern.value is not None
 
             t = model.SimpleType(None, schema)
-            t.restriction = model.Restriction(schema)
+            t.restriction = model.Restriction()
             t.restriction.base = type_pattern.type
             t.restriction.enumerations.append(
                 model.EnumerationValue(type_pattern.value, ''))
@@ -177,7 +126,7 @@ class Rng2Model(object):
                 t = type_pattern.type
             else:
                 t = model.SimpleType(None, schema)
-                t.restriction = model.Restriction(schema)
+                t.restriction = model.Restriction()
                 t.restriction.base = type_pattern.type
 
                 if not _set_restriction_params(type_pattern, t.restriction):
@@ -228,7 +177,7 @@ class Rng2Model(object):
     @method_once
     def _forge_empty_simple_type(self, schema):
         empty_type = model.SimpleType(None, schema)
-        empty_type.restriction = model.Restriction(schema)
+        empty_type.restriction = model.Restriction()
         empty_type.restriction.base = xsd_types.xsd_builtin_types()['string']
         empty_type.restriction.length = '0'
         return empty_type
@@ -285,7 +234,7 @@ class Rng2Model(object):
                 enum_type = enum_types.get((p.datatypes_uri, p.type))
                 if enum_type is None:
                     enum_type = model.SimpleType(None, schema)
-                    enum_type.restriction = model.Restriction(schema)
+                    enum_type.restriction = model.Restriction()
                     enum_type.restriction.base = p.type
 
                     enum_types[(p.datatypes_uri, p.type)] = enum_type
@@ -326,7 +275,7 @@ class Rng2Model(object):
                 checks.is_attribute_use(struct) or checks.is_text(struct)):
             # Struct is either single element or attribute or text,
             # thus we have to wrap struct in a compositor.
-            sequence = model.Sequence(schema)
+            sequence = model.Sequence()
             sequence.members.append(struct)
             t.structure = uses.Particle(False, 1, max_occurs, sequence)
         elif struct is None:
@@ -465,16 +414,16 @@ class Rng2Model(object):
             return (False, uses.SchemaText(t))
         elif isinstance(type_pattern, rng_choice.RngChoicePattern):
             if _is_complex_pattern(type_pattern):
-                choice = model.Choice(schema)
+                choice = model.Choice()
                 return convert_compositor(choice)
             else:
                 t = self._convert_simple_type(type_pattern, schema)
                 return (False, uses.SchemaText(t))
         elif isinstance(type_pattern, rng_group.RngGroup):
-            sequence = model.Sequence(schema)
+            sequence = model.Sequence()
             return convert_compositor(sequence)
         elif isinstance(type_pattern, rng_interleave.RngInterleave):
-            interleave = model.Interleave(schema)
+            interleave = model.Interleave()
             return convert_compositor(interleave)
         else:
             assert False

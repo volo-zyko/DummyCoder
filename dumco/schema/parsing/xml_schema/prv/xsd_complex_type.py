@@ -9,11 +9,11 @@ import dumco.schema.model
 import dumco.schema.uses
 import dumco.schema.xsd_types
 
+import base
 import xsd_all
 import xsd_any
 import xsd_attribute
 import xsd_attribute_group
-import xsd_base
 import xsd_choice
 import xsd_complex_content
 import xsd_group
@@ -42,7 +42,7 @@ def xsd_complexType(attrs, parent_element, factory, schema_path, all_schemata):
     })
 
 
-class XsdComplexType(xsd_base.XsdBase):
+class XsdComplexType(base.XsdBase):
     def __init__(self, attrs, parent_schema):
         super(XsdComplexType, self).__init__(attrs)
 
@@ -92,8 +92,7 @@ class XsdComplexType(xsd_base.XsdBase):
         if mixed:
             if particle is None:
                 particle = dumco.schema.uses.Particle(
-                    False, 1, 1,
-                    dumco.schema.model.Sequence(self.schema_element.schema))
+                    False, 1, 1, dumco.schema.model.Sequence())
 
             text = dumco.schema.uses.SchemaText(
                 dumco.schema.xsd_types.xsd_builtin_types()['string'])
@@ -103,19 +102,16 @@ class XsdComplexType(xsd_base.XsdBase):
         def attr_key(use):
             if dumco.schema.checks.is_any(use.attribute):
                 return (0, '')
-            elif use.attribute.schema is None:
-                return (-2, use.attribute.name)
             elif use.attribute.schema != self.schema_element.schema:
                 num = sum([ord(c) for c in use.attribute.schema.prefix])
-                return (-3 - num, use.attribute.name)
+                return (-2 - num, use.attribute.name)
             return (-1, use.attribute.name)
         attr_uses.sort(key=attr_key)
 
         if attr_uses or text is not None:
             if particle is None:
                 particle = dumco.schema.uses.Particle(
-                    False, 1, 1,
-                    dumco.schema.model.Sequence(self.schema_element.schema))
+                    False, 1, 1, dumco.schema.model.Sequence())
             else:
                 new_particle = copy.copy(particle)
                 new_particle.term = copy.copy(particle.term)

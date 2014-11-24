@@ -5,7 +5,7 @@ from dumco.utils.decorators import method_once
 import dumco.schema.model
 import dumco.schema.uses
 
-import xsd_base
+import base
 import xsd_complex_type
 import xsd_simple_type
 
@@ -27,7 +27,7 @@ def xsd_element(attrs, parent_element, factory, schema_path, all_schemata):
     })
 
 
-class XsdElement(xsd_base.XsdBase):
+class XsdElement(base.XsdBase):
     def __init__(self, attrs, parent_schema, factory):
         super(XsdElement, self).__init__(attrs)
 
@@ -78,6 +78,9 @@ class XsdElement(xsd_base.XsdBase):
                         isinstance(t, xsd_simple_type.XsdSimpleType)), \
                     'Element can contain only its type'
 
-                self.schema_element.term.type = t.schema_element
+                if isinstance(t, xsd_simple_type.XsdSimpleType):
+                    self.schema_element.term.type = t.finalize(factory)
+                else:
+                    self.schema_element.term.type = t.schema_element
 
         return self.schema_element

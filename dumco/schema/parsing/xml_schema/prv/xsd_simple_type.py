@@ -7,7 +7,7 @@ import dumco.schema.checks
 import dumco.schema.model
 import dumco.schema.uses
 
-import xsd_base
+import base
 import xsd_list
 import xsd_restriction
 import xsd_union
@@ -28,7 +28,7 @@ def xsd_simpleType(attrs, parent_element, factory, schema_path, all_schemata):
     })
 
 
-class XsdSimpleType(xsd_base.XsdBase):
+class XsdSimpleType(base.XsdBase):
     def __init__(self, attrs, parent_schema):
         super(XsdSimpleType, self).__init__(attrs)
 
@@ -45,10 +45,10 @@ class XsdSimpleType(xsd_base.XsdBase):
 
             if isinstance(c, xsd_restriction.XsdRestriction):
                 restriction_or_type = c.finalize(factory)
-                if dumco.schema.checks.is_list_type(restriction_or_type):
-                    return restriction_or_type
-                else:
+                if dumco.schema.checks.is_restriction(restriction_or_type):
                     self.schema_element.restriction = restriction_or_type
+                else:
+                    self.schema_element = restriction_or_type
             elif isinstance(c, xsd_list.XsdList):
                 listitem = dumco.schema.uses.ListTypeCardinality(
                     c.finalize(factory).itemtype,
@@ -68,4 +68,23 @@ class XsdSimpleType(xsd_base.XsdBase):
                  self.schema_element.restriction is None)), \
             'SimpleType must be any of restriction, list, union'
 
-        return self.schema_element
+        return eliminate_degenerate_simple_type(self.schema_element)
+
+
+def eliminate_degenerate_simple_type(st):
+    if (dumco.schema.checks.is_restriction_type(st) and
+            not st.restriction.enumerations and
+            st.restriction.fraction_digits is None and
+            st.restriction.length is None and
+            st.restriction.max_exclusive is None and
+            st.restriction.max_inclusive is None and
+            st.restriction.max_length is None and
+            st.restriction.min_exclusive is None and
+            st.restriction.min_inclusive is None and
+            st.restriction.min_length is None and
+            not st.restriction.patterns and
+            st.restriction.total_digits is None and
+            st.restriction.white_space is None):
+        return st.restriction.base
+
+    return st

@@ -5,8 +5,8 @@ from dumco.utils.decorators import method_once
 import dumco.schema.model
 import dumco.schema.uses
 
+import base
 import xsd_any
-import xsd_base
 import xsd_element
 import xsd_group
 import xsd_sequence
@@ -26,7 +26,7 @@ def xsd_choice(attrs, parent_element, factory, schema_path, all_schemata):
     })
 
 
-class XsdChoice(xsd_base.XsdBase):
+class XsdChoice(base.XsdBase):
     def __init__(self, attrs, parent_schema, factory):
         super(XsdChoice, self).__init__(attrs)
 
@@ -34,7 +34,7 @@ class XsdChoice(xsd_base.XsdBase):
             False,
             factory.particle_min_occurs(attrs),
             factory.particle_max_occurs(attrs),
-            dumco.schema.model.Choice(parent_schema.schema_element))
+            dumco.schema.model.Choice())
 
     @method_once
     def finalize(self, factory):

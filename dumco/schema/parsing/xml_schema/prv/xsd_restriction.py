@@ -6,7 +6,7 @@ import dumco.schema.checks
 import dumco.schema.model
 import dumco.schema.uses
 
-import xsd_base
+import base
 import xsd_enumeration
 import xsd_simple_type
 
@@ -33,13 +33,12 @@ def xsd_restriction(attrs, parent_element, factory, schema_path, all_schemata):
     })
 
 
-class XsdRestriction(xsd_base.XsdBase):
+class XsdRestriction(base.XsdBase):
     def __init__(self, attrs, parent_schema):
         super(XsdRestriction, self).__init__(attrs)
 
         self.schema = parent_schema
-        self.schema_element = \
-            dumco.schema.model.Restriction(parent_schema.schema_element)
+        self.schema_element = dumco.schema.model.Restriction()
 
     @method_once
     def finalize(self, factory):
@@ -58,8 +57,7 @@ class XsdRestriction(xsd_base.XsdBase):
                         t.value, t.schema_element.doc)
                     self.schema_element.enumerations.append(enum)
         else:
-            base = factory.resolve_simple_type(self.attr('base'),
-                                               self.schema, finalize=True)
+            base = factory.resolve_simple_type(self.attr('base'), self.schema)
             for x in self.children:
                 assert isinstance(x, xsd_enumeration.XsdEnumeration), \
                     'Expected only Enumerations'
@@ -69,28 +67,18 @@ class XsdRestriction(xsd_base.XsdBase):
 
         assert base is not None, 'Restriction does not have base type'
 
+        return self.connet_restriction_base(base)
+
+    def connet_restriction_base(self, base):
         if dumco.schema.checks.is_list_type(base):
-            itemtype = base.listitems[0]
-
-            min_occurs = itemtype.min_occurs
-            max_occurs = itemtype.max_occurs
-            if self.schema_element.length is not None:
-                min_occurs = self.schema_element.length
-                max_occurs = self.schema_element.length
-            else:
-                if self.schema_element.min_length is not None:
-                    min_occurs = self.schema_element.min_length
-                elif self.schema_element.max_length is not None:
-                    max_occurs = self.schema_element.max_length
-
-            base.listitems[0] = dumco.schema.uses.ListTypeCardinality(
-                itemtype, min_occurs, max_occurs)
-
+            simplify_list_restiction(base, self.schema_element.length,
+                                     self.schema_element.min_length,
+                                     self.schema_element.max_length)
             return base
-        else:
-            self.schema_element.base = self.merge_base_restriction(base)
 
-            return self.schema_element
+        self.schema_element.base = self.merge_base_restriction(base)
+
+        return self.schema_element
 
     def merge_base_restriction(self, base):
         def merge(attr):
@@ -100,7 +88,7 @@ class XsdRestriction(xsd_base.XsdBase):
                     setattr(self.schema_element, attr, value)
 
         if dumco.schema.checks.is_restriction_type(base):
-            merge('enumeration')
+            merge('enumerations')
             merge('fraction_digits')
             merge('length')
             merge('max_exclusive')
@@ -109,7 +97,7 @@ class XsdRestriction(xsd_base.XsdBase):
             merge('min_exclusive')
             merge('min_inclusive')
             merge('min_length')
-            merge('pattern')
+            merge('patterns')
             merge('total_digits')
             merge('white_space')
 
@@ -222,3 +210,25 @@ class XsdRestriction(xsd_base.XsdBase):
         return (parent_element, {
             'annotation': factory.noop_handler,
         })
+
+
+def simplify_list_restiction(base, length, min_length, max_length):
+    assert dumco.schema.checks.is_list_type(base)
+
+    itemtype = base.listitems[0]
+
+    min_occurs = itemtype.min_occurs
+    max_occurs = itemtype.max_occurs
+
+    if length is not None:
+        min_occurs = length
+        max_occurs = length
+
+    if min_length is not None:
+        min_occurs = min_length
+
+    if max_length is not None:
+        max_occurs = max_length
+
+    base.listitems[0] = dumco.schema.uses.ListTypeCardinality(
+        itemtype[0], min_occurs, max_occurs)

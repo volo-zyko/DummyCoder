@@ -37,8 +37,8 @@ class SchemaBase(object):
 
 
 class Compositor(SchemaBase):
-    def __init__(self, parent_schema):
-        super(Compositor, self).__init__(parent_schema)
+    def __init__(self):
+        super(Compositor, self).__init__(None)
 
         self.members = []
 

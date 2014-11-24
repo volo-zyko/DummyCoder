@@ -18,7 +18,7 @@ import prv.rng_grammar
 import prv.rng_oneOrMore
 import prv.rng_start
 import prv.rng_text
-import prv.rng_to_model
+import prv.to_model
 
 
 class RelaxElementFactory(object):
@@ -152,7 +152,7 @@ class RelaxElementFactory(object):
         sorted_all_grammars = sorted(all_grammars.values(),
                                      key=lambda g: g.grammar_path)
 
-        converter = prv.rng_to_model.Rng2Model(all_schemata, self)
+        converter = prv.to_model.Rng2Model(all_schemata, self)
         for grammar in sorted_all_grammars:
             grammar.finalize(grammar, self)
 

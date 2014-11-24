@@ -4,6 +4,7 @@ import collections
 import re
 
 import checks
+import enums
 
 
 class PatternParseException(BaseException):
@@ -112,11 +113,14 @@ class Namer(object):
         else:
             assert False, 'Unexpected component'
 
+    def populate_schema_with_naming(self, all_schemata):
+        _populate_schema_with_naming(self, all_schemata)
+
     def name_ct(self, ct, parent):
         c = self.ctypes_counters.setdefault(ct.schema.target_ns, {})
 
         if ct.name is not None and not self.ctype_patterns:
-            ct.name = _track_name(ct.name, c)
+            ct.name = _track_name(ct, ct.name, c)
             return
 
         if ct.name is None:
@@ -126,16 +130,24 @@ class Namer(object):
         else:
             (style, words) = self._parse_name(ct.name, _NAME_HINT_CT)
 
-        ct.name = self._apply_patterns(words, c, self.ctype_patterns, style)
+        ct.name = self._apply_patterns(ct, words, c, self.ctype_patterns, style)
 
     def name_st(self, st, parent):
         c = self.stypes_counters.setdefault(st.schema.target_ns, {})
 
         if st.name is not None and not self.stype_patterns:
-            st.name = _track_name(st.name, c)
+            st.name = _track_name(st, st.name, c)
             return
 
-        if st.name is None:
+        if st.name is None and checks.is_text(parent):
+            (style, words) = self._parse_name('text', _NAME_HINT_ST)
+            if checks.is_union_type(st):
+                words.extend(['union', 'type'])
+            elif checks.is_list_type(st):
+                words.extend(['list', 'type'])
+            else:
+                words.extend(['simple', 'type'])
+        elif st.name is None:
             assert parent.name is not None
             if checks.is_element(parent) or checks.is_attribute(parent):
                 (style, words) = self._parse_name(parent.name, _NAME_HINT_ST)
@@ -171,7 +183,7 @@ class Namer(object):
         else:
             (style, words) = self._parse_name(st.name, _NAME_HINT_ST)
 
-        st.name = self._apply_patterns(words, c, self.stype_patterns, style)
+        st.name = self._apply_patterns(st, words, c, self.stype_patterns, style)
 
     def name_egroup(self, elem_parent):
         c = self.egroups_counters.setdefault(elem_parent.schema.target_ns, {})
@@ -179,7 +191,8 @@ class Namer(object):
         assert elem_parent.name is not None
         (style, words) = self._parse_name(elem_parent.name, _NAME_HINT_ELEM)
 
-        return self._apply_patterns(words, c, self.egroup_patterns, style)
+        return self._apply_patterns(elem_parent, words, c,
+                                    self.egroup_patterns, style)
 
     def name_agroup(self, attr_parent):
         c = self.agroups_counters.setdefault(attr_parent.schema.target_ns, {})
@@ -187,7 +200,8 @@ class Namer(object):
         assert attr_parent.name is not None
         (style, words) = self._parse_name(attr_parent.name, _NAME_HINT_ATTR)
 
-        return self._apply_patterns(words, c, self.agroup_patterns, style)
+        return self._apply_patterns(attr_parent, words, c,
+                                    self.agroup_patterns, style)
 
     def _parse_name(self, name, hint):
         (_, words) = _guess_naming(name)
@@ -199,7 +213,7 @@ class Namer(object):
 
         return (Namer.SCHEMA_NAMING_UCC, words)
 
-    def _apply_patterns(self, words, counters, patterns, style):
+    def _apply_patterns(self, key_component, words, counters, patterns, style):
         if patterns:
             new_name = '-'.join(words)
 
@@ -214,19 +228,32 @@ class Namer(object):
 
             new_name = _get_join_char(style).join(words)
 
-        return _track_name(new_name, counters)
+        return _track_name(key_component, new_name, counters)
 
 
-def _track_name(name, counters):
-    c = counters.get(name, 0)
+STEM_PARSER = re.compile('([-._a-zA-Z0-9]*?)([0-9]*)$')
 
-    while True:
-        new_name = name if c == 0 else name + str(c)
-        c += 1
 
-        if new_name not in counters:
-            counters[name] = c
-            return new_name
+def _track_name(key_component, name, counters):
+    m = STEM_PARSER.match(name)
+    assert m is not None
+
+    (stem, count_part) = m.group(1, 2)
+    count_tracker = counters.setdefault(stem, set())
+
+    if key_component in count_tracker:
+        return name
+
+    # Handle case with stem ending with big number.
+    # count = 0 if count_part == '' else int(count_part)
+    # if count > len(count_tracker):
+    #     stem = name + '.'
+
+    count_tracker.add(key_component)
+    if len(count_tracker) == 1:
+        return name
+    else:
+        return stem + str(len(count_tracker))
 
 
 def _get_join_char(style):
@@ -350,3 +377,77 @@ def _guess_naming(name):
             style = Namer.SCHEMA_NAMING_LCC
 
     return (style, words)
+
+
+def _populate_schema_with_naming(namer, all_schemata):
+    visited_cts = set()
+
+    unnamed_sts = []
+    unnamed_cts = []
+
+    def traverse_complex_type(ct, parent):
+        if ct in visited_cts:
+            return
+
+        if ct.name is None:
+            unnamed_cts.append((ct, parent))
+        else:
+            namer.learn_naming(ct)
+            namer.name_ct(ct, parent)
+        ct.schema.complex_types.append(ct)
+        visited_cts.add(ct)
+
+        for child in enums.enum_flat(ct):
+            if checks.is_attribute_use(child):
+                if checks.is_any(child.attribute):
+                    continue
+
+                traverse_simple_type(child.attribute.type, child.attribute)
+            elif checks.is_particle(child):
+                if checks.is_any(child.term):
+                    continue
+
+                if checks.is_complex_type(child.term.type):
+                    traverse_complex_type(child.term.type, child.term)
+                elif checks.is_complex_type(child.term.type):
+                    traverse_simple_type(child.term.type, child.term)
+            elif checks.is_text(child):
+                traverse_simple_type(child.type, child)
+
+    def traverse_simple_type(st, parent):
+        if (checks.is_native_type(st) or
+                checks.is_xsd_namespace(st.schema.target_ns) and
+                st.name is not None):
+            return
+
+        if st.name is None:
+            unnamed_sts.append((st, parent))
+        else:
+            namer.learn_naming(st)
+            namer.name_st(st, parent)
+        st.schema.simple_types.append(st)
+
+        if checks.is_list_type(st):
+            for item in st.listitems:
+                traverse_simple_type(item.type, st)
+        elif checks.is_union_type(st):
+            for member in st.union:
+                traverse_simple_type(member, st)
+
+    for schema in all_schemata:
+        for elem in schema.elements:
+            if checks.is_complex_type(elem.type):
+                traverse_complex_type(elem.type, elem)
+            elif checks.is_simple_type(elem.type):
+                traverse_simple_type(elem.type, elem)
+
+    for (ct, parent) in unnamed_cts:
+        namer.name_ct(ct, parent)
+
+    for (st, parent) in unnamed_sts:
+        namer.name_st(st, parent)
+
+    for schema in all_schemata:
+        schema.simple_types.sort(key=lambda s: s.name)
+        schema.complex_types.sort(key=lambda c: c.name)
+        schema.elements.sort(key=lambda e: e.name)

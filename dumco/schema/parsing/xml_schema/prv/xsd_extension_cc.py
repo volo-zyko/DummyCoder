@@ -9,11 +9,11 @@ import dumco.schema.model
 import dumco.schema.enums
 import dumco.schema.uses
 
+import base
 import xsd_all
 import xsd_any
 import xsd_attribute
 import xsd_attribute_group
-import xsd_base
 import xsd_choice
 import xsd_group
 import xsd_sequence
@@ -36,7 +36,7 @@ def xsd_extension_in_complexContent(attrs, parent_element, factory,
     })
 
 
-class XsdComplexExtension(xsd_base.XsdBase):
+class XsdComplexExtension(base.XsdBase):
     def __init__(self, attrs, parent_schema):
         super(XsdComplexExtension, self).__init__(attrs)
 
@@ -85,7 +85,7 @@ class XsdComplexExtension(xsd_base.XsdBase):
         elif base_part is None:
             return self.part
 
-        new_elem = dumco.schema.model.Sequence(self.schema.schema_element)
+        new_elem = dumco.schema.model.Sequence()
         copy_base = dumco.schema.uses.Particle(False,
                                                base_part.min_occurs,
                                                base_part.max_occurs,

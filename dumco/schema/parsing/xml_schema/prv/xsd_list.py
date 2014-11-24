@@ -2,7 +2,7 @@
 
 from dumco.utils.decorators import method_once
 
-import xsd_base
+import base
 import xsd_simple_type
 
 
@@ -16,7 +16,7 @@ def xsd_list(attrs, parent_element, factory, schema_path, all_schemata):
     })
 
 
-class XsdList(xsd_base.XsdBase):
+class XsdList(base.XsdBase):
     def __init__(self, attrs, parent_schema):
         super(XsdList, self).__init__(attrs)
 

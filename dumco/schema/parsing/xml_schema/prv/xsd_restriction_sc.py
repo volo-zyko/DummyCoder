@@ -5,10 +5,11 @@ from dumco.utils.decorators import method_once
 import dumco.schema.checks
 import dumco.schema.model
 
+import base
+import utils
 import xsd_any
 import xsd_attribute
 import xsd_attribute_group
-import xsd_base
 import xsd_enumeration
 import xsd_restriction
 import xsd_simple_type
@@ -95,15 +96,19 @@ class XsdSimpleRestriction(xsd_restriction.XsdRestriction):
         else:
             base_type = simple_type
 
-        self.schema_element.base = self.merge_base_restriction(base_type)
+        restriction_or_type = self.connet_restriction_base(base_type)
 
         if dumco.schema.checks.is_complex_type(base):
             self.attr_uses.extend(
-                xsd_base.restrict_base_attributes(base, factory,
-                                                  prohibited_attr_uses,
-                                                  redefined_attr_uses))
+                utils.restrict_base_attributes(base, factory,
+                                               prohibited_attr_uses,
+                                               redefined_attr_uses))
 
         self.attr_uses.extend(redefined_attr_uses)
 
-        self.simple_type.restriction = self.schema_element
+        if dumco.schema.checks.is_restriction(restriction_or_type):
+            self.simple_type.restriction = restriction_or_type
+        else:
+            self.simple_type = restriction_or_type
+
         return self.simple_type

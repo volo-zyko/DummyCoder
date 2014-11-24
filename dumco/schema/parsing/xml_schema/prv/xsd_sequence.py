@@ -5,8 +5,8 @@ from dumco.utils.decorators import method_once
 import dumco.schema.model
 import dumco.schema.uses
 
+import base
 import xsd_any
-import xsd_base
 import xsd_choice
 import xsd_element
 import xsd_group
@@ -26,7 +26,7 @@ def xsd_sequence(attrs, parent_element, factory, schema_path, all_schemata):
     })
 
 
-class XsdSequence(xsd_base.XsdBase):
+class XsdSequence(base.XsdBase):
     def __init__(self, attrs, parent_schema, factory):
         super(XsdSequence, self).__init__(attrs)
 
@@ -34,7 +34,7 @@ class XsdSequence(xsd_base.XsdBase):
             False,
             factory.particle_min_occurs(attrs),
             factory.particle_max_occurs(attrs),
-            dumco.schema.model.Sequence(parent_schema.schema_element))
+            dumco.schema.model.Sequence())
 
     @method_once
     def finalize(self, factory):

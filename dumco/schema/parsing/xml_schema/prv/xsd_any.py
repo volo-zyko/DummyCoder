@@ -5,7 +5,7 @@ from dumco.utils.decorators import method_once
 import dumco.schema.model
 import dumco.schema.uses
 
-import xsd_base
+import base
 
 
 def xsd_any(attrs, parent_element, factory, schema_path, all_schemata):
@@ -27,7 +27,7 @@ def xsd_anyAttribute(attrs, parent_element, factory,
     })
 
 
-class XsdAny(xsd_base.XsdBase):
+class XsdAny(base.XsdBase):
     def __init__(self, attrs, parent_schema, factory, is_attribute):
         super(XsdAny, self).__init__(attrs)
 
