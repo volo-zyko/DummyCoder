@@ -54,10 +54,10 @@ class DataComponent(SchemaBase):
 
 class NativeType(SchemaBase):
     # Represents native (predefined) named type in certain namespace/uri.
-    def __init__(self, uri, name):
-        super(NativeType, self).__init__(None)
+    def __init__(self, parent_schema, name):
+        super(NativeType, self).__init__(parent_schema)
 
-        self.uri = uri
+        self.uri = parent_schema.target_ns
         self.name = name
 
 

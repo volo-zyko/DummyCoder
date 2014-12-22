@@ -4,6 +4,7 @@ from dumco.utils.decorators import method_once
 
 import dumco.schema.model
 import dumco.schema.uses
+import dumco.schema.xsd_types
 
 import base
 import xsd_complex_type
@@ -71,8 +72,7 @@ class XsdElement(base.XsdBase):
             self.schema_element.term.type = \
                 factory.resolve_type(self.attr('type'), self.schema)
         else:
-            self.schema_element.term.type = \
-                dumco.schema.model.ComplexType.urtype()
+            self.schema_element.term.type = dumco.schema.xsd_types.ct_urtype()
             for t in self.children:
                 assert (isinstance(t, xsd_complex_type.XsdComplexType) or
                         isinstance(t, xsd_simple_type.XsdSimpleType)), \
@@ -82,5 +82,8 @@ class XsdElement(base.XsdBase):
                     self.schema_element.term.type = t.finalize(factory)
                 else:
                     self.schema_element.term.type = t.schema_element
+
+        if self.schema_element.max_occurs == 0:
+            return None
 
         return self.schema_element

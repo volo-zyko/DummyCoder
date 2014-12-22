@@ -36,10 +36,7 @@ class XsdSimpleContent(base.XsdBase):
 
             c.finalize(factory)
 
-            if isinstance(c, xsd_extension_sc.XsdSimpleExtension):
-                self.content_type = c.base
-            elif isinstance(c, xsd_restriction_sc.XsdSimpleRestriction):
-                self.content_type = c.simple_type
+            self.content_type = c.base
             self.attr_uses = c.attr_uses
 
         return self

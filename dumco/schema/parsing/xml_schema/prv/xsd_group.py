@@ -2,10 +2,13 @@
 
 from dumco.utils.decorators import method_once
 
+import dumco.schema.checks
 import dumco.schema.enums
+import dumco.schema.model
 import dumco.schema.uses
 
 import base
+import utils
 import xsd_all
 import xsd_choice
 import xsd_sequence
@@ -36,19 +39,25 @@ class XsdGroup(base.XsdBase):
 
     @method_once
     def finalize(self, factory):
-        term = None
+        particle = None
         if self.attr('ref') is not None:
             particle = factory.resolve_group(self.attr('ref'), self.schema)
-
-            term = particle.term
         else:
             for c in self.children:
                 assert ((isinstance(c, xsd_all.XsdAll) or
                          isinstance(c, xsd_choice.XsdChoice) or
                          isinstance(c, xsd_sequence.XsdSequence)) and
-                        term is None), 'Wrong content of Group'
+                        particle is None), 'Wrong content of Group'
 
-                term = c.finalize(factory).term
+                particle = c.finalize(factory)
 
-        return dumco.schema.uses.Particle(
-            False, self.min_occurs, self.max_occurs, term)
+        if particle is None:
+            return particle
+
+        new_seq = dumco.schema.model.Sequence()
+        new_seq.members.append(particle)
+
+        particle = dumco.schema.uses.Particle(
+            False, self.min_occurs, self.max_occurs, new_seq)
+
+        return utils.reduce_particle(particle)

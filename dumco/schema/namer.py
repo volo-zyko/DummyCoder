@@ -190,6 +190,7 @@ class Namer(object):
 
         assert elem_parent.name is not None
         (style, words) = self._parse_name(elem_parent.name, _NAME_HINT_ELEM)
+        words.append('group')
 
         return self._apply_patterns(elem_parent, words, c,
                                     self.egroup_patterns, style)
@@ -199,6 +200,7 @@ class Namer(object):
 
         assert attr_parent.name is not None
         (style, words) = self._parse_name(attr_parent.name, _NAME_HINT_ATTR)
+        words.append('group')
 
         return self._apply_patterns(attr_parent, words, c,
                                     self.agroup_patterns, style)
@@ -238,22 +240,21 @@ def _track_name(key_component, name, counters):
     m = STEM_PARSER.match(name)
     assert m is not None
 
-    (stem, count_part) = m.group(1, 2)
-    count_tracker = counters.setdefault(stem, set())
+    (stem, name_id) = m.group(1, 2)
+    name_id = 0 if name_id == '' else int(name_id)
 
-    if key_component in count_tracker:
-        return name
+    count_tracker = counters.setdefault(stem, {})
 
-    # Handle case with stem ending with big number.
-    # count = 0 if count_part == '' else int(count_part)
-    # if count > len(count_tracker):
-    #     stem = name + '.'
+    if key_component not in count_tracker:
+        if name_id in count_tracker.itervalues():
+            for name_id in xrange(0, 2 ** 32):
+                if name_id not in count_tracker.itervalues():
+                    count_tracker[key_component] = name_id
+                    break
+        else:
+            count_tracker[key_component] = name_id
 
-    count_tracker.add(key_component)
-    if len(count_tracker) == 1:
-        return name
-    else:
-        return stem + str(len(count_tracker))
+    return stem if name_id == 0 else '{}{}'.format(stem, name_id)
 
 
 def _get_join_char(style):
@@ -409,15 +410,14 @@ def _populate_schema_with_naming(namer, all_schemata):
 
                 if checks.is_complex_type(child.term.type):
                     traverse_complex_type(child.term.type, child.term)
-                elif checks.is_complex_type(child.term.type):
+                elif checks.is_simple_type(child.term.type):
                     traverse_simple_type(child.term.type, child.term)
             elif checks.is_text(child):
                 traverse_simple_type(child.type, child)
 
     def traverse_simple_type(st, parent):
-        if (checks.is_native_type(st) or
-                checks.is_xsd_namespace(st.schema.target_ns) and
-                st.name is not None):
+        if checks.is_native_type(st):
+            assert st.name is not None
             return
 
         if st.name is None:

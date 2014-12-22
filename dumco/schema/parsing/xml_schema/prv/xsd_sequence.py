@@ -6,6 +6,7 @@ import dumco.schema.model
 import dumco.schema.uses
 
 import base
+import utils
 import xsd_any
 import xsd_choice
 import xsd_element
@@ -48,4 +49,4 @@ class XsdSequence(base.XsdBase):
 
             self.schema_element.term.members.append(c.finalize(factory))
 
-        return self.schema_element
+        return utils.reduce_particle(self.schema_element)

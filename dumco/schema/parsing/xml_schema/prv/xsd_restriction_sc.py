@@ -5,7 +5,6 @@ from dumco.utils.decorators import method_once
 import dumco.schema.checks
 import dumco.schema.model
 
-import base
 import utils
 import xsd_any
 import xsd_attribute
@@ -49,9 +48,7 @@ class XsdSimpleRestriction(xsd_restriction.XsdRestriction):
     def __init__(self, attrs, parent_schema):
         super(XsdSimpleRestriction, self).__init__(attrs, parent_schema)
 
-        # Should have been named schema_element but it's already defined
-        # in the base class.
-        self.simple_type = dumco.schema.model.SimpleType(
+        self.base = dumco.schema.model.SimpleType(
             None, parent_schema.schema_element)
         self.attr_uses = []
 
@@ -85,30 +82,32 @@ class XsdSimpleRestriction(xsd_restriction.XsdRestriction):
             elif isinstance(c, xsd_any.XsdAny):
                 self.attr_uses.append(c.finalize(factory))
 
-        # Only complex type can be here.
-        base = factory.resolve_complex_type(self.attr('base'),
-                                            self.schema, finalize=True)
+        # Only complex type can be here. That's the essence of restriction.
+        base_ct = factory.resolve_complex_type(self.attr('base'),
+                                               self.schema, finalize=True)
 
-        if simple_type is None:
-            base_type = base.text().type
-            assert dumco.schema.checks.is_primitive_type(base_type), \
-                'Wrong base type of simple Restriction'
-        else:
-            base_type = simple_type
-
-        restriction_or_type = self.connet_restriction_base(base_type)
-
-        if dumco.schema.checks.is_complex_type(base):
+        if dumco.schema.checks.is_complex_type(base_ct):
             self.attr_uses.extend(
-                utils.restrict_base_attributes(base, factory,
+                utils.restrict_base_attributes(base_ct, factory,
                                                prohibited_attr_uses,
                                                redefined_attr_uses))
 
         self.attr_uses.extend(redefined_attr_uses)
 
-        if dumco.schema.checks.is_restriction(restriction_or_type):
-            self.simple_type.restriction = restriction_or_type
+        if simple_type is None:
+            base_type = base_ct.text().type
+            assert dumco.schema.checks.is_primitive_type(base_type), \
+                'Simple Restriction must restrict only Simple Content'
         else:
-            self.simple_type = restriction_or_type
+            base_type = simple_type
 
-        return self.simple_type
+        restriction_or_type = self.connect_restriction_base(base_type)
+
+        if dumco.schema.checks.is_restriction(restriction_or_type):
+            self.base.restriction = restriction_or_type
+        else:
+            self.base = restriction_or_type
+
+        self.base = xsd_simple_type.eliminate_degenerate_simple_type(self.base)
+
+        return self

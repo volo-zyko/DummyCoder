@@ -61,7 +61,7 @@ class Rng2Model(object):
             element.type = \
                 self._convert_complex_type(pattern.pattern, element.schema)
 
-        self.namer.populate_schema_with_naming(self.all_schemata)
+        self.namer.populate_schema_with_naming(self.all_schemata.itervalues())
 
     def _convert_start(self, start_pattern, added_elements):
         def convert_root_element(pattern, ns, name, qualified, excpt=None):
@@ -596,7 +596,9 @@ def _set_restriction_params(data, restriction):
         return False
 
     for p in data.params:
-        if p.name == 'fractionDigits':
+        if p.name == 'enumeration':
+            restriction.enumerations.append(p.value)
+        elif p.name == 'fractionDigits':
             restriction.fraction_digits = p.value
         elif p.name == 'length':
             restriction.length = p.value
@@ -613,7 +615,7 @@ def _set_restriction_params(data, restriction):
         elif p.name == 'minLength':
             restriction.min_length = p.value
         elif p.name == 'pattern':
-            restriction.pattern = p.value
+            restriction.patterns.append(p.value)
         elif p.name == 'totalDigits':
             restriction.total_digits = p.value
         elif p.name == 'whiteSpace':

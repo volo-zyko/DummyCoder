@@ -3,6 +3,8 @@
 from dumco.utils.decorators import function_once
 
 import base
+import model
+import uses
 
 
 # Constants.
@@ -63,5 +65,39 @@ _NATIVE_XSD_TYPE_NAMES = [
 
 @function_once
 def xsd_builtin_types():
-    return {x: base.NativeType(XSD_NAMESPACE, x)
+    return {x: base.NativeType(xsd_schema(), x)
             for x in _NATIVE_XSD_TYPE_NAMES}
+
+
+@function_once
+def xsd_schema():
+    return model.Schema(XSD_NAMESPACE, 'xsd')
+
+
+@function_once
+def ct_urtype():
+    seqpart = uses.Particle(False, 1, 1, model.Sequence())
+    seqpart.term.members.append(
+        uses.Particle(False, 1, base.UNBOUNDED, model.Any([], None)))
+
+    root_seqpart = uses.Particle(False, 1, 1, model.Sequence())
+    root_seqpart.term.members.append(
+        uses.AttributeUse(None, False, False, False, model.Any([], None)))
+    root_seqpart.term.members.append(seqpart)
+    root_seqpart.term.members.append(
+        uses.SchemaText(xsd_builtin_types()['string']))
+
+    urtype = model.ComplexType('anyType', xsd_schema())
+    urtype.structure = root_seqpart
+    return urtype
+
+
+@function_once
+def st_urtype():
+    urtype = model.SimpleType('anySimpleType', xsd_schema())
+
+    restr = model.Restriction()
+    restr.base = ct_urtype()
+    urtype.restriction = restr
+
+    return urtype

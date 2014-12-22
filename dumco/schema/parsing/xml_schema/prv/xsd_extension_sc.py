@@ -8,7 +8,6 @@ import base
 import xsd_any
 import xsd_attribute
 import xsd_attribute_group
-import xsd_restriction
 
 
 def xsd_extension_in_simpleContent(attrs, parent_element, factory,
@@ -48,16 +47,16 @@ class XsdSimpleExtension(base.XsdBase):
             elif isinstance(c, xsd_any.XsdAny):
                 self.attr_uses.append(c.finalize(factory))
 
-        base = factory.resolve_type(self.attr('base'),
-                                    self.schema, finalize=True)
+        base_type = factory.resolve_type(self.attr('base'),
+                                         self.schema, finalize=True)
 
-        if dumco.schema.checks.is_complex_type(base):
-            self.attr_uses.extend([x for x in base.attribute_uses()])
+        if dumco.schema.checks.is_complex_type(base_type):
+            self.attr_uses.extend(base_type.attribute_uses())
 
-            self.base = base.text().type
+            self.base = base_type.text().type
             assert dumco.schema.checks.is_primitive_type(self.base), \
                 'Simple Extension must extend only Simple Content'
         else:
-            self.base = base
+            self.base = base_type
 
         return self

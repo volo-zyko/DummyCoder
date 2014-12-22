@@ -218,10 +218,11 @@ def dump_particle(ct, particle, schema, context, names, in_group=False):
             all([context.om.is_opaque_ct_member(ct, p.term)
                  for p in particle.traverse() if checks.is_particle(p)])):
         return
-    elif particle.term.schema != schema:
+    elif (checks.is_element(particle.term) and
+            particle.term.schema != schema):
         groups = context.egroups.get(particle.term.schema, {})
 
-        if particle.term in [t for t in groups.iterkeys()]:
+        if particle.term in groups.iterkeys():
             group_name = groups[particle.term].name
             with TagGuard('group', context):
                 context.add_attribute(
@@ -243,7 +244,7 @@ def dump_particle(ct, particle, schema, context, names, in_group=False):
         elif checks.is_element(particle.term):
             is_element_def = False
             if particle.term.schema == schema:
-                top_elements = [e for e in particle.term.schema.elements]
+                top_elements = particle.term.schema.elements
 
                 is_element_def = particle.term not in top_elements
 

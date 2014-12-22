@@ -67,9 +67,9 @@ class XsdRestriction(base.XsdBase):
 
         assert base is not None, 'Restriction does not have base type'
 
-        return self.connet_restriction_base(base)
+        return self.connect_restriction_base(base)
 
-    def connet_restriction_base(self, base):
+    def connect_restriction_base(self, base):
         if dumco.schema.checks.is_list_type(base):
             simplify_list_restiction(base, self.schema_element.length,
                                      self.schema_element.min_length,

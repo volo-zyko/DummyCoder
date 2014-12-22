@@ -9,6 +9,7 @@ import xml.sax.handler
 from dumco.utils.file_utils import enumerate_files
 from dumco.utils.horn import horn
 
+
 class _XmlContentHandler(xml.sax.handler.ContentHandler):
     NamespacePair = collections.namedtuple('NamespacePair', ['prefix', 'uri'])
 

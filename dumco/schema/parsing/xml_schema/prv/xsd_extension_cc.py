@@ -10,6 +10,7 @@ import dumco.schema.enums
 import dumco.schema.uses
 
 import base
+import utils
 import xsd_all
 import xsd_any
 import xsd_attribute
@@ -67,33 +68,35 @@ class XsdComplexExtension(base.XsdBase):
                                                self.schema, finalize=True)
 
         self.part = self._merge_content(base_ct)
-        self.attr_uses.extend([x for x in base_ct.attribute_uses()])
+        self.attr_uses.extend(base_ct.attribute_uses())
 
         return self
 
     def _merge_content(self, base_ct):
+        assert base_ct is not None
+
         base_part = None
-        if base_ct is not None:
-            base_part = copy.copy(base_ct.structure)
         if base_ct.structure is not None:
+            base_part = copy.copy(base_ct.structure)
             base_part.term = copy.copy(base_ct.structure.term)
             base_part.term.members = [m for m in base_ct.structure.term.members
                                       if dumco.schema.checks.is_particle(m)]
+
+            if not base_part.term.members:
+                base_part = None
+
+            base_part = utils.reduce_particle(base_part)
 
         if self.part is None:
             return base_part
         elif base_part is None:
             return self.part
 
-        new_elem = dumco.schema.model.Sequence()
-        copy_base = dumco.schema.uses.Particle(False,
-                                               base_part.min_occurs,
-                                               base_part.max_occurs,
-                                               base_part.term)
-        copy_self = dumco.schema.uses.Particle(False,
+        new_seq = dumco.schema.model.Sequence()
+        copy_self = dumco.schema.uses.Particle(self.part.qualified,
                                                self.part.min_occurs,
                                                self.part.max_occurs,
                                                self.part.term)
-        new_elem.members.extend([copy_base, copy_self])
+        new_seq.members.extend([base_part, copy_self])
 
-        return dumco.schema.uses.Particle(False, 1, 1, new_elem)
+        return dumco.schema.uses.Particle(False, 1, 1, new_seq)

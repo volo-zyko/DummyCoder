@@ -205,7 +205,7 @@ $COVERAGE_APPEND_COMMAND "$PWD/dumco.py" dumpxsd --help
 $COVERAGE_APPEND_COMMAND "$PWD/dumco.py" rfilter --help
 $COVERAGE_APPEND_COMMAND "$PWD/dumco.py" --version
 
-syntaxes=('xsd')
+syntaxes=('rng')
 if [ -n "$COVERAGE_BEGIN_COMMAND" ]; then
     syntaxes+=('xsd')
 fi

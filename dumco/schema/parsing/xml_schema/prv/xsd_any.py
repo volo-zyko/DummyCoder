@@ -68,4 +68,8 @@ class XsdAny(base.XsdBase):
 
     @method_once
     def finalize(self, factory):
+        if (dumco.schema.checks.is_particle(self.schema_element) and
+                self.schema_element.max_occurs == 0):
+            return None
+
         return self.schema_element

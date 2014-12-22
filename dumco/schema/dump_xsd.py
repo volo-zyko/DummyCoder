@@ -12,6 +12,7 @@ import base
 import checks
 import enums
 import model
+import rng_types
 import xsd_types
 
 from prv.dump_utils import XSD_PREFIX, TagGuard, XmlWriter, \
@@ -140,7 +141,8 @@ class _SchemaDumpContext(XmlWriter):
             with TagGuard('group', self):
                 self.add_attribute('name', name)
 
-                dump_particle(ct, particle, schema, self, set(), in_group)
+                with TagGuard('sequence', self):
+                    dump_particle(ct, particle, schema, self, set(), in_group)
 
     def define_namespace(self, prefix, uri):
         if self.fhandle == self.buffered_fhandle:
@@ -160,7 +162,7 @@ class _SchemaDumpContext(XmlWriter):
         with _FakeSchemaTagGuard(self):
             self._dump_schema_content(schema)
 
-            # Now all required namepaces are defined.
+            # Now all required namespaces are defined.
             import_namespaces = self.imported_namespaces
 
         with TagGuard('schema', self):
@@ -179,13 +181,15 @@ class _SchemaDumpContext(XmlWriter):
             if sorted_namespaces:
                 self.add_comment('Imports')
             for (prefix, uri) in sorted_namespaces:
+                if (uri == schema.target_ns or
+                        uri == xsd_types.XSD_NAMESPACE or
+                        uri == rng_types.RNG_NAMESPACE):
+                    continue
+
                 sub_schema = next((s for s in self.schemata
                                    if s.target_ns == uri), None)
 
                 with TagGuard('import', self):
-                    if uri == schema.target_ns:
-                        continue
-
                     if uri == base.XML_NAMESPACE:
                         self.add_attribute('namespace', base.XML_NAMESPACE)
                         self.add_attribute('schemaLocation',
@@ -303,9 +307,8 @@ def _find_element_groups(ct, particle, schema, egroups, namer, opacity_manager):
 
         group_name = namer.name_egroup(p.term)
         groups = egroups.setdefault(p.term.schema, {})
-        groups.setdefault(particle.term,
-                          ElementGroup(ct, group_name, particle))
-        return
+        groups.setdefault(p.term,
+                          ElementGroup(ct, group_name, p))
 
     # Then recurse into compositors.
     for c in compositors:
@@ -393,11 +396,11 @@ def _approximate_simple_types(stypes, namer, opacity_manager):
             union_st = model.SimpleType(st.name, st.schema)
             for item in st.listitems:
                 new_st = model.SimpleType(None, st.schema)
-                namer.name_st(st, union_st)
                 new_st.listitems.append(item)
                 simple_types[new_st.name] = new_st
 
                 union_st.union.append(new_st)
+                namer.name_st(new_st, union_st)
 
             simple_types[st.name] = union_st
 

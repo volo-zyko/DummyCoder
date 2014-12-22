@@ -89,6 +89,13 @@ class XsdComplexType(base.XsdBase):
             else:  # pragma: no cover
                 assert False, 'Wrong content of ComplexType'
 
+        if (dumco.schema.checks.is_particle(particle) and
+                dumco.schema.checks.is_terminal(particle.term)):
+            seq = dumco.schema.model.Sequence()
+            seq.members.append(particle)
+
+            particle = dumco.schema.uses.Particle(False, 1, 1, seq)
+
         if mixed:
             if particle is None:
                 particle = dumco.schema.uses.Particle(

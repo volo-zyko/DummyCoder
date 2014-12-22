@@ -3,6 +3,7 @@
 from dumco.utils.decorators import function_once
 
 import base
+import model
 
 
 # Constants.
@@ -16,5 +17,10 @@ _NATIVE_RNG_TYPE_NAMES = [
 
 @function_once
 def rng_builtin_types():
-    return {x: base.NativeType(RNG_NAMESPACE, x)
+    return {x: base.NativeType(get_rng_schema(), x)
             for x in _NATIVE_RNG_TYPE_NAMES}
+
+
+@function_once
+def get_rng_schema():
+    return model.Schema(RNG_NAMESPACE, 'rng')

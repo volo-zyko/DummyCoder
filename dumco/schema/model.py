@@ -12,11 +12,8 @@ import xsd_types
 
 @function_once
 def xml_attributes():
-    xml_schema = Schema(base.XML_NAMESPACE)
-    xml_schema.prefix = 'xml'
-
     attrs = {name: uses.AttributeUse(None, False, False, False,
-                                     Attribute(name, xml_schema))
+                                     Attribute(name, xml_schema()))
              for name in ['base', 'id', 'lang', 'space']}
 
     attrs['base'].attribute.type = xsd_types.xsd_builtin_types()['anyURI']
@@ -26,7 +23,7 @@ def xml_attributes():
     attrs['lang'].attribute.type = xsd_types.xsd_builtin_types()['language']
 
     # spaceType is an artificial name, it's not defined by any specs.
-    space_type = SimpleType('spaceType', xml_schema)
+    space_type = SimpleType('spaceType', xml_schema())
     space_type.restriction = Restriction()
     space_type.restriction.base = xsd_types.xsd_builtin_types()['NCName']
     space_type.restriction.enumerations = [
@@ -35,6 +32,11 @@ def xml_attributes():
     attrs['space'].constraint = base.ValueConstraint(False, 'preserve')
 
     return attrs
+
+
+@function_once
+def xml_schema():
+    return Schema(base.XML_NAMESPACE, 'xml')
 
 
 class Any(base.DataComponent):
@@ -131,27 +133,6 @@ class ComplexType(base.SchemaBase):
             for x in self.structure.traverse(flatten=False, parents=[self]):
                 yield x
 
-    @staticmethod
-    @function_once
-    def urtype():
-        seqpart = uses.Particle(False, 1, 1, Sequence())
-        seqpart.term.members.append(
-            uses.Particle(False, 1, base.UNBOUNDED, Any([], None)))
-
-        root_seqpart = uses.Particle(False, 1, 1, Sequence())
-        root_seqpart.term.members.append(
-            uses.AttributeUse(None, False, False, False, Any([], None)))
-        root_seqpart.term.members.append(seqpart)
-        root_seqpart.term.members.append(
-            uses.SchemaText(xsd_types.xsd_builtin_types()['string']))
-
-        xsd_schema = Schema(xsd_types.XSD_NAMESPACE)
-        xsd_schema.prefix = 'xsd'
-
-        urtype = ComplexType('anyType', xsd_schema)
-        urtype.structure = root_seqpart
-        return urtype
-
 
 class Element(base.DataComponent):
     def __init__(self, name, default, fixed, parent_schema):
@@ -196,11 +177,11 @@ class Restriction(base.SchemaBase):
 
 
 class Schema(base.SchemaBase):
-    def __init__(self, target_ns):
+    def __init__(self, target_ns, prefix=None):
         super(Schema, self).__init__(None)
 
         self.filename = None
-        self.prefix = None
+        self.prefix = prefix
         self.target_ns = target_ns
 
         # Containers for elements in the schema.
@@ -232,16 +213,3 @@ class SimpleType(base.SchemaBase):
         # List of simple of native types. The first matching type for an
         # input string is assumed to be its type.
         self.union = []
-
-    @staticmethod
-    @function_once
-    def urtype():
-        ct_urtype = ComplexType.urtype()
-
-        urtype = SimpleType('anySimpleType', ct_urtype.schema)
-
-        restr = Restriction()
-        restr.base = ComplexType.urtype()
-        urtype.restriction = restr
-
-        return urtype

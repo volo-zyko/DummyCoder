@@ -4,6 +4,7 @@ from dumco.utils.decorators import method_once
 
 import dumco.schema.model
 import dumco.schema.uses
+import dumco.schema.xsd_types
 
 import base
 import xsd_simple_type
@@ -59,7 +60,7 @@ class XsdAttribute(base.XsdBase):
                 factory.resolve_simple_type(self.attr('type'), self.schema)
         else:
             self.schema_element.attribute.type = \
-                dumco.schema.model.SimpleType.urtype()
+                dumco.schema.xsd_types.st_urtype()
             for t in self.children:
                 assert isinstance(t, xsd_simple_type.XsdSimpleType), \
                     'Attribute can contain only its type'
