@@ -10,8 +10,8 @@ import time
 # import dumco.cxx.rfilter.gendriver
 
 import dumco.schema.namer
-from dumco.schema.parsing.relaxng.element_factory import RelaxElementFactory
 from dumco.schema.parsing.xml_parser import XmlLoader
+from dumco.schema.parsing.relaxng.element_factory import RelaxElementFactory
 from dumco.schema.parsing.xml_schema.element_factory import XsdElementFactory
 from dumco.schema.dump_xsd import dump_xsd
 from dumco.schema.opacity_manager import OpacityManager
@@ -66,18 +66,19 @@ def process_arguments():
     parser_dumpxsd = subparsers.add_parser(
         'dumpxsd', help='dump XSD serialization of schema files')
     parser_dumpxsd.add_argument(
-        '-o', '--output-dir', required=True, help='output directory')
-    parser_dumpxsd.add_argument(
         '--dump-rng-model-to-dir', default=None,
         help='dump loaded RelaxNG model in simple syntax to specified '
         'directory (works only for rng input syntax)')
+    parser_dumpxsd.add_argument(
+        '-o', '--output-dir', required=True, help='output directory')
 
     parser_rdumpxsd = subparsers.add_parser(
         'rdumpxsd', help='dump reduced XSD serialization of schema files '
         '(only elements from supported elements file are dumped)')
     parser_rdumpxsd.add_argument(
         '-d', '--supported-elements-file', required=True, default=None,
-        help='file with a list of supported schema elements')
+        help='file with a list of supported schema elements (works only '
+             'for xsd input syntax)')
     parser_rdumpxsd.add_argument(
         '-o', '--output-dir', required=True, help='output directory')
 
@@ -109,11 +110,16 @@ def process_arguments():
 
     args = parser.parse_args()
 
-    if (args.mode == 'dumpxsd' and
-            args.input_syntax != 'rng' and args.input_syntax != 'rnc' and
-            args.dump_rng_model_to_dir is not None):
-        parser.error('--dump-rng-model-to-dir is only applicable for RelaxNG '
-                     'input syntax')
+    if args.mode == 'dumpxsd':
+        if (args.dump_rng_model_to_dir is not None and
+                args.input_syntax != 'rng' and args.input_syntax != 'rnc'):
+            parser.error('--dump-rng-model-to-dir is only applicable to '
+                         'RelaxNG input syntax')
+    elif args.mode == 'rdumpxsd':
+        if (args.supported_elements_file is not None and
+                args.input_syntax != 'xsd'):
+            parser.error('-d/--supported-elements-file is only applicable to '
+                         'XML Schema input syntax')
 
     return args
 

@@ -3,6 +3,7 @@
 import dumco.schema.base as base
 import dumco.schema.checks as checks
 import dumco.schema.model as model
+import dumco.schema.tuples as tuples
 import dumco.schema.xsd_types as xsd_types
 import dumco.utils.string_utils
 
@@ -119,6 +120,14 @@ def _term_name(term):
     return term.__class__.__name__.lower()
 
 
+def is_top_level_attribute(attr_use):
+    # Required and default value should not be present at the same time.
+    assert (not attr_use.required or attr_use.constraint.fixed or
+            attr_use.constraint.value is None)
+    return (attr_use.required and not attr_use.attribute.constraint.fixed and
+            attr_use.attribute.constraint.value is not None)
+
+
 def dump_restriction(restriction, schema, context):
     with TagGuard('restriction', context):
         context.add_attribute(
@@ -201,7 +210,7 @@ def dump_simple_content(ct, schema, context):
             dump_attribute_uses(ct, ct.attribute_uses(), schema, context)
 
 
-def dump_particle(ct, particle, schema, context, names, in_group=False):
+def dump_particle(ct, particle, schema, context, names):
     def dump_occurs_attributes():
         if particle.min_occurs != 1:
             context.add_attribute('minOccurs', particle.min_occurs)
@@ -222,21 +231,19 @@ def dump_particle(ct, particle, schema, context, names, in_group=False):
             particle.term.schema != schema):
         groups = context.egroups.get(particle.term.schema, {})
 
-        if particle.term in groups.iterkeys():
-            group_name = groups[particle.term].name
+        hashable_particle = tuples.HashableParticle(particle, None)
+        if hashable_particle in groups.iterkeys():
+            group_name = groups[hashable_particle].name
             with TagGuard('group', context):
                 context.add_attribute(
                     'ref',
                     _qname(group_name, particle.term.schema, schema, context))
 
-                dump_occurs_attributes()
-
             return
 
     name = _term_name(particle.term)
     with TagGuard(name, context):
-        if not in_group:
-            dump_occurs_attributes()
+        dump_occurs_attributes()
 
         if checks.is_compositor(particle.term):
             for p in particle.term.members:
@@ -254,7 +261,7 @@ def dump_particle(ct, particle, schema, context, names, in_group=False):
             if is_element_def:
                 context.add_attribute(
                     'form',
-                    'qualified' if particle.qualified else 'unqualified')
+                    'qualified' if particle.term.qualified else 'unqualified')
         elif checks.is_any(particle.term):
             _dump_any(particle.term, schema, context)
         else:  # pragma: no cover
@@ -279,12 +286,14 @@ def dump_attribute_use(attr_use, schema, context):
 
     attribute = attr_use.attribute
 
-    if not checks.is_xml_attribute(attribute) and attribute.schema != schema:
-        # We reference attribute from other schema but since we don't
-        # maintain top-level attributes we can reference then only
-        # attribute group.
+    if (not checks.is_xml_attribute(attribute) and
+            not is_top_level_attribute(attr_use) and
+            attribute.schema != schema):
+        # We reference attribute from other schema but since in most cases
+        # we don't want to maintain top-level attributes we can reference then
+        # only attribute group.
         groups = context.agroups[attribute.schema]
-        group_name = groups[attribute].name
+        group_name = groups[tuples.HashableAttributeUse(attr_use, None)].name
         with TagGuard('attributeGroup', context):
             context.add_attribute(
                 'ref',
@@ -293,33 +302,28 @@ def dump_attribute_use(attr_use, schema, context):
         return
 
     with TagGuard('attribute', context):
-        if checks.is_xml_attribute(attribute):
+        if (checks.is_xml_attribute(attribute) or
+                is_top_level_attribute(attr_use)):
             context.add_attribute(
                 'ref', _qname(attribute.name, attribute.schema,
                               schema, context, prefix=XML_PREFIX))
-        else:
-            _dump_attribute_attributes(attribute, schema, context)
 
-        if not checks.is_xml_attribute(attribute):
-            # Attribute declaration cannot have both ref and form attributes.
+            _dump_constraint(attr_use.constraint, context)
+        else:
+            dump_attribute_attributes(attribute, schema, context)
+
+            if attribute.constraint.value is None:
+                _dump_constraint(attr_use.constraint, context)
+
             context.add_attribute(
                 'form',
-                'qualified' if attr_use.qualified else 'unqualified')
-
-        if attr_use.constraint.fixed:
-            assert attr_use.constraint.value is not None, \
-                'Attribute has fixed value but the value itself is unknown'
-            context.add_attribute('fixed',
-                                  attr_use.constraint.value)
-        elif attr_use.constraint.value is not None:
-            context.add_attribute('default',
-                                  attr_use.constraint.value)
+                'qualified' if attr_use.attribute.qualified else 'unqualified')
 
         if attr_use.required:
             context.add_attribute('use', 'required')
 
 
-def _dump_attribute_attributes(attribute, schema, context):
+def dump_attribute_attributes(attribute, schema, context):
     assert checks.is_attribute(attribute)
 
     context.add_attribute(
@@ -330,6 +334,8 @@ def _dump_attribute_attributes(attribute, schema, context):
         context.add_attribute(
             'type', _qname(attribute.type.name, attribute.type.schema,
                            schema, context))
+
+    _dump_constraint(attribute.constraint, context)
 
 
 def dump_element_attributes(element, is_element_definition,
@@ -347,18 +353,22 @@ def dump_element_attributes(element, is_element_definition,
                 'type', _qname(element.type.name, element.type.schema,
                                schema, context))
 
-        if element.constraint.fixed:
-            assert element.constraint.value, \
-                'Element has fixed value but the value itself is unknown'
-            context.add_attribute('fixed',
-                                  element.constraint.value)
-        elif element.constraint.value is not None:
-            context.add_attribute('default',
-                                  element.constraint.value)
+        _dump_constraint(element.constraint, context)
     else:
         context.add_attribute(
             'ref',
             _qname(element.name, element.schema, schema, context))
+
+
+def _dump_constraint(constraint, context):
+    if constraint.fixed:
+        assert constraint.value, \
+            'Constraint has fixed value but the value itself is unknown'
+        context.add_attribute('fixed',
+                              constraint.value)
+    elif constraint.value is not None:
+        context.add_attribute('default',
+                              constraint.value)
 
 
 def _dump_any(elem, schema, context):

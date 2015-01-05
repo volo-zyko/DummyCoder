@@ -94,12 +94,12 @@ class XsdComplexType(base.XsdBase):
             seq = dumco.schema.model.Sequence()
             seq.members.append(particle)
 
-            particle = dumco.schema.uses.Particle(False, 1, 1, seq)
+            particle = dumco.schema.uses.Particle(1, 1, seq)
 
         if mixed:
             if particle is None:
                 particle = dumco.schema.uses.Particle(
-                    False, 1, 1, dumco.schema.model.Sequence())
+                    1, 1, dumco.schema.model.Sequence())
 
             text = dumco.schema.uses.SchemaText(
                 dumco.schema.xsd_types.xsd_builtin_types()['string'])
@@ -118,7 +118,7 @@ class XsdComplexType(base.XsdBase):
         if attr_uses or text is not None:
             if particle is None:
                 particle = dumco.schema.uses.Particle(
-                    False, 1, 1, dumco.schema.model.Sequence())
+                    1, 1, dumco.schema.model.Sequence())
             else:
                 new_particle = copy.copy(particle)
                 new_particle.term = copy.copy(particle.term)

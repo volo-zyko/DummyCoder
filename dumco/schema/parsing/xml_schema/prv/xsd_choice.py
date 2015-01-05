@@ -32,7 +32,6 @@ class XsdChoice(base.XsdBase):
         super(XsdChoice, self).__init__(attrs)
 
         self.schema_element = dumco.schema.uses.Particle(
-            False,
             factory.particle_min_occurs(attrs),
             factory.particle_max_occurs(attrs),
             dumco.schema.model.Choice())

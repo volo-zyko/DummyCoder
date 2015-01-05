@@ -19,9 +19,9 @@ class SchemaBase(object):
         self._docs = []
 
     def append_doc(self, doc):
-        d = doc.strip()
-        if d != '':
-            self._docs.append(d)
+        text = doc.strip()
+        if text != '':
+            self._docs.append(text)
 
     @property
     def doc(self):
@@ -45,11 +45,13 @@ class Compositor(SchemaBase):
 
 class DataComponent(SchemaBase):
     # Element or attribute.
-    def __init__(self, name, parent_schema):
+    def __init__(self, name, default, fixed, qualified, parent_schema):
         super(DataComponent, self).__init__(parent_schema)
 
         self.name = name
         self.type = None
+        self.qualified = qualified
+        self.constraint = ValueConstraint(default, fixed)
 
 
 class NativeType(SchemaBase):
@@ -66,4 +68,4 @@ class NativeType(SchemaBase):
 # then 'value' contains default value. If there are no constraints then
 # 'value' = None.
 ValueConstraint = collections.namedtuple('ValueConstraint',
-                                         ['fixed', 'value'])
+                                         ['value', 'fixed'])

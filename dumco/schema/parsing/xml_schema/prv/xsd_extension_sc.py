@@ -47,8 +47,7 @@ class XsdSimpleExtension(base.XsdBase):
             elif isinstance(c, xsd_any.XsdAny):
                 self.attr_uses.append(c.finalize(factory))
 
-        base_type = factory.resolve_type(self.attr('base'),
-                                         self.schema, finalize=True)
+        base_type = factory.resolve_type(self.attr('base'), self.schema, True)
 
         if dumco.schema.checks.is_complex_type(base_type):
             self.attr_uses.extend(base_type.attribute_uses())

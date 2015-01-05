@@ -6,21 +6,19 @@ from dumco.utils.decorators import function_once
 
 import base
 import checks
-import uses
 import xsd_types
 
 
 @function_once
 def xml_attributes():
-    attrs = {name: uses.AttributeUse(None, False, False, False,
-                                     Attribute(name, xml_schema()))
+    attrs = {name: Attribute(name, None, False, False, xml_schema())
              for name in ['base', 'id', 'lang', 'space']}
 
-    attrs['base'].attribute.type = xsd_types.xsd_builtin_types()['anyURI']
+    attrs['base'].type = xsd_types.xsd_builtin_types()['anyURI']
 
-    attrs['id'].attribute.type = xsd_types.xsd_builtin_types()['ID']
+    attrs['id'].type = xsd_types.xsd_builtin_types()['ID']
 
-    attrs['lang'].attribute.type = xsd_types.xsd_builtin_types()['language']
+    attrs['lang'].type = xsd_types.xsd_builtin_types()['language']
 
     # spaceType is an artificial name, it's not defined by any specs.
     space_type = SimpleType('spaceType', xml_schema())
@@ -28,8 +26,8 @@ def xml_attributes():
     space_type.restriction.base = xsd_types.xsd_builtin_types()['NCName']
     space_type.restriction.enumerations = [
         EnumerationValue('default', ''), EnumerationValue('preserve', '')]
-    attrs['space'].attribute.type = space_type
-    attrs['space'].constraint = base.ValueConstraint(False, 'preserve')
+    attrs['space'].type = space_type
+    attrs['space'].constraint = base.ValueConstraint('preserve', False)
 
     return attrs
 
@@ -53,7 +51,7 @@ class Any(base.DataComponent):
     Not = collections.namedtuple('Not', ['name'])
 
     def __init__(self, constraints, parent_schema):
-        super(Any, self).__init__(None, parent_schema)
+        super(Any, self).__init__(None, None, False, False, parent_schema)
 
         for c in constraints:
             if isinstance(c, Any.Name):
@@ -68,8 +66,9 @@ class Any(base.DataComponent):
 
 
 class Attribute(base.DataComponent):
-    def __init__(self, name, parent_schema):
-        super(Attribute, self).__init__(name, parent_schema)
+    def __init__(self, name, default, fixed, qualified, parent_schema):
+        super(Attribute, self).__init__(name, default, fixed,
+                                        qualified, parent_schema)
 
 
 class Choice(base.Compositor):
@@ -135,10 +134,9 @@ class ComplexType(base.SchemaBase):
 
 
 class Element(base.DataComponent):
-    def __init__(self, name, default, fixed, parent_schema):
-        super(Element, self).__init__(name, parent_schema)
-
-        self.constraint = base.ValueConstraint(fixed, default)
+    def __init__(self, name, default, fixed, qualified, parent_schema):
+        super(Element, self).__init__(name, default, fixed,
+                                      qualified, parent_schema)
 
 
 EnumerationValue = collections.namedtuple('EnumerationValue', ['value', 'doc'])

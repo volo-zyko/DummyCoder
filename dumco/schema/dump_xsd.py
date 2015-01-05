@@ -13,12 +13,13 @@ import checks
 import enums
 import model
 import rng_types
+import tuples
 import xsd_types
 
 from prv.dump_utils import XSD_PREFIX, TagGuard, XmlWriter, \
     dump_restriction, dump_listitems, dump_union, dump_simple_content, \
     dump_particle, dump_attribute_uses, dump_attribute_use, \
-    dump_element_attributes
+    dump_element_attributes, dump_attribute_attributes, is_top_level_attribute
 
 
 class _FakeSchemaTagGuard(object):
@@ -46,7 +47,7 @@ class _FakeSchemaTagGuard(object):
 
 class _SchemaDumpContext(XmlWriter):
     def __init__(self, filename, namer, opacity_manager, elements,
-                 ctypes, stypes, agroups, egroups, schemata):
+                 attributes, ctypes, stypes, agroups, egroups, schemata):
         self.namer = namer
         self.om = opacity_manager
 
@@ -54,6 +55,7 @@ class _SchemaDumpContext(XmlWriter):
         # and element groups. In this case _SchemaDumpContext is used as global
         # object.
         self.elements = elements
+        self.attributes = attributes
         self.ctypes = ctypes
         self.stypes = stypes
         self.agroups = agroups
@@ -125,14 +127,13 @@ class _SchemaDumpContext(XmlWriter):
 
                 dump_attribute_use(attr_use, schema, self)
 
-        elements = self.elements.get(schema, {})
-        if elements:
-            self.add_comment('Top-level Elements')
-        for elem in sorted(elements.itervalues(), key=lambda x: x.name):
-            with TagGuard('element', self):
-                dump_element_attributes(elem, True, schema, self)
+        attributes = self.attributes.get(schema, {})
+        if attributes:
+            self.add_comment('Top-level Attributes')
+        for attribute in sorted(attributes.itervalues(), key=lambda x: x.name):
+            with TagGuard('attribute', self):
+                dump_attribute_attributes(attribute, schema, self)
 
-        in_group = True
         elem_groups = self.egroups.get(schema, {})
         if elem_groups:
             self.add_comment('Element Groups')
@@ -142,7 +143,14 @@ class _SchemaDumpContext(XmlWriter):
                 self.add_attribute('name', name)
 
                 with TagGuard('sequence', self):
-                    dump_particle(ct, particle, schema, self, set(), in_group)
+                    dump_particle(ct, particle, schema, self, set())
+
+        elements = self.elements.get(schema, {})
+        if elements:
+            self.add_comment('Top-level Elements')
+        for elem in sorted(elements.itervalues(), key=lambda x: x.name):
+            with TagGuard('element', self):
+                dump_element_attributes(elem, True, schema, self)
 
     def define_namespace(self, prefix, uri):
         if self.fhandle == self.buffered_fhandle:
@@ -170,22 +178,25 @@ class _SchemaDumpContext(XmlWriter):
                 self.add_attribute('targetNamespace', schema.target_ns)
                 self.define_namespace(None, schema.target_ns)
 
-            sorted_namespaces = sorted(import_namespaces.iteritems())
+            sorted_namespaces = [
+                x for x in sorted(import_namespaces.iteritems())
+                if (x[1] != rng_types.RNG_NAMESPACE and
+                    x[1] != schema.target_ns)]
+
             for (prefix, uri) in sorted_namespaces:
-                if uri == base.XML_NAMESPACE or uri == schema.target_ns:
+                if uri == base.XML_NAMESPACE:
                     continue
 
                 assert prefix, 'No prefix for imported schema'
                 self.define_namespace(prefix, uri)
 
+            sorted_namespaces = [
+                x for x in sorted_namespaces
+                if x[1] != xsd_types.XSD_NAMESPACE]
+
             if sorted_namespaces:
                 self.add_comment('Imports')
             for (prefix, uri) in sorted_namespaces:
-                if (uri == schema.target_ns or
-                        uri == xsd_types.XSD_NAMESPACE or
-                        uri == rng_types.RNG_NAMESPACE):
-                    continue
-
                 sub_schema = next((s for s in self.schemata
                                    if s.target_ns == uri), None)
 
@@ -250,8 +261,10 @@ def _do_for_single_valued_type(t, do_ctypes, do_stypes):
 
 def _collect_attribute_groups(schemata, namer, opacity_manager):
     # This function finds all attributes referenced from other schemata
-    # and later these attributes are dumped as xsd:attributeGroup elements.
+    # and later these attributes are dumped as xsd:attributeGroup and
+    # xsd:attribute elements.
     agroups = {}
+    attributes = {}
 
     AttributeGroup = collections.namedtuple('AttributeGroup',
                                             ['name', 'attr_use'])
@@ -266,9 +279,15 @@ def _collect_attribute_groups(schemata, namer, opacity_manager):
                 checks.is_any(attribute) or attribute.schema == schema):
             return
 
-        group_name = namer.name_agroup(attribute)
+        if is_top_level_attribute(attr_use):
+            schema_attributes = attributes.setdefault(attribute.schema, {})
+            schema_attributes[attribute.name] = attribute
+            return
+
+        group_name = namer.name_agroup(attr_use)
         groups = agroups.setdefault(attribute.schema, {})
-        groups.setdefault(attribute, AttributeGroup(group_name, attr_use))
+        groups.setdefault(tuples.HashableAttributeUse(attr_use, None),
+                          AttributeGroup(group_name, attr_use))
 
     for schema in schemata:
         for ct in schema.complex_types:
@@ -278,7 +297,7 @@ def _collect_attribute_groups(schemata, namer, opacity_manager):
             for u in ct.attribute_uses():
                 find_groups(ct, u, schema)
 
-    return agroups
+    return (attributes, agroups)
 
 
 def _find_element_groups(ct, particle, schema, egroups, namer, opacity_manager):
@@ -305,9 +324,9 @@ def _find_element_groups(ct, particle, schema, egroups, namer, opacity_manager):
 
         assert checks.is_element(p.term)
 
-        group_name = namer.name_egroup(p.term)
+        group_name = namer.name_egroup(p)
         groups = egroups.setdefault(p.term.schema, {})
-        groups.setdefault(p.term,
+        groups.setdefault(tuples.HashableParticle(p, None),
                           ElementGroup(ct, group_name, p))
 
     # Then recurse into compositors.
@@ -411,7 +430,8 @@ def dump_xsd(schemata, output_dir, namer, opacity_manager):
     ctypes = {}
     stypes = {}
 
-    agroups = _collect_attribute_groups(schemata, namer, opacity_manager)
+    (attributes, agroups) = \
+        _collect_attribute_groups(schemata, namer, opacity_manager)
     egroups = _collect_element_groups(schemata, namer, opacity_manager)
     elements = _select_top_elements(schemata, namer, opacity_manager,
                                     egroups, ctypes, stypes)
@@ -428,12 +448,13 @@ def dump_xsd(schemata, output_dir, namer, opacity_manager):
     for schema in schemata:
         if (schema not in elements and schema not in ctypes and
                 schema not in stypes and schema not in agroups and
-                schema not in egroups):
+                schema not in egroups and schema not in attributes):
             continue
 
         file_path = os.path.join(output_dir, '{}.xsd'.format(schema.filename))
 
         dumper = _SchemaDumpContext(file_path, namer, opacity_manager, elements,
-                                    ctypes, stypes, agroups, egroups, schemata)
+                                    attributes, ctypes, stypes, agroups,
+                                    egroups, schemata)
 
         dumper.dump_schema(schema)

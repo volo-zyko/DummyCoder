@@ -76,13 +76,13 @@ def xsd_schema():
 
 @function_once
 def ct_urtype():
-    seqpart = uses.Particle(False, 1, 1, model.Sequence())
+    seqpart = uses.Particle(1, 1, model.Sequence())
     seqpart.term.members.append(
-        uses.Particle(False, 1, base.UNBOUNDED, model.Any([], None)))
+        uses.Particle(1, base.UNBOUNDED, model.Any([], None)))
 
-    root_seqpart = uses.Particle(False, 1, 1, model.Sequence())
+    root_seqpart = uses.Particle(1, 1, model.Sequence())
     root_seqpart.term.members.append(
-        uses.AttributeUse(None, False, False, False, model.Any([], None)))
+        uses.AttributeUse(None, False, False, model.Any([], None)))
     root_seqpart.term.members.append(seqpart)
     root_seqpart.term.members.append(
         uses.SchemaText(xsd_builtin_types()['string']))

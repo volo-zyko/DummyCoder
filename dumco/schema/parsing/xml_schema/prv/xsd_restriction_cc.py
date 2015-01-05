@@ -61,8 +61,7 @@ class XsdComplexRestriction(base.XsdBase):
             else:  # pragma: no cover
                 assert False, 'Wrong content of complex Restriction'
 
-        base_ct = factory.resolve_complex_type(self.attr('base'),
-                                               self.schema, finalize=True)
+        base_ct = factory.resolve_complex_type(self.attr('base'), self.schema)
 
         self.attr_uses.extend(
             utils.restrict_base_attributes(base_ct, factory,

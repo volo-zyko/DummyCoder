@@ -277,7 +277,7 @@ class Rng2Model(object):
             # thus we have to wrap struct in a compositor.
             sequence = model.Sequence()
             sequence.members.append(struct)
-            t.structure = uses.Particle(False, 1, max_occurs, sequence)
+            t.structure = uses.Particle(1, max_occurs, sequence)
         elif struct is None:
             t.structure = None
         elif checks.is_particle(struct):
@@ -356,7 +356,7 @@ class Rng2Model(object):
             assert len(compositor.members) != 0
 
             if len(compositor.members) != 1:
-                return (True, uses.Particle(False, 1, 1, compositor))
+                return (True, uses.Particle(1, 1, compositor))
 
             struct = compositor.members[0]
             if checks.is_particle(struct):
@@ -387,14 +387,14 @@ class Rng2Model(object):
                     else:
                         attr_schema = self.all_schemata[ns]
 
-                    attr = model.Attribute(name, attr_schema)
+                    attr = model.Attribute(name, None, False,
+                                           qualified, attr_schema)
                     attr.type = \
                         self._convert_simple_type(pattern.pattern, attr_schema)
 
                     self.namer.learn_naming(attr)
 
-                return (True,
-                        uses.AttributeUse(None, False, qualified, False, attr))
+                return (True, attr)
 
             return _convert_named_component(type_pattern, convert_attribute)
         elif isinstance(type_pattern, rng_element.RngElement):
@@ -404,7 +404,7 @@ class Rng2Model(object):
             if not _is_complex_pattern(type_pattern.pattern):
                 elem.type = self._convert_simple_type(type_pattern.pattern,
                                                       elem.schema)
-            return (True, uses.Particle(qualified, 1, 1, elem))
+            return (True, uses.Particle(1, 1, elem))
         elif isinstance(type_pattern, rng_text.RngText):
             return (False,
                     uses.SchemaText(xsd_types.xsd_builtin_types()['string']))

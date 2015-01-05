@@ -5,6 +5,7 @@ import re
 
 import checks
 import enums
+import tuples
 
 
 class PatternParseException(BaseException):
@@ -14,7 +15,7 @@ class PatternParseException(BaseException):
 
 def parse_name_patterns(text_patterns):
     # We expect here a string of the following format.
-    # 'ct #aa#bb#, #ww#ee#i; st#qq#aa# g, #11#22#; eg#rr#tt#gi; ag#qqq#XXX#'.
+    # 'ct #aa#bb#, #ww#ee#i; st#qq#aa#g, #11#22#; eg#rr#tt#gi; ag#qqq#XXX#'.
 
     sub_matcher = re.compile('^#([^|]+)#([^|]+)#([ gi]*)$')
 
@@ -185,25 +186,33 @@ class Namer(object):
 
         st.name = self._apply_patterns(st, words, c, self.stype_patterns, style)
 
-    def name_egroup(self, elem_parent):
-        c = self.egroups_counters.setdefault(elem_parent.schema.target_ns, {})
+    def name_egroup(self, particle_parent):
+        assert checks.is_particle(particle_parent)
 
-        assert elem_parent.name is not None
-        (style, words) = self._parse_name(elem_parent.name, _NAME_HINT_ELEM)
+        elem = particle_parent.term
+        c = self.egroups_counters.setdefault(elem.schema.target_ns, {})
+
+        assert elem.name is not None
+        (style, words) = self._parse_name(elem.name, _NAME_HINT_ELEM)
         words.append('group')
 
-        return self._apply_patterns(elem_parent, words, c,
-                                    self.egroup_patterns, style)
+        return self._apply_patterns(
+            tuples.HashableParticle(particle_parent, None),
+            words, c, self.egroup_patterns, style)
 
-    def name_agroup(self, attr_parent):
-        c = self.agroups_counters.setdefault(attr_parent.schema.target_ns, {})
+    def name_agroup(self, attr_use_parent):
+        assert checks.is_attribute_use(attr_use_parent)
 
-        assert attr_parent.name is not None
-        (style, words) = self._parse_name(attr_parent.name, _NAME_HINT_ATTR)
+        attr = attr_use_parent.attribute
+        c = self.agroups_counters.setdefault(attr.schema.target_ns, {})
+
+        assert attr.name is not None
+        (style, words) = self._parse_name(attr.name, _NAME_HINT_ATTR)
         words.append('group')
 
-        return self._apply_patterns(attr_parent, words, c,
-                                    self.agroup_patterns, style)
+        return self._apply_patterns(
+            tuples.HashableAttributeUse(attr_use_parent, None),
+            words, c, self.agroup_patterns, style)
 
     def _parse_name(self, name, hint):
         (_, words) = _guess_naming(name)

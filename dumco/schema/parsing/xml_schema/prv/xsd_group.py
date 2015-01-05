@@ -58,6 +58,6 @@ class XsdGroup(base.XsdBase):
         new_seq.members.append(particle)
 
         particle = dumco.schema.uses.Particle(
-            False, self.min_occurs, self.max_occurs, new_seq)
+            self.min_occurs, self.max_occurs, new_seq)
 
         return utils.reduce_particle(particle)

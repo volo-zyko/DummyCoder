@@ -7,18 +7,19 @@ import checks
 
 
 class AttributeUse(object):
-    def __init__(self, default, fixed, qualified, required, attribute):
+    def __init__(self, default, fixed, required, attribute):
+        self._docs = []
         # constraint = ValueConstraint.
-        self.constraint = base.ValueConstraint(fixed, default)
-        # qualified = boolean.
-        self.qualified = qualified
+        self.constraint = base.ValueConstraint(default, fixed)
         # required = boolean.
         self.required = required
         # attribute = Attribute/Any.
         self.attribute = attribute
 
     def append_doc(self, doc):
-        self.attribute.append_doc(doc)
+        text = doc.strip()
+        if text != '':
+            self._docs.append(text)
 
 
 # Utility class necessary for better traversing dumco model.
@@ -31,11 +32,10 @@ ListTypeCardinality = collections.namedtuple(
 
 
 class Particle(object):
-    def __init__(self, qualified, min_occurs, max_occurs, term):
+    def __init__(self, min_occurs, max_occurs, term):
         assert min_occurs <= max_occurs
 
-        # qualified = boolean.
-        self.qualified = qualified
+        self._docs = []
         # min_occurs = integer.
         self.min_occurs = min_occurs
         # max_occurs = integer.
@@ -44,7 +44,9 @@ class Particle(object):
         self.term = term
 
     def append_doc(self, doc):
-        self.term.append_doc(doc)
+        text = doc.strip()
+        if text != '':
+            self._docs.append(text)
 
     def traverse(self, flatten=True, parents=None):
         assert checks.is_compositor(self.term)

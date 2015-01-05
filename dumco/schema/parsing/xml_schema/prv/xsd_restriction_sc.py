@@ -83,8 +83,7 @@ class XsdSimpleRestriction(xsd_restriction.XsdRestriction):
                 self.attr_uses.append(c.finalize(factory))
 
         # Only complex type can be here. That's the essence of restriction.
-        base_ct = factory.resolve_complex_type(self.attr('base'),
-                                               self.schema, finalize=True)
+        base_ct = factory.resolve_complex_type(self.attr('base'), self.schema)
 
         if dumco.schema.checks.is_complex_type(base_ct):
             self.attr_uses.extend(

@@ -64,7 +64,7 @@ class HashableSimpleType(HashableModel):
 
 def get_attribute_tuple(a):
     if checks.is_attribute(a):
-        return (a.schema, a.name)
+        return (a.schema, a.name, a.qualified, a.constraint, a.type)
     elif checks.is_any(a):
         return ('anyAttr', a.schema, tuple(a.constraints))
     else:
@@ -73,8 +73,7 @@ def get_attribute_tuple(a):
 
 def get_attribute_use_tuple(u):
     assert checks.is_attribute_use(u)
-    return (u.constraint, u.qualified,
-            u.required, get_attribute_tuple(u.attribute))
+    return (u.constraint, u.required, get_attribute_tuple(u.attribute))
 
 
 def get_complex_type_tuple(ct):
@@ -86,12 +85,12 @@ def get_complex_type_tuple(ct):
 
 def get_element_tuple(e):
     assert checks.is_element(e)
-    return (e.schema, e.name, e.constraint)
+    return (e.schema, e.name, e.qualified, e.constraint, e.type)
 
 
 def get_element_particle_tuple(p):
     assert checks.is_particle(p)
-    return (p.qualified, p.min_occurs, p.max_occurs, get_element_tuple(p.term))
+    return (p.min_occurs, p.max_occurs, get_element_tuple(p.term))
 
 
 def get_particle_tuple(p):

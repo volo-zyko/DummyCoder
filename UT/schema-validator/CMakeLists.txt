@@ -6,7 +6,7 @@ project(schema-validator CXX)
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost REQUIRED COMPONENTS system filesystem)
+find_package(Boost REQUIRED COMPONENTS system filesystem regex)
 
 # Find XercesC includes.
 find_path(
@@ -42,4 +42,4 @@ endif()
 add_definitions("-DBOOST_FILESYSTEM_NO_DEPRECATED -DLIBXML2_DEFINITIONS")
 include_directories(${Boost_INCLUDE_DIRS} ${XERCESC_INCLUDE_DIR} ${LIBXML2_INCLUDE_DIR})
 add_executable(${PROJECT_NAME} ${PROJECT_NAME}.cpp)
-target_link_libraries(${PROJECT_NAME} ${Boost_SYSTEM_LIBRARY} ${Boost_FILESYSTEM_LIBRARY} ${XERCESC_LIBRARY} ${LIBXML2_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${Boost_SYSTEM_LIBRARY} ${Boost_FILESYSTEM_LIBRARY} ${Boost_REGEX_LIBRARY} ${XERCESC_LIBRARY} ${LIBXML2_LIBRARIES})

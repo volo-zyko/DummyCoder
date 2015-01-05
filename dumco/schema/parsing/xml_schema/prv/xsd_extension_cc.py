@@ -64,8 +64,7 @@ class XsdComplexExtension(base.XsdBase):
             else:  # pragma: no cover
                 assert False, 'Wrong content of complex Extension'
 
-        base_ct = factory.resolve_complex_type(self.attr('base'),
-                                               self.schema, finalize=True)
+        base_ct = factory.resolve_complex_type(self.attr('base'), self.schema)
 
         self.part = self._merge_content(base_ct)
         self.attr_uses.extend(base_ct.attribute_uses())
@@ -93,10 +92,9 @@ class XsdComplexExtension(base.XsdBase):
             return self.part
 
         new_seq = dumco.schema.model.Sequence()
-        copy_self = dumco.schema.uses.Particle(self.part.qualified,
-                                               self.part.min_occurs,
+        copy_self = dumco.schema.uses.Particle(self.part.min_occurs,
                                                self.part.max_occurs,
                                                self.part.term)
         new_seq.members.extend([base_part, copy_self])
 
-        return dumco.schema.uses.Particle(False, 1, 1, new_seq)
+        return dumco.schema.uses.Particle(1, 1, new_seq)

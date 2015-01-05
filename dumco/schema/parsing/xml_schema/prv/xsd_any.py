@@ -57,11 +57,10 @@ class XsdAny(base.XsdBase):
 
         if is_attribute:
             self.schema_element = dumco.schema.uses.AttributeUse(
-                None, False, False, False,
+                None, False, False,
                 Any(constraints, parent_schema.schema_element))
         else:
             self.schema_element = dumco.schema.uses.Particle(
-                False,
                 factory.particle_min_occurs(attrs),
                 factory.particle_max_occurs(attrs),
                 Any(constraints, parent_schema.schema_element))
