@@ -5,6 +5,7 @@
 import argparse
 import os
 import os.path
+import sys
 import time
 
 # import dumco.cxx.rfilter.gendriver
@@ -15,6 +16,7 @@ from dumco.schema.parsing.relaxng.element_factory import RelaxElementFactory
 from dumco.schema.parsing.xml_schema.element_factory import XsdElementFactory
 from dumco.schema.dump_xsd import dump_xsd
 from dumco.schema.opacity_manager import OpacityManager
+import dumco.schema.xsd_types
 
 from dumco.utils.ns_converter import NamespaceConverter
 from dumco.utils.file_utils import PathNotExists
@@ -70,15 +72,23 @@ def process_arguments():
         help='dump loaded RelaxNG model in simple syntax to specified '
         'directory (works only for rng input syntax)')
     parser_dumpxsd.add_argument(
+        '--xml-xsd-location', default=dumco.schema.xsd_types.XML_XSD_URI,
+        help='location for xml.xsd which must be dumped in schema files '
+        '{default: %(default)s}')
+    parser_dumpxsd.add_argument(
         '-o', '--output-dir', required=True, help='output directory')
 
     parser_rdumpxsd = subparsers.add_parser(
         'rdumpxsd', help='dump reduced XSD serialization of schema files '
         '(only elements from supported elements file are dumped)')
     parser_rdumpxsd.add_argument(
+        '--xml-xsd-location', default=dumco.schema.xsd_types.XML_XSD_URI,
+        help='location for xml.xsd which must be dumped in schema files '
+        '{default: %(default)s}')
+    parser_rdumpxsd.add_argument(
         '-d', '--supported-elements-file', required=True, default=None,
         help='file with a list of supported schema elements (works only '
-             'for xsd input syntax)')
+        'for xsd input syntax)')
     parser_rdumpxsd.add_argument(
         '-o', '--output-dir', required=True, help='output directory')
 
@@ -156,8 +166,11 @@ if __name__ == '__main__':
 
         opacity_manager = OpacityManager(elements_file)
 
-        if opacity_manager.ensure_consistency(all_schemata):
-            dump_xsd(all_schemata, args.output_dir, namer, opacity_manager)
+        if not opacity_manager.ensure_consistency(all_schemata):
+            sys.exit(1)
+
+        dump_xsd(all_schemata, args.output_dir, args.xml_xsd_location,
+                 namer, opacity_manager)
     elif args.mode == 'rfilter' or args.mode == 'dom':
         ns_converter = NamespaceConverter(args.root_namespaces.split(),
                                           args.uri_to_namespaces,

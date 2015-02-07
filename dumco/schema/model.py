@@ -38,31 +38,33 @@ def xml_schema():
 
 
 class Any(base.DataComponent):
-    # Any can have type and a list of constraints. If the list of constraints
-    # is empty then Any accepts any name in any namespace. Otherwise list
-    # contains an interleaving of Name and Not tuples.
+    # Any can have type and one constraint. If constraint is None then Any
+    # accepts any name in any namespace. Otherwise the constraint is either
+    # Name or Not tuple.
     # Name tuple has ns and tag fields which contain strings with respective
     # meanings. Either ns or tag must be None (but not both) and in this case
     # any restricts either namespace or tag.
-    # Not tuple has only name field which contains instance of Name tuple.
-    # This means anything except for the name.
+    # Not tuple has only name field which contains instance of Name tuple,
+    # which means anything except for the name.
 
     Name = collections.namedtuple('Name', ['ns', 'tag'])
     Not = collections.namedtuple('Not', ['name'])
 
-    def __init__(self, constraints, parent_schema):
+    def __init__(self, constraint, parent_schema):
         super(Any, self).__init__(None, None, False, False, parent_schema)
 
-        for c in constraints:
-            if isinstance(c, Any.Name):
-                assert ((c.ns is None and c.tag is not None) or
-                        (c.tag is None and c.ns is not None)), \
-                    'Either namespace or tag must be a wildcard'
-            elif isinstance(c, Any.Not):
-                assert c.name.ns is not None or c.name.tag is not None, \
-                    'Incorrect \'Not\' constraint'
+        assert not isinstance(constraint, list)
 
-        self.constraints = constraints
+        if isinstance(constraint, Any.Name):
+            assert ((constraint.ns is None and constraint.tag is not None) or
+                    (constraint.tag is None and constraint.ns is not None)), \
+                'Either namespace or tag must be a wildcard'
+        elif isinstance(constraint, Any.Not):
+            assert (constraint.name.ns is not None or
+                    constraint.name.tag is not None), \
+                'Incorrect \'Not\' constraint'
+
+        self.constraint = constraint
 
 
 class Attribute(base.DataComponent):

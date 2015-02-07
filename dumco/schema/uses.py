@@ -51,9 +51,6 @@ class Particle(object):
     def traverse(self, flatten=True, parents=None):
         assert checks.is_compositor(self.term)
 
-        if not flatten:
-            yield ChildComponent(parents, self)
-
         for x in self.term.members:
             assert ((checks.is_particle(x) and
                      (checks.is_terminal(x.term) or
@@ -75,10 +72,10 @@ class Particle(object):
             else:
                 if checks.is_particle(x) and checks.is_compositor(x.term):
                     for child in x.traverse(flatten=False,
-                                            parents=[self] + parents):
+                                            parents=parents + [self]):
                         yield child
                 else:
-                    yield ChildComponent([self] + parents, x)
+                    yield ChildComponent(parents + [self], x)
 
 
 class SchemaText(object):
@@ -100,3 +97,11 @@ def max_occurs_op(occurs1, occurs2, op):
     if res > base.UNBOUNDED:
         return base.UNBOUNDED
     return res
+
+
+def attribute_key(attr_use, referencing_schema):
+    if checks.is_any(attr_use.attribute):
+        return ('', '')
+    elif attr_use.attribute.schema != referencing_schema:
+        return (attr_use.attribute.schema.prefix, attr_use.attribute.name)
+    return ('', attr_use.attribute.name)

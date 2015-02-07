@@ -229,6 +229,13 @@ void xmlSchemaErrorHandler(void* userData, xmlErrorPtr error)
         return;
     }
 
+    // Currently libxml doesn't like wildcards, so we ignore such error reports.
+    if (error->level == XML_ERR_ERROR && error->domain == XML_FROM_SCHEMASP &&
+        error->code == XML_SCHEMAP_NOT_DETERMINISTIC)
+    {
+        return;
+    }
+
     const char* file = error->file ? error->file : "";
 
     std::cerr << '<' << file << '>'

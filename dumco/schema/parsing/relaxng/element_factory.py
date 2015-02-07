@@ -48,7 +48,6 @@ class RelaxElementFactory(object):
         self.datatypes_stack = []
         self.ns_attribute_stack = []
         self.namespaces = {'xml': dumco.schema.base.XML_NAMESPACE}
-        self.parents = []
 
     def define_namespace(self, prefix, uri):
         if uri is None:

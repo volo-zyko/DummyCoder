@@ -97,7 +97,7 @@ $COVERAGE_APPEND_COMMAND "$RUNNER" --version
 
 syntaxes=('xsd')
 if [ -n "$COVERAGE_BEGIN_COMMAND" ]; then
-    syntaxes+=('xsd')
+    syntaxes+=('rng')
 fi
 
 for syntax in "${syntaxes[@]}"
@@ -114,37 +114,6 @@ do
         fi
     done
 done
-
-# if [ "$DUMP_RNG" -ne 0 ]; then
-#     outp="$BASE_OUTPUT_DIR/rng-dumps1"
-#     again="$BASE_OUTPUT_DIR/again"
-
-#     echo '###'
-#     echo '### Checking RNG re-loading'
-#     echo '###'
-
-#     for in_rng in $(find "$DUMP_RNG_DIR" -type f -name '*.rng')
-#     do
-#         rm -rf "$outp"
-#         mkdir -p "$outp"
-
-#         out_rng="$outp/$(basename "$in_rng")"
-#         res_diff="$BASE_OUTPUT_DIR/$(basename "$in_rng").diff"
-
-#         $COVERAGE_APPEND_COMMAND "$RUNNER" -s rng -n oxml -i "$in_rng" \
-#             dumpxsd -o "$again" --dump-rng-model-to-dir "$outp"
-
-#         set +o errexit
-#         diff -rub "$in_rng" "$out_rng" >"$res_diff"
-#         set -o errexit
-
-#         if [ -s "$res_diff" ]; then
-#             echo "### ERROR: '$in_rng' and '$out_rng' is different after reloading, see $res_diff" >&2
-#             false
-#         fi
-#         rm -f "$res_diff"
-#     done
-# fi
 
 if [ -n "$COVERAGE_BEGIN_COMMAND" ]; then
     test -d "$COVERAGE_REPORT_DIR" && rm -rf "$COVERAGE_REPORT_DIR"

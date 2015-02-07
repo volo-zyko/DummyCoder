@@ -106,15 +106,6 @@ class XsdComplexType(base.XsdBase):
 
         _assert_on_duplicate_attributes(attr_uses, self)
 
-        def attr_key(use):
-            if dumco.schema.checks.is_any(use.attribute):
-                return (0, '')
-            elif use.attribute.schema != self.schema_element.schema:
-                num = sum([ord(c) for c in use.attribute.schema.prefix])
-                return (-2 - num, use.attribute.name)
-            return (-1, use.attribute.name)
-        attr_uses.sort(key=attr_key)
-
         if attr_uses or text is not None:
             if particle is None:
                 particle = dumco.schema.uses.Particle(

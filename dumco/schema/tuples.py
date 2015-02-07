@@ -66,7 +66,7 @@ def get_attribute_tuple(a):
     if checks.is_attribute(a):
         return (a.schema, a.name, a.qualified, a.constraint, a.type)
     elif checks.is_any(a):
-        return ('anyAttr', a.schema, tuple(a.constraints))
+        return ('anyAttr', a.schema, a.constraint)
     else:
         assert False, 'Unknown attribute'
 
@@ -145,6 +145,6 @@ def get_term_tuple(t):
         return ('ilv', tuple(sorted([get_structure_tuple(m)
                                      for m in t.members])))
     elif checks.is_any(t):
-        return ('any', t.schema, tuple(sorted(t.constraints)))
+        return ('anyElem', t.schema, t.constraint)
     else:
         assert False, 'Unknown compositor'

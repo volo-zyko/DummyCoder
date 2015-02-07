@@ -3,8 +3,9 @@
 import operator
 import re
 
-import dumco.schema.checks
-import dumco.schema.enums
+import dumco.schema.checks as checks
+import dumco.schema.enums as enums
+import dumco.schema.model as model
 import dumco.schema.uses as uses
 from dumco.utils.horn import horn
 import dumco.utils.string_utils
@@ -40,23 +41,38 @@ class OpacityManager(object):
         except KeyError:
             return self.is_opaque_anything()
 
-    def is_opaque_ct_member(self, ct, member):
+    def is_opaque_ct_member(self, ct, member, is_attribute=False):
         if not self.is_opaque_anything():
             return False
-        elif dumco.schema.checks.is_any(member):
-            return True
 
         try:
             member_set = self.supported_cts[ct.schema.target_ns][ct.name]
         except KeyError:
             return True
 
-        if dumco.schema.checks.is_element(member):
+        if checks.is_element(member):
             name = dumco.utils.string_utils.cxx_name(ct, member)
-        elif dumco.schema.checks.is_attribute(member):
-            name = '@{}'.format(dumco.utils.string_utils.cxx_name(ct, member))
-        elif dumco.schema.checks.is_text(member):
+        elif checks.is_attribute(member):
+            name = '@' + dumco.utils.string_utils.cxx_name(ct, member)
+        elif checks.is_text(member):
             name = 'text()'
+        elif checks.is_any(member):
+            def constraint_str(c):
+                if isinstance(c, model.Any.Name):
+                    if c.tag is not None:
+                        return 'tag={}'.format(c.tag)
+                    elif c.ns is not None:
+                        return 'ns={}'.format(c.ns)
+                elif isinstance(c, model.Any.Not):
+                    return '!{}'.format(constraint_str(c.name))
+
+            for c in ([] if member.constraint is None else member.constraint):
+                name = '*[{}]'.format(constraint_str(c))
+
+                if name in member_set:
+                    return False
+
+            name = '*'
         else:  # pragma: no cover
             assert False
         return (name not in member_set)
@@ -68,7 +84,8 @@ class OpacityManager(object):
         def cumulative_min_occurs(parents, particle):
             min_occurs = 1
             for p in parents + [particle]:
-                assert checks.is_compositor(p.term)
+                if checks.is_complex_type(p):
+                    continue
 
                 min_occurs = \
                     uses.min_occurs_op(min_occurs, p.min_occurs, operator.mul)
@@ -76,8 +93,6 @@ class OpacityManager(object):
             return min_occurs
 
         consistent = True
-        checks = dumco.schema.checks
-        enums = dumco.schema.enums
         for schema in schemata:
             if self.is_opaque_ns(schema.target_ns):
                 continue
@@ -100,10 +115,6 @@ class OpacityManager(object):
                     continue
 
                 for (p, x) in enums.enum_hierarchy(ct):
-                    if (checks.is_particle(x) and
-                            checks.is_compositor(x.term)):
-                        continue
-
                     if (checks.is_particle(x) and checks.is_element(x.term) and
                             cumulative_min_occurs(p, x) > 0 and
                             self.is_opaque_ct_member(ct, x.term)):
@@ -119,11 +130,11 @@ class OpacityManager(object):
                         horn.honk('ComplexType {}:{} which is referenced '
                                   'from {}:{}#{} is opaque',
                                   x.term.type.schema.target_ns,
-                                  x.term.type.name, x.term.schema.target_ns,
+                                  x.term.type.name, ct.schema.target_ns,
                                   ct.name, x.term.name)
                         consistent = False
                     elif (checks.is_attribute_use(x) and x.required and
-                            self.is_opaque_ct_member(ct, x.attribute)):
+                            self.is_opaque_ct_member(ct, x.attribute, True)):
                         horn.honk('Attribute {} in {}:{} is required but is '
                                   'opaque', x.attribute.name,
                                   ct.schema.target_ns, ct.name)

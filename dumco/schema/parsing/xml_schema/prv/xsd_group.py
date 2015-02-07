@@ -41,7 +41,11 @@ class XsdGroup(base.XsdBase):
     def finalize(self, factory):
         particle = None
         if self.attr('ref') is not None:
-            particle = factory.resolve_group(self.attr('ref'), self.schema)
+            # We need this step to pass min/max occurs values to higher levels.
+            particle = dumco.schema.uses.Particle(
+                self.min_occurs, self.max_occurs, dumco.schema.model.Sequence())
+            particle.term.members.append(
+                factory.resolve_group(self.attr('ref'), self.schema))
         else:
             for c in self.children:
                 assert ((isinstance(c, xsd_all.XsdAll) or
@@ -50,14 +54,5 @@ class XsdGroup(base.XsdBase):
                         particle is None), 'Wrong content of Group'
 
                 particle = c.finalize(factory)
-
-        if particle is None:
-            return particle
-
-        new_seq = dumco.schema.model.Sequence()
-        new_seq.members.append(particle)
-
-        particle = dumco.schema.uses.Particle(
-            self.min_occurs, self.max_occurs, new_seq)
 
         return utils.reduce_particle(particle)

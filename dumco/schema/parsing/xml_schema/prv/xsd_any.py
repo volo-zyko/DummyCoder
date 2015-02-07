@@ -40,35 +40,49 @@ class XsdAny(base.XsdBase):
                 constraints = []
             elif value == '##other':
                 if parent_schema.schema_element.target_ns is not None:
-                    constraints = Any.Not(
-                        Any.Name(parent_schema.schema_element.target_ns, None))
+                    constraints = [Any.Not(
+                        Any.Name(parent_schema.schema_element.target_ns, None))]
             else:
                 def fold_namespaces(accum, u):
                     if u == '##targetNamespace':
                         if parent_schema.schema_element.target_ns is None:
                             return accum
-                        return accum + Any.Name(
-                            parent_schema.schema_element.target_ns, None)
+                        return accum + [Any.Name(
+                            parent_schema.schema_element.target_ns, None)]
                     elif u == '##local':
                         return accum
                     return accum + [Any.Name(u, None)]
 
                 constraints = reduce(fold_namespaces, value.split(), [])
 
-        if is_attribute:
-            self.schema_element = dumco.schema.uses.AttributeUse(
-                None, False, False,
-                Any(constraints, parent_schema.schema_element))
+        if len(constraints) == 0:
+            anys = [Any(None, parent_schema.schema_element)]
+        elif len(constraints) == 1:
+            anys = [Any(constraints[0], parent_schema.schema_element)]
         else:
-            self.schema_element = dumco.schema.uses.Particle(
-                factory.particle_min_occurs(attrs),
-                factory.particle_max_occurs(attrs),
-                Any(constraints, parent_schema.schema_element))
+            anys = [Any(c, parent_schema.schema_element) for c in constraints]
+
+        if is_attribute:
+            uses = [dumco.schema.uses.AttributeUse(None, False, False, a)
+                    for a in anys]
+        else:
+            min_occurs = factory.particle_min_occurs(attrs)
+            max_occurs = factory.particle_max_occurs(attrs)
+
+            uses = []
+            if max_occurs > 0:
+                uses = [dumco.schema.uses.Particle(min_occurs, max_occurs, a)
+                        for a in anys]
+
+        if len(uses) == 0:
+            self.schema_element = None
+        if len(uses) == 1:
+            self.schema_element = uses[0]
+        else:
+            self.schema_element = \
+                dumco.schema.uses.Particle(1, 1, dumco.schema.model.Choice())
+            self.schema_element.term.members = uses
 
     @method_once
     def finalize(self, factory):
-        if (dumco.schema.checks.is_particle(self.schema_element) and
-                self.schema_element.max_occurs == 0):
-            return None
-
         return self.schema_element

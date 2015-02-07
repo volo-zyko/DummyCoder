@@ -83,7 +83,7 @@ function single_schema_set_dump()
     rng_output2="$BASE_OUTPUT_DIR/second-rng-rng-dump"
     xsd_output3="$BASE_OUTPUT_DIR/second-rng-xsd-dump"
     renames="$(get_renames "$input")"
-    supported="" # "$(get_supported_list "$input")"
+    supported="$(get_supported_list "$input")"
 
     test -d "$xsd_output2" && rm -rf "$xsd_output2"
     test -d "$rng_output2" && rm -rf "$rng_output2"
@@ -126,7 +126,7 @@ function single_schema_set_dump()
 
     if [ "$syntax" = 'rng' -a "$DUMP_RNG" -ne 0 ]; then
         echo "### $RUNNER -i $rng_output dumpxsd -o $xsd_output3 --dump-rng-model-to-dir $rng_output2"
-        $RUNNER -i "$rng_output" dumpxsd -o "$xsd_output3" --dump-rng-model-to-dir "$rng_output2"
+        $RUNNER -s rng -i "$rng_output" dumpxsd -o "$xsd_output3" --dump-rng-model-to-dir "$rng_output2"
 
         diff_schemata "$xsd_output2" "$xsd_output3" "$BASE_OUTPUT_DIR/$(basename "$xsd_output2").diff"
         diff_schemata "$rng_output" "$rng_output2" "$BASE_OUTPUT_DIR/$(basename "$rng_output").diff"

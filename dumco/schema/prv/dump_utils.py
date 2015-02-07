@@ -1,10 +1,16 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
+import operator
+
 import dumco.schema.base as base
 import dumco.schema.checks as checks
+import dumco.schema.enums as enums
 import dumco.schema.model as model
+import dumco.schema.rng_types as rng_types
 import dumco.schema.tuples as tuples
+import dumco.schema.uses as uses
 import dumco.schema.xsd_types as xsd_types
+from dumco.utils.horn import horn
 import dumco.utils.string_utils
 
 
@@ -98,26 +104,47 @@ class TagGuard(object):
         return exc_value is None
 
 
-def _qname(name, own_schema, other_schema, context, prefix=XSD_PREFIX):
+def _qname(name, own_schema, other_schema, context):
     if own_schema != other_schema:
         if own_schema is not None:
             context.store_import_namespace(own_schema.prefix,
                                            own_schema.target_ns)
-        elif prefix == XML_PREFIX:
-            context.store_import_namespace(None, base.XML_NAMESPACE)
-        return '{}:{}'.format(
-            own_schema.prefix if own_schema is not None else prefix, name)
+        return '{}:{}'.format(own_schema.prefix, name)
     return name
 
 
-def _max_occurs(value):
-    return ('unbounded' if value == base.UNBOUNDED else value)
+def _type_qname(name, own_schema, other_schema, context):
+    if own_schema.target_ns == rng_types.RNG_NAMESPACE:
+        return 'xsd:{}'.format(name)
+    return _qname(name, own_schema, other_schema, context)
 
 
-def _term_name(term):
-    if checks.is_interleave(term):
-        return 'all'
-    return term.__class__.__name__.lower()
+def _element_form(elem, context):
+    elem_form = context.element_forms.get(elem.schema, None)
+    if elem_form is not None:
+        if ((not elem.qualified and not elem_form) or
+                (elem.qualified and elem_form)):
+            return None
+        elif elem.qualified:
+            return 'qualified'
+        else:
+            return 'unqualified'
+    else:
+        return None
+
+
+def _attribute_form(attr, context):
+    attr_form = context.attribute_forms.get(attr.schema, None)
+    if attr_form is not None:
+        if ((not attr.qualified and not attr_form) or
+                (attr.qualified and attr_form)):
+            return None
+        elif attr.qualified:
+            return 'qualified'
+        else:
+            return 'unqualified'
+    else:
+        return None
 
 
 def is_top_level_attribute(attr_use):
@@ -131,8 +158,8 @@ def is_top_level_attribute(attr_use):
 def dump_restriction(restriction, schema, context):
     with TagGuard('restriction', context):
         context.add_attribute(
-            'base', _qname(restriction.base.name, restriction.base.schema,
-                           schema, context))
+            'base', _type_qname(restriction.base.name, restriction.base.schema,
+                                schema, context))
 
         if restriction.enumerations:
             for e in restriction.enumerations:
@@ -181,13 +208,13 @@ def dump_restriction(restriction, schema, context):
 
 
 def dump_listitems(listitems, schema, context):
-    assert len(listitems) == 1, 'Cannot dump xs:list'
+    assert len(listitems) == 1, 'Cannot dump xsd:list'
 
     with TagGuard('list', context):
         context.add_attribute(
-            'itemType', _qname(listitems[0].type.name,
-                               listitems[0].type.schema,
-                               schema, context))
+            'itemType', _type_qname(listitems[0].type.name,
+                                    listitems[0].type.schema,
+                                    schema, context))
 
 
 def dump_union(union, schema, context):
@@ -196,89 +223,226 @@ def dump_union(union, schema, context):
     with TagGuard('union', context):
         context.add_attribute(
             'memberTypes',
-            ' '.join([_qname(m.name, m.schema, schema, context)
+            ' '.join([_type_qname(m.name, m.schema, schema, context)
                       for m in union]))
 
 
 def dump_simple_content(ct, schema, context):
     with TagGuard('simpleContent', context):
         with TagGuard('extension', context):
-            qn = _qname(ct.text().type.name, ct.text().type.schema,
-                        schema, context)
+            qn = _type_qname(ct.text().type.name, ct.text().type.schema,
+                             schema, context)
             context.add_attribute('base', qn)
 
-            dump_attribute_uses(ct, ct.attribute_uses(), schema, context)
+            dump_attribute_uses(ct, schema, context)
 
 
-def dump_particle(ct, particle, schema, context, names):
-    def dump_occurs_attributes():
-        if particle.min_occurs != 1:
-            context.add_attribute('minOccurs', particle.min_occurs)
-        if particle.max_occurs != 1:
-            context.add_attribute('maxOccurs',
-                                  _max_occurs(particle.max_occurs))
+def _dump_occurs_attributes(min_occurs, max_occurs, context):
+    if min_occurs != 1:
+        context.add_attribute('minOccurs', min_occurs)
+    if max_occurs != 1:
+        context.add_attribute('maxOccurs', 'unbounded'
+                              if max_occurs == base.UNBOUNDED
+                              else max_occurs)
 
-    if not checks.is_particle(particle):
-        return
-    elif (checks.is_element(particle.term) and
-            context.om.is_opaque_ct_member(ct, particle.term)):
-        return
-    elif (checks.is_compositor(particle.term) and
-            all([context.om.is_opaque_ct_member(ct, p.term)
-                 for p in particle.traverse() if checks.is_particle(p)])):
-        return
-    elif (checks.is_element(particle.term) and
-            particle.term.schema != schema):
+
+def dump_particle(ct, schema, context):
+    def dump_element(particle, min_occurs, max_occurs):
         groups = context.egroups.get(particle.term.schema, {})
 
         hashable_particle = tuples.HashableParticle(particle, None)
         if hashable_particle in groups.iterkeys():
             group_name = groups[hashable_particle].name
+
             with TagGuard('group', context):
                 context.add_attribute(
-                    'ref',
-                    _qname(group_name, particle.term.schema, schema, context))
+                    'ref', _qname(group_name, particle.term.schema,
+                                  schema, context))
 
             return
 
-    name = _term_name(particle.term)
-    with TagGuard(name, context):
-        dump_occurs_attributes()
+        top_elements = particle.term.schema.elements
+        is_element_definition = particle.term not in top_elements
 
-        if checks.is_compositor(particle.term):
-            for p in particle.term.members:
-                dump_particle(ct, p, schema, context, names)
-        elif checks.is_element(particle.term):
-            is_element_def = False
-            if particle.term.schema == schema:
-                top_elements = particle.term.schema.elements
+        with TagGuard('element', context):
+            _dump_occurs_attributes(min_occurs, max_occurs, context)
 
-                is_element_def = particle.term not in top_elements
-
-            dump_element_attributes(particle.term, is_element_def,
+            dump_element_attributes(particle.term, is_element_definition,
                                     schema, context)
 
-            if is_element_def:
-                context.add_attribute(
-                    'form',
-                    'qualified' if particle.term.qualified else 'unqualified')
-        elif checks.is_any(particle.term):
-            _dump_any(particle.term, schema, context)
-        else:  # pragma: no cover
-            assert False
+            form = (None if not is_element_definition
+                    else _element_form(particle.term, context))
+            if form is not None:
+                context.add_attribute('form', form)
 
+    def dump_any(particle, min_occurs, max_occurs):
+        constraint = _get_any_constraint_text(particle.term.constraint, schema)
 
-def dump_attribute_uses(ct, attr_uses, schema, context):
-    for u in attr_uses:
-        if (context.om.is_opaque_ct_member(ct, u.attribute) and
-                not checks.is_single_valued_type(ct)):
-            continue
+        with TagGuard('any', context):
+            _dump_occurs_attributes(min_occurs, max_occurs, context)
 
-        if checks.is_any(u.attribute):
-            with TagGuard('anyAttribute', context):
-                _dump_any(u.attribute, schema, context)
+            context.add_attribute('namespace', constraint)
+
+    def dump_terminal(level, subparents, subpart):
+        if level < len(subparents):
+            min_occurs = reduce(
+                lambda acc, x: uses.min_occurs_op(acc, x.min_occurs,
+                                                  operator.mul),
+                subparents[level:], 1)
+            max_occurs = reduce(
+                lambda acc, x: uses.max_occurs_op(acc, x.max_occurs,
+                                                  operator.mul),
+                subparents[level:], 1)
+
+            min_occurs = uses.min_occurs_op(min_occurs, subpart.min_occurs,
+                                            operator.mul)
+            max_occurs = uses.max_occurs_op(max_occurs, subpart.max_occurs,
+                                            operator.mul)
         else:
+            min_occurs = subpart.min_occurs
+            max_occurs = subpart.max_occurs
+
+        if checks.is_element(subpart.term):
+            dump_element(subpart, min_occurs, max_occurs)
+        elif checks.is_any(subpart.term):
+            dump_any(subpart, min_occurs, max_occurs)
+
+    def dump_compositor(comp_name, comp_min, comp_max, hierarchy, level):
+        with TagGuard(comp_name, context):
+            _dump_occurs_attributes(comp_min, comp_max, context)
+
+            dump_hierarchy(hierarchy, level)
+
+    def get_compositor_info(particle):
+        if checks.is_interleave(particle.term):
+            members = [m for m in particle.term.members
+                       if (checks.is_particle(m) and
+                           checks.is_element(m.term) and
+                           not context.om.is_opaque_ct_member(ct, m.term))]
+
+            if (particle.max_occurs == 1 and
+                    all([m.max_occurs <= 1 for m in members])):
+                return (particle.min_occurs, particle.max_occurs, 'all')
+            else:
+                horn.peep('Cannot represent xsd:all. Approximating '
+                          'with xsd:choice')
+                return (0, base.UNBOUNDED, 'choice')
+
+        return (particle.min_occurs, particle.max_occurs,
+                particle.term.__class__.__name__.lower())
+
+    def dump_hierarchy(hierarchy, level):
+        assert hierarchy
+
+        subhierarchies = [[]]
+
+        curr_parents = hierarchy[0][0]
+        for (parents, part) in hierarchy:
+            if (level < len(curr_parents) and level < len(parents) and
+                    curr_parents[level] == parents[level]):
+                subhierarchies[-1].append((parents, part))
+                continue
+
+            curr_parents = parents
+            if subhierarchies[-1]:
+                subhierarchies.append([(parents, part)])
+            else:
+                subhierarchies[-1].append((parents, part))
+
+        for subhierarchy in subhierarchies:
+            len_subhierarchy = len(subhierarchy)
+
+            if (len_subhierarchy > 1 or
+                    (len_subhierarchy == 1 and level == 0)):
+                (subparents, subpart) = subhierarchy[0]
+
+                if len_subhierarchy == 1:
+                    # Handle the case when we have to dump compositor with
+                    # single child and this compositor is the first child of
+                    # complex type. We always convert it to sequence because
+                    # on loading we load such cases only as sequence.
+                    with TagGuard('sequence', context):
+                        dump_terminal(level, subparents, subpart)
+
+                    continue
+
+                (comp_min, comp_max, comp_name) = \
+                    get_compositor_info(subparents[level])
+
+                sublevel = level + 1
+                while sublevel < len(subparents):
+                    subparent = subparents[sublevel]
+                    if all([sublevel < len(ps) and subparent == ps[sublevel]
+                            for (ps, p) in subhierarchy]):
+                        sublevel = sublevel + 1
+
+                        (c_min, c_max, comp_name) = \
+                            get_compositor_info(subparent)
+
+                        comp_min = uses.min_occurs_op(comp_min, c_min,
+                                                      operator.mul)
+                        comp_max = uses.max_occurs_op(comp_max, c_max,
+                                                      operator.mul)
+                    else:
+                        break
+
+                dump_compositor(comp_name, comp_min, comp_max,
+                                subhierarchy, sublevel)
+            elif len_subhierarchy == 1:
+                (subparents, subpart) = subhierarchy[0]
+
+                dump_terminal(level, subparents, subpart)
+
+    root_hierarchy = [(p[1:], x) for (p, x)
+                      in enums.enum_supported_hierarchy(ct, context.om)
+                      if checks.is_particle(x)]
+
+    dump_hierarchy(root_hierarchy, 0)
+
+
+def dump_attribute_uses(ct, schema, context):
+    def enum_sorted_attributes(ct, schema):
+        for u in sorted([u for u in enums.enum_supported_flat(ct, context.om)
+                         if checks.is_attribute_use(u)],
+                        key=lambda u: uses.attribute_key(u, schema),
+                        reverse=True):
+            yield u
+
+    anys = []
+    for u in enum_sorted_attributes(ct, schema):
+        if checks.is_attribute(u.attribute):
             dump_attribute_use(u, schema, context)
+        elif checks.is_any(u.attribute):
+            anys.append(u.attribute)
+
+    if anys:
+        constraints = [_get_any_constraint_text(a.constraint, schema)
+                       for a in anys]
+
+        with TagGuard('anyAttribute', context):
+            if any([c == '##any' for c in constraints]):
+                context.add_attribute('namespace', '##any')
+            elif any([c == '##other' for c in constraints]):
+                if any([c == schema.target_ns for c in constraints]):
+                    context.add_attribute('namespace', '##any')
+                else:
+                    context.add_attribute('namespace', '##other')
+            else:
+                context.add_attribute('namespace', ' '.join(constraints))
+
+
+def dump_element_particle(particle, schema, context):
+    assert checks.is_element(particle.term)
+
+    with TagGuard('element', context):
+        _dump_occurs_attributes(
+            particle.min_occurs, particle.max_occurs, context)
+
+        dump_element_attributes(particle.term, True, schema, context)
+
+        form = _element_form(particle.term, context)
+        if form is not None:
+            context.add_attribute('form', form)
 
 
 def dump_attribute_use(attr_use, schema, context):
@@ -306,18 +470,18 @@ def dump_attribute_use(attr_use, schema, context):
                 is_top_level_attribute(attr_use)):
             context.add_attribute(
                 'ref', _qname(attribute.name, attribute.schema,
-                              schema, context, prefix=XML_PREFIX))
+                              schema, context))
 
-            _dump_constraint(attr_use.constraint, context)
+            _dump_value_constraint(attr_use.constraint, context)
         else:
             dump_attribute_attributes(attribute, schema, context)
 
             if attribute.constraint.value is None:
-                _dump_constraint(attr_use.constraint, context)
+                _dump_value_constraint(attr_use.constraint, context)
 
-            context.add_attribute(
-                'form',
-                'qualified' if attr_use.attribute.qualified else 'unqualified')
+            form = _attribute_form(attr_use.attribute, context)
+            if form is not None:
+                context.add_attribute('form', form)
 
         if attr_use.required:
             context.add_attribute('use', 'required')
@@ -332,10 +496,10 @@ def dump_attribute_attributes(attribute, schema, context):
 
     if not checks.is_simple_urtype(attribute.type):
         context.add_attribute(
-            'type', _qname(attribute.type.name, attribute.type.schema,
-                           schema, context))
+            'type', _type_qname(attribute.type.name, attribute.type.schema,
+                                schema, context))
 
-    _dump_constraint(attribute.constraint, context)
+    _dump_value_constraint(attribute.constraint, context)
 
 
 def dump_element_attributes(element, is_element_definition,
@@ -350,17 +514,17 @@ def dump_element_attributes(element, is_element_definition,
         if (not checks.is_complex_urtype(element.type) and
                 not checks.is_simple_urtype(element.type)):
             context.add_attribute(
-                'type', _qname(element.type.name, element.type.schema,
-                               schema, context))
+                'type', _type_qname(element.type.name, element.type.schema,
+                                    schema, context))
 
-        _dump_constraint(element.constraint, context)
+        _dump_value_constraint(element.constraint, context)
     else:
         context.add_attribute(
             'ref',
             _qname(element.name, element.schema, schema, context))
 
 
-def _dump_constraint(constraint, context):
+def _dump_value_constraint(constraint, context):
     if constraint.fixed:
         assert constraint.value, \
             'Constraint has fixed value but the value itself is unknown'
@@ -371,24 +535,21 @@ def _dump_constraint(constraint, context):
                               constraint.value)
 
 
-def _dump_any(elem, schema, context):
-    assert checks.is_any(elem)
-
-    val = '##any'
-    if not elem.constraints:
-        val = '##any'
-    elif (len(elem.constraints) == 1 and
-          isinstance(elem.constraints[0], model.Any.Not) and
-          isinstance(elem.constraints[0].name, model.Any.Name) and
-          elem.constraints[0].name.ns == schema.target_ns and
-          elem.constraints[0].name.tag is None):
-        val = '##other'
-    elif (len(elem.constraints) > 1 and
-          all([isinstance(x, model.Any.Name) and x.tag is None
-               for x in elem.constraints])):
-        val = ' '.join([x.ns for x in elem.constraints])
+def _get_any_constraint_text(constraint, schema):
+    if constraint is None:
+        return '##any'
+    elif (isinstance(constraint, model.Any.Not) and
+          constraint.name.ns == schema.target_ns and
+          constraint.name.tag is None):
+        return '##other'
+    elif (isinstance(constraint, model.Any.Name) and
+          constraint.ns == schema.target_ns and constraint.tag is None):
+        return '##targetNamespace'
+    elif (isinstance(constraint, model.Any.Name) and
+          constraint.ns is not None and constraint.tag is None):
+        return constraint.ns
     else:
-        # Issue a warning about impossibility to convert to XSD any.
-        pass
-
-    context.add_attribute('namespace', val)
+        horn.peep(
+            'Cannot represent constraint \'{}\' for xsd:any. '
+            'Approximating with ##any'.format(str(constraint)))
+        return '##any'
