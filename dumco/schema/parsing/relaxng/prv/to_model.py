@@ -71,7 +71,7 @@ class Rng2Model(object):
             added_elements.add(pattern)
 
             schema = self.all_schemata[ns]
-            elem = model.Element(name, None, False, schema)
+            elem = model.Element(name, None, False, qualified, schema)
             schema.elements.append(elem)
 
             self.namer.learn_naming(elem)
@@ -92,15 +92,15 @@ class Rng2Model(object):
         def convert_local_element(pattern, ns, name, qualified, excpt=None):
             assert pattern not in self.untyped_elements
             if name is None and ns is None:
-                any_elem = model.Any([], None)
+                any_elem = model.Any(None, None)
                 self.untyped_elements[pattern] = (any_elem, False)
             elif name is None:
                 constraint = model.Any.Name(ns, None)
-                any_elem = model.Any([constraint], None)
+                any_elem = model.Any(constraint, None)
                 self.untyped_elements[pattern] = (any_elem, False)
             else:
                 elem_schema = self.all_schemata[ns]
-                elem = model.Element(name, None, False, elem_schema)
+                elem = model.Element(name, None, False, qualified, elem_schema)
 
                 self.namer.learn_naming(elem)
                 self.untyped_elements[pattern] = (elem, qualified)
@@ -372,16 +372,13 @@ class Rng2Model(object):
         if isinstance(type_pattern, rng_attribute.RngAttribute):
             def convert_attribute(pattern, ns, name, qualified, excpt=None):
                 if name is None and ns is None:
-                    attr = model.Any([], schema)
-                    qualified = False
+                    attr = model.Any(None, schema)
                 elif name is None:
                     name_constraint = model.Any.Name(ns, None)
-                    attr = model.Any([name_constraint], schema)
-                    qualified = False
+                    attr = model.Any(name_constraint, schema)
+                elif checks.is_xml_namespace(ns):
+                    attr = model.xml_attributes()[name]
                 else:
-                    if checks.is_xml_namespace(ns):
-                        return (True, model.xml_attributes()[name])
-
                     if ns == '':
                         attr_schema = schema
                     else:
@@ -394,7 +391,7 @@ class Rng2Model(object):
 
                     self.namer.learn_naming(attr)
 
-                return (True, attr)
+                return (True, uses.AttributeUse(None, False, False, attr))
 
             return _convert_named_component(type_pattern, convert_attribute)
         elif isinstance(type_pattern, rng_element.RngElement):
@@ -535,7 +532,8 @@ class Rng2Model(object):
     def _merge_enum_types(self, changing_enum_type, redundant_enum_type):
         assert changing_enum_type != redundant_enum_type
 
-        enums = {x.value: x for x in changing_enum_type.restriction.enumerations}
+        enums = {x.value: x for x in
+                 changing_enum_type.restriction.enumerations}
         enums.update(
             {x.value: x for x in redundant_enum_type.restriction.enumerations})
         changing_enum_type.restriction.enumerations = list(enums.itervalues())

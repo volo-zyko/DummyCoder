@@ -188,6 +188,13 @@ class _SchemaDumpContext(XmlWriter):
                 self.add_attribute('targetNamespace', schema.target_ns)
                 self.define_namespace(None, schema.target_ns)
 
+            self.add_attribute('elementFormDefault',
+                               'qualified' if self.element_forms[schema]
+                               else 'unqualified')
+            self.add_attribute('attributeFormDefault',
+                               'qualified' if self.attribute_forms[schema]
+                               else 'unqualified')
+
             sorted_namespaces = [
                 x for x in sorted(import_namespaces.iteritems())
                 if (x[1] != rng_types.RNG_NAMESPACE and
@@ -237,6 +244,10 @@ def _stypes_adder(stypes, t):
 def _ctypes_adder(ctypes, t):
     schema_cts = ctypes.setdefault(t.schema, {})
     schema_cts.setdefault(t.name, t)
+
+
+def _is_in_top_elements(e, top_elements):
+    return (e in top_elements.get(e.schema, {}).itervalues())
 
 
 def _do_for_single_valued_type(t, om, do_ctypes, do_stypes):
@@ -329,7 +340,7 @@ def _find_element_groups(ct, particle, schema, top_elements,
             continue
         elif p.term.schema == schema:
             continue
-        elif p.term in top_elements.get(p.term.schema, {}).itervalues():
+        elif _is_in_top_elements(p.term, top_elements):
             continue
 
         assert checks.is_element(p.term)
@@ -440,31 +451,39 @@ def _approximate_simple_types(stypes, namer, opacity_manager):
     return stypes
 
 
-def _collect_forms(schemata, opacity_manager):
+def _collect_forms(schemata, opacity_manager, top_elements):
     element_forms = {}
     attribute_forms = {}
+
+    def inc_stats(m, stats):
+        if m.qualified:
+            stats[0] = stats[0] + 1
+        else:
+            stats[1] = stats[1] + 1
 
     for schema in schemata:
         if opacity_manager.is_opaque_ns(schema.target_ns):
             continue
 
-        # Qualification stats. Element at index 0 is count with qualified form,
-        # and element at index 1 is count of unqualified entities.
+        # Qualification stats. Element at index 0 is a count of qualified
+        # entities, and element at index 1 is a count of unqualified entities.
         elems = [0, 0]
         attrs = [0, 0]
 
-        for e in schema.elements:
-            if opacity_manager.is_opaque_top_element(e):
-                continue
-
-            if e.qualified:
-                elems[0] = elems[0] + 1
-            else:
-                elems[1] = elems[1] + 1
+        for e in top_elements.get(schema, {}).itervalues():
+            inc_stats(e, elems)
 
         for ct in schema.complex_types:
             if opacity_manager.is_opaque_ct(ct):
                 continue
+
+            for m in enums.enum_supported_flat(ct, opacity_manager):
+                if (checks.is_particle(m) and checks.is_element(m.term) and
+                        not _is_in_top_elements(m.term, top_elements)):
+                    inc_stats(m.term, elems)
+                elif (checks.is_attribute_use(m) and
+                        checks.is_attribute(m.attribute)):
+                    inc_stats(m.attribute, attrs)
 
         element_forms[schema] = True if elems[0] > elems[1] else False
         attribute_forms[schema] = True if attrs[0] > attrs[1] else False
@@ -488,7 +507,8 @@ def dump_xsd(schemata, output_dir, xml_xsd, namer, opacity_manager):
                                     ctypes, stypes)
     stypes = _approximate_simple_types(stypes, namer, opacity_manager)
 
-    (element_forms, attribute_forms) = _collect_forms(schemata, opacity_manager)
+    (element_forms, attribute_forms) = \
+        _collect_forms(schemata, opacity_manager, elements)
 
     horn.beep('Dumping XML Schema files to {}...',
               os.path.realpath(output_dir))

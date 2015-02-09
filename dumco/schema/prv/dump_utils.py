@@ -311,18 +311,20 @@ def dump_particle(ct, schema, context):
         with TagGuard(comp_name, context):
             _dump_occurs_attributes(comp_min, comp_max, context)
 
-            dump_hierarchy(hierarchy, level)
+            dump_hierarchy(hierarchy, level, False)
 
-    def get_compositor_info(particle):
+    def get_compositor_info(particle, is_first_in_ct):
         if checks.is_interleave(particle.term):
             members = [m for m in particle.term.members
                        if (checks.is_particle(m) and
-                           checks.is_element(m.term) and
                            not context.om.is_opaque_ct_member(ct, m.term))]
 
             if (particle.max_occurs == 1 and
-                    all([m.max_occurs <= 1 for m in members])):
-                return (particle.min_occurs, particle.max_occurs, 'all')
+                    all([(checks.is_element(m.term) and
+                          m.max_occurs <= 1) for m in members]) and
+                    is_first_in_ct):
+                return (particle.min_occurs,
+                        particle.max_occurs, 'all')
             else:
                 horn.peep('Cannot represent xsd:all. Approximating '
                           'with xsd:choice')
@@ -331,7 +333,7 @@ def dump_particle(ct, schema, context):
         return (particle.min_occurs, particle.max_occurs,
                 particle.term.__class__.__name__.lower())
 
-    def dump_hierarchy(hierarchy, level):
+    def dump_hierarchy(hierarchy, level, is_first_compositor):
         assert hierarchy
 
         subhierarchies = [[]]
@@ -367,7 +369,7 @@ def dump_particle(ct, schema, context):
                     continue
 
                 (comp_min, comp_max, comp_name) = \
-                    get_compositor_info(subparents[level])
+                    get_compositor_info(subparents[level], is_first_compositor)
 
                 sublevel = level + 1
                 while sublevel < len(subparents):
@@ -377,7 +379,7 @@ def dump_particle(ct, schema, context):
                         sublevel = sublevel + 1
 
                         (c_min, c_max, comp_name) = \
-                            get_compositor_info(subparent)
+                            get_compositor_info(subparent, is_first_compositor)
 
                         comp_min = uses.min_occurs_op(comp_min, c_min,
                                                       operator.mul)
@@ -393,17 +395,15 @@ def dump_particle(ct, schema, context):
 
                 dump_terminal(level, subparents, subpart)
 
-    root_hierarchy = [(p[1:], x) for (p, x)
-                      in enums.enum_supported_hierarchy(ct, context.om)
-                      if checks.is_particle(x)]
+    root = [(p[1:], x) for (p, x)
+            in enums.enum_supported_elements_hierarchy(ct, context.om)]
 
-    dump_hierarchy(root_hierarchy, 0)
+    dump_hierarchy(root, 0, True)
 
 
 def dump_attribute_uses(ct, schema, context):
     def enum_sorted_attributes(ct, schema):
-        for u in sorted([u for u in enums.enum_supported_flat(ct, context.om)
-                         if checks.is_attribute_use(u)],
+        for u in sorted(enums.enum_supported_attributes_flat(ct, context.om),
                         key=lambda u: uses.attribute_key(u, schema),
                         reverse=True):
             yield u
