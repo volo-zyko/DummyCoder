@@ -76,14 +76,18 @@ function single_schema_set_dump()
     syntax="$2"
     dumpmode="$3"
 
+    renames="$(get_renames "$input")"
+    supported="$(get_supported_list "$input")"
     xsd_output="$BASE_OUTPUT_DIR/$(basename "$input")-${syntax}-xsd"
     xsd_output2="$BASE_OUTPUT_DIR/second-xsd-xsd-dump"
     # These variables can be unused when dumping non-RNG schemata.
     rng_output="$BASE_OUTPUT_DIR/$(basename "$input")-rng-rng"
     rng_output2="$BASE_OUTPUT_DIR/second-rng-rng-dump"
     xsd_output3="$BASE_OUTPUT_DIR/second-rng-xsd-dump"
-    renames="$(get_renames "$input")"
-    supported="$(get_supported_list "$input")"
+
+    if [ "$dumpmode" = 'rdumpxsd' -a -n "$supported" ]; then
+        xsd_output="$xsd_output-lst"
+    fi
 
     test -d "$xsd_output2" && rm -rf "$xsd_output2"
     test -d "$rng_output2" && rm -rf "$rng_output2"

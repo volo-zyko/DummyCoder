@@ -121,7 +121,7 @@ class _SchemaDumpContext(XmlWriter):
                     dump_attribute_uses(ct, schema, self)
                 elif [u for u in ct.attribute_uses()
                       if not self.om.is_opaque_ct_member(ct, u.attribute,
-                                                         is_attribute=True)]:
+                                                         is_attr=True)]:
                     assert checks.has_supported_empty_content(ct, self.om), \
                         'Expected empty CT'
 
@@ -451,7 +451,7 @@ def _approximate_simple_types(stypes, namer, opacity_manager):
     return stypes
 
 
-def _collect_forms(schemata, opacity_manager, top_elements):
+def _collect_forms(schemata):
     element_forms = {}
     attribute_forms = {}
 
@@ -462,24 +462,18 @@ def _collect_forms(schemata, opacity_manager, top_elements):
             stats[1] = stats[1] + 1
 
     for schema in schemata:
-        if opacity_manager.is_opaque_ns(schema.target_ns):
-            continue
-
         # Qualification stats. Element at index 0 is a count of qualified
         # entities, and element at index 1 is a count of unqualified entities.
         elems = [0, 0]
         attrs = [0, 0]
 
-        for e in top_elements.get(schema, {}).itervalues():
+        for e in schema.elements:
             inc_stats(e, elems)
 
         for ct in schema.complex_types:
-            if opacity_manager.is_opaque_ct(ct):
-                continue
-
-            for m in enums.enum_supported_flat(ct, opacity_manager):
+            for m in enums.enum_flat(ct):
                 if (checks.is_particle(m) and checks.is_element(m.term) and
-                        not _is_in_top_elements(m.term, top_elements)):
+                        not m.term in schema.elements):
                     inc_stats(m.term, elems)
                 elif (checks.is_attribute_use(m) and
                         checks.is_attribute(m.attribute)):
@@ -507,8 +501,7 @@ def dump_xsd(schemata, output_dir, xml_xsd, namer, opacity_manager):
                                     ctypes, stypes)
     stypes = _approximate_simple_types(stypes, namer, opacity_manager)
 
-    (element_forms, attribute_forms) = \
-        _collect_forms(schemata, opacity_manager, elements)
+    (element_forms, attribute_forms) = _collect_forms(schemata)
 
     horn.beep('Dumping XML Schema files to {}...',
               os.path.realpath(output_dir))

@@ -135,6 +135,7 @@ def process_arguments():
 
 
 if __name__ == '__main__':
+    status = 0
     start_time = time.time()
 
     args = process_arguments()
@@ -166,11 +167,12 @@ if __name__ == '__main__':
 
         opacity_manager = OpacityManager(elements_file)
 
-        if not opacity_manager.ensure_consistency(all_schemata):
-            sys.exit(1)
-
-        dump_xsd(all_schemata, args.output_dir, args.xml_xsd_location,
-                 namer, opacity_manager)
+        if opacity_manager.ensure_consistency(all_schemata):
+            dump_xsd(all_schemata, args.output_dir, args.xml_xsd_location,
+                     namer, opacity_manager)
+        else:
+            horn.honk('ERROR: Supported elements file is not consistent')
+            status = 1
     elif args.mode == 'rfilter' or args.mode == 'dom':
         ns_converter = NamespaceConverter(args.root_namespaces.split(),
                                           args.uri_to_namespaces,
@@ -186,4 +188,7 @@ if __name__ == '__main__':
 
         gd.generate()
 
-    horn.beep('Done in {0:f} seconds!'.format(time.time() - start_time))
+    horn.beep('{} in {} seconds!',
+              ('Done' if status == 0 else 'Failed'),
+              time.time() - start_time)
+    sys.exit(status)
