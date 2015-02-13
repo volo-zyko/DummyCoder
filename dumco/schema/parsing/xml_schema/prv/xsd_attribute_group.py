@@ -2,8 +2,8 @@
 
 from dumco.utils.decorators import method_once
 
+import base
 import xsd_any
-import xsd_base
 import xsd_attribute
 
 
@@ -23,7 +23,7 @@ def xsd_attributeGroup(attrs, parent_element, factory,
     })
 
 
-class XsdAttributeGroup(xsd_base.XsdBase):
+class XsdAttributeGroup(base.XsdBase):
     def __init__(self, attrs, parent_schema):
         super(XsdAttributeGroup, self).__init__(attrs)
 

@@ -19,9 +19,9 @@ class SchemaBase(object):
         self._docs = []
 
     def append_doc(self, doc):
-        d = doc.strip()
-        if d != '':
-            self._docs.append(d)
+        text = doc.strip()
+        if text != '':
+            self._docs.append(text)
 
     @property
     def doc(self):
@@ -37,27 +37,29 @@ class SchemaBase(object):
 
 
 class Compositor(SchemaBase):
-    def __init__(self, parent_schema):
-        super(Compositor, self).__init__(parent_schema)
+    def __init__(self):
+        super(Compositor, self).__init__(None)
 
         self.members = []
 
 
 class DataComponent(SchemaBase):
     # Element or attribute.
-    def __init__(self, name, parent_schema):
+    def __init__(self, name, default, fixed, qualified, parent_schema):
         super(DataComponent, self).__init__(parent_schema)
 
         self.name = name
         self.type = None
+        self.qualified = qualified
+        self.constraint = ValueConstraint(default, fixed)
 
 
 class NativeType(SchemaBase):
     # Represents native (predefined) named type in certain namespace/uri.
-    def __init__(self, uri, name):
-        super(NativeType, self).__init__(None)
+    def __init__(self, parent_schema, name):
+        super(NativeType, self).__init__(parent_schema)
 
-        self.uri = uri
+        self.uri = parent_schema.target_ns
         self.name = name
 
 
@@ -66,4 +68,4 @@ class NativeType(SchemaBase):
 # then 'value' contains default value. If there are no constraints then
 # 'value' = None.
 ValueConstraint = collections.namedtuple('ValueConstraint',
-                                         ['fixed', 'value'])
+                                         ['value', 'fixed'])

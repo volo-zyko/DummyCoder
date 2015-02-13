@@ -6,15 +6,15 @@ import StringIO
 from dumco.utils.decorators import method_once
 
 import dumco.schema.checks
-import dumco.schema.elements
-import dumco.schema.namer as namer
+import dumco.schema.model
+import dumco.schema.enums
 import dumco.schema.xsd_types
 
 import dumco.schema.parsing.xml_parser
 
+import base
 import xsd_attribute
 import xsd_attribute_group
-import xsd_base
 import xsd_complex_type
 import xsd_element
 import xsd_group
@@ -46,7 +46,7 @@ def xsd_schema(attrs, parent_element, factory, schema_path, all_schemata):
     })
 
 
-class XsdSchema(xsd_base.XsdBase):
+class XsdSchema(base.XsdBase):
     def __init__(self, attrs, schema_path):
         super(XsdSchema, self).__init__(attrs)
 
@@ -57,7 +57,7 @@ class XsdSchema(xsd_base.XsdBase):
         self.elements_qualified = \
             self.attr('elementFormDefault') == 'qualified'
 
-        self.schema_element = dumco.schema.elements.Schema(
+        self.schema_element = dumco.schema.model.Schema(
             self.attr('targetNamespace'))
         assert schema_path.endswith('.xsd')
         self.schema_element.filename = \
@@ -73,11 +73,9 @@ class XsdSchema(xsd_base.XsdBase):
         self.unnamed_types = []
 
     def set_imports(self, all_schemata, factory):
-        self.imports = {}
-
         for path in all_schemata.iterkeys():
-            if any([(path in included_paths) for included_paths
-                    in factory.included_schema_paths.itervalues()]):
+            if any([(path in included_paths) for included_paths in
+                    factory.included_schema_paths.itervalues()]):
                 continue
 
             schema = all_schemata[path]
@@ -90,42 +88,23 @@ class XsdSchema(xsd_base.XsdBase):
 
     @method_once
     def finalize(self, all_schemata, factory):
-        schema_element = self.schema_element
+        key_extractor = lambda x: x.schema_element.name
 
-        for name in sorted(self.simple_types.iterkeys()):
-            schema_st = self.simple_types[name].finalize(factory)
-            factory.namer.learn_naming(schema_st.name, namer.NAME_HINT_ST)
-            schema_element.simple_types.append(schema_st)
+        for st in sorted(self.simple_types.itervalues(), key=key_extractor):
+            st.finalize(factory)
 
-        for name in sorted(self.complex_types.iterkeys()):
-            schema_ct = self.complex_types[name].finalize(factory)
-            factory.namer.learn_naming(schema_ct.name, namer.NAME_HINT_CT)
-            schema_element.complex_types.append(schema_ct)
+        for ct in sorted(self.complex_types.itervalues(), key=key_extractor):
+            ct.finalize(factory)
 
-        for (parents, t) in sorted(self.unnamed_types,
-                                   key=lambda x: len(x[0])):
-            schema_type = t.finalize(factory)
-            if dumco.schema.checks.is_complex_type(schema_type):
-                schema_type.name = factory.namer.name_ct(
-                    schema_type.name, schema_type.schema.target_ns, parents[-1])
-
-                schema_element.complex_types.append(schema_type)
-            elif dumco.schema.checks.is_simple_type(schema_type):
-                schema_type.name = factory.namer.name_st(
-                    schema_type.name, schema_type.schema.target_ns, parents[-1])
-
-                schema_element.simple_types.append(schema_type)
+        for xsd_type in self.unnamed_types:
+            xsd_type.finalize(factory)
 
         for elem in self.elements.itervalues():
             particle = elem.finalize(factory)
-            schema_element.elements.append(particle.term)
+            self.schema_element.elements.append(particle.term)
 
         for attr in self.attributes.itervalues():
             attr.finalize(factory)
-
-        schema_element.simple_types.sort(key=lambda st: st.name)
-        schema_element.complex_types.sort(key=lambda ct: ct.name)
-        schema_element.elements.sort(key=lambda e: e.name)
 
     @staticmethod
     def _get_schema_location(attrs, factory, schema_path):

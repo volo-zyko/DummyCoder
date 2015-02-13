@@ -2,11 +2,12 @@
 
 from dumco.utils.decorators import method_once
 
+import base
+import utils
 import xsd_all
 import xsd_any
 import xsd_attribute
 import xsd_attribute_group
-import xsd_base
 import xsd_choice
 import xsd_group
 import xsd_sequence
@@ -29,7 +30,7 @@ def xsd_restriction_in_complexContent(attrs, parent_element, factory,
     })
 
 
-class XsdComplexRestriction(xsd_base.XsdBase):
+class XsdComplexRestriction(base.XsdBase):
     def __init__(self, attrs, parent_schema):
         super(XsdComplexRestriction, self).__init__(attrs)
 
@@ -60,13 +61,12 @@ class XsdComplexRestriction(xsd_base.XsdBase):
             else:  # pragma: no cover
                 assert False, 'Wrong content of complex Restriction'
 
-        base = factory.resolve_complex_type(self.attr('base'),
-                                            self.schema, finalize=True)
+        base_ct = factory.resolve_complex_type(self.attr('base'), self.schema)
 
         self.attr_uses.extend(
-            xsd_base.restrict_base_attributes(base, factory,
-                                              prohibited_attr_uses,
-                                              redefined_attr_uses))
+            utils.restrict_base_attributes(base_ct, factory,
+                                           prohibited_attr_uses,
+                                           redefined_attr_uses))
 
         self.attr_uses.extend(redefined_attr_uses)
 

@@ -1,10 +1,9 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
 import dumco.schema.base
-import dumco.schema.checks
-import dumco.schema.elements
-import dumco.schema.enums
-import dumco.schema.uses
+import dumco.schema.checks as checks
+import dumco.schema.model
+import dumco.schema.uses as uses
 import dumco.schema.xsd_types
 
 import prv.xsd_schema
@@ -46,7 +45,7 @@ class XsdElementFactory(object):
             self.namespaces[prefix] = uri
 
             if (prefix is not None and
-                    not dumco.schema.checks.is_xsd_namespace(uri)):
+                    not checks.is_xsd_namespace(uri)):
                 # This makes sure that prefix will be the same no matter
                 # what was the order of loading of schemata.
                 if prefix > self.all_namespace_prefixes.get(uri, ''):
@@ -54,7 +53,7 @@ class XsdElementFactory(object):
 
     def new_element(self, elem_name, attrs, schema_path, all_schemata):
         # Here we don't support anything non-XSD.
-        if not dumco.schema.checks.is_xsd_namespace(elem_name[0]):
+        if not checks.is_xsd_namespace(elem_name[0]):
             return
 
         self.dispatcher_stack.append(self.dispatcher)
@@ -88,7 +87,7 @@ class XsdElementFactory(object):
 
     def finalize_current_element(self, name):
         # Here we don't support anything non-XSD.
-        if not dumco.schema.checks.is_xsd_namespace(name[0]):
+        if not checks.is_xsd_namespace(name[0]):
             return
 
         self.element = self.element_stack.pop()
@@ -128,137 +127,76 @@ class XsdElementFactory(object):
 
             schema.finalize(all_schemata, self)
 
-        # Set imports in each DOM schema and fix substitution groups.
-        # There is no way to do it during schema finalization, so we traverse
-        # everything once again.
+        # Fix substitution groups. There is no way to do it during schema
+        # finalization, so we traverse everything once again.
         substituted = set()
         for schema in sorted_all_schemata:
             self._post_finalize(schema, substituted)
 
-        return [schema.schema_element
-                for schema in sorted_all_schemata
-                if not included_in_other_schema(schema)]
+        resulting_schemata = [schema.schema_element
+                              for schema in sorted_all_schemata
+                              if not included_in_other_schema(schema)]
+
+        self.namer.populate_schema_with_naming(resulting_schemata)
+
+        return resulting_schemata
 
     def _post_finalize(self, xsd_schema, substituted):
-        checks = dumco.schema.checks
+        # for ct in xsd_schema.complex_types:
+        #     if ct.abstract:
+        #         # Remove abstract complex type.
+        #         name = ct.schema_element.name
+        #         del xsd_schema.schema_element.complex_types[name]
 
-        def enum_schema_content_with_fixes(schema):
-            def enum_with_substitute(particle):
-                for p in particle.traverse():
-                    if not checks.is_particle(p):
-                        continue
+        # for elem in xsd_schema.elements:
+        #     if elem.abstract:
+        #         # Remove abstract element.
+        #         name = elem.schema_element.term.name
+        #         del xsd_schema.schema_element.elements[name]
 
-                    if (p.term in self.substitution_groups and
-                            p.term not in substituted):
-                        substituted.add(p.term)
-                        p.term = self.substitution_groups[p.term]
-                        for t in enum_with_substitute(p):
-                            yield t
-                    else:
-                        yield p.term
+        def finalize_substitutions(particle):
+            for p in particle.traverse():
+                if (not checks.is_particle(p) and
+                        (p.term not in self.substitution_groups or
+                         p.term in substituted)):
+                    continue
 
-            # for ct in schema.complex_types:
-            #     if ct.abstract:
-            #         # Remove abstract complex type.
-            #         name = ct.schema_element.name
-            #         del schema.schema_element.complex_types[name]
+                substituted.add(p.term)
+                p.term = self.substitution_groups[p.term]
+                finalize_substitutions(p)
 
-            # for elem in schema.elements:
-            #     if elem.abstract:
-            #         # Remove abstract element.
-            #         name = elem.schema_element.term.name
-            #         del schema.schema_element.elements[name]
-
-            for ct in schema.schema_element.complex_types:
-                if ct.mixed or checks.has_complex_content(ct):
-                    for t in enum_with_substitute(ct.structure):
-                        yield t
-
-                for u in ct.attribute_uses():
-                    yield u.attribute
-
-                if checks.has_simple_content(ct):
-                    yield ct.text().type
-
-            for st in schema.schema_element.simple_types:
-                yield st
-
-            for elem in schema.schema_element.elements:
-                yield elem
-
-        def add_import_if_differ(own_schema, other_schema):
-            if own_schema != other_schema:
-                own_schema.add_import(other_schema)
-                return True
-            return False
-
-        # Traverse all schema components and add imports if necessary.
-        for c in enum_schema_content_with_fixes(xsd_schema):
-            if add_import_if_differ(xsd_schema.schema_element, c.schema):
-                if checks.is_attribute(c):
-                    add_import_if_differ(c.schema, c.type.schema)
-
+        for ct in xsd_schema.schema_element.complex_types:
+            if not checks.has_complex_content(ct):
                 continue
 
-            if checks.is_element(c) or checks.is_attribute(c):
-                add_import_if_differ(xsd_schema.schema_element,
-                                     c.type.schema)
-            elif checks.is_simple_type(c):
-                if c.restriction is not None:
-                    add_import_if_differ(xsd_schema.schema_element,
-                                         c.restriction.base.schema)
-                elif c.listitems:
-                    for s in c.listitems:
-                        add_import_if_differ(xsd_schema.schema_element,
-                                             s.type.schema)
-                elif c.union:
-                    for s in c.union:
-                        add_import_if_differ(xsd_schema.schema_element,
-                                             s.schema)
+            finalize_substitutions(ct.structure)
 
     def add_substitution_group(self, xsd_head, xsd_element):
         head = xsd_head.schema_element.term
 
-        if head not in self.substitution_groups:
-            self.substitution_groups[head] = \
-                dumco.schema.elements.Choice(head.schema)
-        substitution_group = self.substitution_groups[head]
+        substitution_group = self.substitution_groups.setdefault(
+            head, dumco.schema.model.Choice())
 
         if not xsd_head.abstract and len(substitution_group.members) == 0:
-            substitution_group.members.append(dumco.schema.uses.Particle(
-                xsd_head.qualified, 1, 1, head))
+            substitution_group.members.append(uses.Particle(1, 1, head))
 
-        substitution_group.members.append(dumco.schema.uses.Particle(
-            xsd_element.qualified, 1, 1, xsd_element.schema_element.term))
+        substitution_group.members.append(
+            uses.Particle(1, 1, xsd_element.schema_element.term))
 
     def add_to_parent_schema(self, element, attrs, schema,
                              fieldname, is_type=False):
         try:
             # Add to parent schema only top-level components or types.
             if isinstance(self.element, prv.xsd_schema.XsdSchema) or is_type:
-                name = self.get_attribute(attrs, 'name')
+                name = self.get_attribute(attrs, 'name').strip()
                 assert name is not None, 'Name cannot be None'
 
                 elements = getattr(schema, fieldname)
                 elements[name] = element
         except LookupError:
-            def fold_elements(accum, e):
-                checks = dumco.schema.checks
-                if hasattr(e, 'schema_element'):
-                    if checks.is_particle(e.schema_element):
-                        return accum + [e.schema_element.term]
-                    elif checks.is_attribute_use(e.schema_element):
-                        return accum + [e.schema_element.attribute]
-                    elif (checks.is_complex_type(e.schema_element) or
-                          checks.is_simple_type(e.schema_element)):
-                        return accum + [e.schema_element]
-                return accum
-
             assert is_type, 'Only types can be unnamed'
 
-            parents = reduce(fold_elements, self.element_stack, [])
-            assert parents, 'parents list should be longer than 0'
-            schema.unnamed_types.append((parents, element))
+            schema.unnamed_types.append(element)
 
     def particle_min_occurs(self, attrs):
         try:
@@ -275,21 +213,16 @@ class XsdElementFactory(object):
         except LookupError:
             return 1
 
-    def resolve_attribute(self, qname, schema, finalize=False):
+    def resolve_attribute(self, qname, schema):
         (uri, localname) = qname
         if uri is None or uri == schema.schema_element.target_ns:
-            attr = schema.attributes[localname]
-            if finalize:
-                attr = attr.finalize(self)
-            return attr.schema_element
+            return schema.attributes[localname].finalize(self).attribute
         else:
             try:
                 attr = schema.imports[uri].attributes[localname]
-                if finalize:
-                    attr = attr.finalize(self)
-                return attr.schema_element
+                return attr.finalize(self).attribute
             except KeyError:
-                return dumco.schema.elements.xml_attributes()[localname]
+                return dumco.schema.model.xml_attributes()[localname]
 
     def resolve_attribute_group(self, qname, schema):
         (uri, localname) = qname
@@ -299,29 +232,27 @@ class XsdElementFactory(object):
             attr_group = schema.imports[uri].attribute_groups[localname]
             return attr_group.finalize(self)
 
-    def resolve_complex_type(self, qname, schema, finalize=False):
+    def resolve_complex_type(self, qname, schema, finalize=True):
         (uri, localname) = qname
-        if (dumco.schema.checks.is_xsd_namespace(uri) and
+        if (checks.is_xsd_namespace(uri) and
                 localname == 'anyType'):
-            return dumco.schema.elements.ComplexType.urtype()
+            return dumco.schema.xsd_types.ct_urtype()
 
         if uri is None or uri == schema.schema_element.target_ns:
             ct = schema.complex_types[localname]
-            return (ct.finalize(self) if finalize else ct.schema_element)
         else:
             ct = schema.imports[uri].complex_types[localname]
-            return (ct.finalize(self) if finalize else ct.schema_element)
 
-    def resolve_element(self, qname, schema, finalize=False):
+        return (ct.finalize(self) if finalize else ct.schema_element)
+
+    def resolve_element(self, qname, schema):
         (uri, localname) = qname
         if uri is None or uri == schema.schema_element.target_ns:
             elem = schema.elements[localname]
-            return (elem, elem.finalize(self).term if finalize
-                    else elem.schema_element.term)
         else:
             elem = schema.imports[uri].elements[localname]
-            return (elem, elem.finalize(self).term if finalize
-                    else elem.schema_element.term)
+
+        return elem
 
     def resolve_group(self, qname, schema):
         (uri, localname) = qname
@@ -330,26 +261,26 @@ class XsdElementFactory(object):
         else:
             return schema.imports[uri].groups[localname].finalize(self)
 
-    def resolve_simple_type(self, qname, schema, finalize=False):
+    def resolve_simple_type(self, qname, schema):
         (uri, localname) = qname
-        if dumco.schema.checks.is_xsd_namespace(uri):
+        if checks.is_xsd_namespace(uri):
             if localname == 'anySimpleType':
-                return dumco.schema.elements.SimpleType.urtype()
+                return dumco.schema.xsd_types.st_urtype()
             else:
                 return dumco.schema.xsd_types.xsd_builtin_types()[localname]
 
         if uri is None or uri == schema.schema_element.target_ns:
             st = schema.simple_types[localname]
-            return (st.finalize(self) if finalize else st.schema_element)
         else:
             st = schema.imports[uri].simple_types[localname]
-            return (st.finalize(self) if finalize else st.schema_element)
 
-    def resolve_type(self, qname, schema, finalize=False):
+        return st.finalize(self)
+
+    def resolve_type(self, qname, schema, finalize):
         try:
-            return self.resolve_simple_type(qname, schema, finalize=finalize)
+            return self.resolve_simple_type(qname, schema)
         except KeyError:
-            return self.resolve_complex_type(qname, schema, finalize=finalize)
+            return self.resolve_complex_type(qname, schema, finalize)
 
     def get_attribute(self, attrs, localname):
         if localname not in attrs:
@@ -357,8 +288,6 @@ class XsdElementFactory(object):
         return attrs.get(localname)
 
     def _parse_qname(self, qname):
-        checks = dumco.schema.checks
-
         splitted = qname.split(':')
         if len(splitted) == 1:
             if (None in self.namespaces and

@@ -2,11 +2,14 @@
 
 from dumco.utils.decorators import method_once
 
+import dumco.schema.checks
 import dumco.schema.enums
+import dumco.schema.model
 import dumco.schema.uses
 
+import base
+import utils
 import xsd_all
-import xsd_base
 import xsd_choice
 import xsd_sequence
 
@@ -26,7 +29,7 @@ def xsd_group(attrs, parent_element, factory, schema_path, all_schemata):
     })
 
 
-class XsdGroup(xsd_base.XsdBase):
+class XsdGroup(base.XsdBase):
     def __init__(self, attrs, parent_schema, factory):
         super(XsdGroup, self).__init__(attrs)
 
@@ -36,19 +39,20 @@ class XsdGroup(xsd_base.XsdBase):
 
     @method_once
     def finalize(self, factory):
-        term = None
+        particle = None
         if self.attr('ref') is not None:
-            particle = factory.resolve_group(self.attr('ref'), self.schema)
-
-            term = particle.term
+            # We need this step to pass min/max occurs values to higher levels.
+            particle = dumco.schema.uses.Particle(
+                self.min_occurs, self.max_occurs, dumco.schema.model.Sequence())
+            particle.term.members.append(
+                factory.resolve_group(self.attr('ref'), self.schema))
         else:
             for c in self.children:
                 assert ((isinstance(c, xsd_all.XsdAll) or
                          isinstance(c, xsd_choice.XsdChoice) or
                          isinstance(c, xsd_sequence.XsdSequence)) and
-                        term is None), 'Wrong content of Group'
+                        particle is None), 'Wrong content of Group'
 
-                term = c.finalize(factory).term
+                particle = c.finalize(factory)
 
-        return dumco.schema.uses.Particle(
-            False, self.min_occurs, self.max_occurs, term)
+        return utils.reduce_particle(particle)

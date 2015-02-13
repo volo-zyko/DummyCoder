@@ -3,9 +3,10 @@
 from dumco.utils.decorators import method_once
 
 import dumco.schema.checks
-import dumco.schema.elements
+import dumco.schema.model
+import dumco.schema.uses
 
-import xsd_base
+import base
 import xsd_enumeration
 import xsd_simple_type
 
@@ -32,13 +33,12 @@ def xsd_restriction(attrs, parent_element, factory, schema_path, all_schemata):
     })
 
 
-class XsdRestriction(xsd_base.XsdBase):
+class XsdRestriction(base.XsdBase):
     def __init__(self, attrs, parent_schema):
         super(XsdRestriction, self).__init__(attrs)
 
         self.schema = parent_schema
-        self.schema_element = \
-            dumco.schema.elements.Restriction(parent_schema.schema_element)
+        self.schema_element = dumco.schema.model.Restriction()
 
     @method_once
     def finalize(self, factory):
@@ -53,20 +53,28 @@ class XsdRestriction(xsd_base.XsdBase):
                 if isinstance(t, xsd_simple_type.XsdSimpleType):
                     base = t.finalize(factory)
                 elif isinstance(t, xsd_enumeration.XsdEnumeration):
-                    enum = dumco.schema.elements.EnumerationValue(
+                    enum = dumco.schema.model.EnumerationValue(
                         t.value, t.schema_element.doc)
-                    self.schema_element.enumeration.append(enum)
+                    self.schema_element.enumerations.append(enum)
         else:
-            base = factory.resolve_simple_type(self.attr('base'),
-                                               self.schema, finalize=True)
+            base = factory.resolve_simple_type(self.attr('base'), self.schema)
             for x in self.children:
                 assert isinstance(x, xsd_enumeration.XsdEnumeration), \
                     'Expected only Enumerations'
-                enum = dumco.schema.elements.EnumerationValue(
+                enum = dumco.schema.model.EnumerationValue(
                     x.value, x.schema_element.doc)
-                self.schema_element.enumeration.append(enum)
+                self.schema_element.enumerations.append(enum)
 
         assert base is not None, 'Restriction does not have base type'
+
+        return self.connect_restriction_base(base)
+
+    def connect_restriction_base(self, base):
+        if dumco.schema.checks.is_list_type(base):
+            simplify_list_restiction(base, self.schema_element.length,
+                                     self.schema_element.min_length,
+                                     self.schema_element.max_length)
+            return base
 
         self.schema_element.base = self.merge_base_restriction(base)
 
@@ -80,7 +88,7 @@ class XsdRestriction(xsd_base.XsdBase):
                     setattr(self.schema_element, attr, value)
 
         if dumco.schema.checks.is_restriction_type(base):
-            merge('enumeration')
+            merge('enumerations')
             merge('fraction_digits')
             merge('length')
             merge('max_exclusive')
@@ -89,7 +97,7 @@ class XsdRestriction(xsd_base.XsdBase):
             merge('min_exclusive')
             merge('min_inclusive')
             merge('min_length')
-            merge('pattern')
+            merge('patterns')
             merge('total_digits')
             merge('white_space')
 
@@ -108,55 +116,78 @@ class XsdRestriction(xsd_base.XsdBase):
             'annotation': factory.noop_handler,
         })
 
-    xsd_fractionDigits = lambda _x, attrs, parent_element, factory, schema_path, \
-        all_schemata: XsdRestriction._value_handler(
-            'fraction_digits', attrs,
-            parent_element, factory, schema_path, all_schemata)
+    @staticmethod
+    def xsd_fractionDigits(attrs, parent_element, factory,
+                           schema_path, all_schemata):
+        return XsdRestriction._value_handler(
+            'fraction_digits', attrs, parent_element,
+            factory, schema_path, all_schemata)
 
-    xsd_length = lambda _x, attrs, parent_element, factory, schema_path, \
-        all_schemata: XsdRestriction._value_handler(
-            'length', attrs,
-            parent_element, factory, schema_path, all_schemata)
+    @staticmethod
+    def xsd_length(attrs, parent_element, factory,
+                   schema_path, all_schemata):
+        return XsdRestriction._value_handler(
+            'length', attrs, parent_element,
+            factory, schema_path, all_schemata)
 
-    xsd_maxExclusive = lambda _x, attrs, parent_element, factory, schema_path, \
-        all_schemata: XsdRestriction._value_handler(
-            'max_exclusive', attrs,
-            parent_element, factory, schema_path, all_schemata)
+    @staticmethod
+    def xsd_maxExclusive(attrs, parent_element, factory,
+                         schema_path, all_schemata):
+        return XsdRestriction._value_handler(
+            'max_exclusive', attrs, parent_element,
+            factory, schema_path, all_schemata)
 
-    xsd_maxInclusive = lambda _x, attrs, parent_element, factory, schema_path, \
-        all_schemata: XsdRestriction._value_handler(
-            'max_inclusive', attrs,
-            parent_element, factory, schema_path, all_schemata)
+    @staticmethod
+    def xsd_maxInclusive(attrs, parent_element, factory,
+                         schema_path, all_schemata):
+        return XsdRestriction._value_handler(
+            'max_inclusive', attrs, parent_element,
+            factory, schema_path, all_schemata)
 
-    xsd_maxLength = lambda _x, attrs, parent_element, factory, schema_path, \
-        all_schemata: XsdRestriction._value_handler(
-            'max_length', attrs,
-            parent_element, factory, schema_path, all_schemata)
+    @staticmethod
+    def xsd_maxLength(attrs, parent_element, factory,
+                      schema_path, all_schemata):
+        return XsdRestriction._value_handler(
+            'max_length', attrs, parent_element,
+            factory, schema_path, all_schemata)
 
-    xsd_minExclusive = lambda _x, attrs, parent_element, factory, schema_path, \
-        all_schemata: XsdRestriction._value_handler(
-            'min_exclusive', attrs,
-            parent_element, factory, schema_path, all_schemata)
+    @staticmethod
+    def xsd_minExclusive(attrs, parent_element, factory,
+                         schema_path, all_schemata):
+        return XsdRestriction._value_handler(
+            'min_exclusive', attrs, parent_element,
+            factory, schema_path, all_schemata)
 
-    xsd_minInclusive = lambda _x, attrs, parent_element, factory, schema_path, \
-        all_schemata: XsdRestriction._value_handler(
-            'min_inclusive', attrs,
-            parent_element, factory, schema_path, all_schemata)
+    @staticmethod
+    def xsd_minInclusive(attrs, parent_element, factory,
+                         schema_path, all_schemata):
+        return XsdRestriction._value_handler(
+            'min_inclusive', attrs, parent_element,
+            factory, schema_path, all_schemata)
 
-    xsd_minLength = lambda _x, attrs, parent_element, factory, schema_path, \
-        all_schemata: XsdRestriction._value_handler(
-            'min_length', attrs,
-            parent_element, factory, schema_path, all_schemata)
+    @staticmethod
+    def xsd_minLength(attrs, parent_element, factory,
+                      schema_path, all_schemata):
+        return XsdRestriction._value_handler(
+            'min_length', attrs, parent_element,
+            factory, schema_path, all_schemata)
 
-    xsd_pattern = lambda _x, attrs, parent_element, factory, schema_path, \
-        all_schemata: XsdRestriction._value_handler(
-            'pattern', attrs,
-            parent_element, factory, schema_path, all_schemata)
+    @staticmethod
+    def xsd_pattern(attrs, parent_element, factory,
+                    schema_path, all_schemata):
+        parent_element.schema_element.patterns.append(
+            factory.get_attribute(attrs, 'value'))
 
-    xsd_totalDigits = lambda _x, attrs, parent_element, factory, schema_path, \
-        all_schemata: XsdRestriction._value_handler(
-            'total_digits', attrs,
-            parent_element, factory, schema_path, all_schemata)
+        return (parent_element, {
+            'annotation': factory.noop_handler,
+        })
+
+    @staticmethod
+    def xsd_totalDigits(attrs, parent_element, factory,
+                        schema_path, all_schemata):
+        return XsdRestriction._value_handler(
+            'total_digits', attrs, parent_element,
+            factory, schema_path, all_schemata)
 
     @staticmethod
     def xsd_whiteSpace(attrs, parent_element, factory,
@@ -166,16 +197,38 @@ class XsdRestriction(xsd_base.XsdBase):
         value = factory.get_attribute(attrs, 'value')
         if value == 'preserve':
             parent_element.schema_element.white_space = \
-                dumco.schema.elements.Restriction.WS_PRESERVE
+                dumco.schema.model.Restriction.WS_PRESERVE
         elif value == 'replace':
             parent_element.schema_element.white_space = \
-                dumco.schema.elements.Restriction.WS_REPLACE
+                dumco.schema.model.Restriction.WS_REPLACE
         elif value == 'collapse':
             parent_element.schema_element.white_space = \
-                dumco.schema.elements.Restriction.WS_COLLAPSE
+                dumco.schema.model.Restriction.WS_COLLAPSE
         else:  # pragma: no cover
-            assert False
+            assert False, 'Unknown token for whiteSpace'
 
         return (parent_element, {
             'annotation': factory.noop_handler,
         })
+
+
+def simplify_list_restiction(base, length, min_length, max_length):
+    assert dumco.schema.checks.is_list_type(base)
+
+    itemtype = base.listitems[0]
+
+    min_occurs = itemtype.min_occurs
+    max_occurs = itemtype.max_occurs
+
+    if length is not None:
+        min_occurs = length
+        max_occurs = length
+
+    if min_length is not None:
+        min_occurs = min_length
+
+    if max_length is not None:
+        max_occurs = max_length
+
+    base.listitems[0] = dumco.schema.uses.ListTypeCardinality(
+        itemtype[0], min_occurs, max_occurs)

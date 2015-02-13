@@ -4,7 +4,7 @@ from dumco.utils.decorators import method_once
 
 import dumco.schema.checks
 
-import xsd_base
+import base
 import xsd_simple_type
 
 
@@ -18,7 +18,7 @@ def xsd_union(attrs, parent_element, factory, schema_path, all_schemata):
     })
 
 
-class XsdUnion(xsd_base.XsdBase):
+class XsdUnion(base.XsdBase):
     def __init__(self, attrs, parent_schema):
         super(XsdUnion, self).__init__(attrs)
 

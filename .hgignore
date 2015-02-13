@@ -3,3 +3,5 @@ syntax: glob
 *.pyc
 *.sublime-project
 *.sublime-workspace
+.coverage
+htmlcov/*

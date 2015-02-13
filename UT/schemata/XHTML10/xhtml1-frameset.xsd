@@ -152,7 +152,7 @@
       </xs:documentation>
     </xs:annotation>
     <xs:restriction base="xs:string">
-      <xs:pattern value="[^,]+(,\s*[^,]+)*"/>
+      <xs:pattern value="[^,]+(, *[^,]+)*"/>
     </xs:restriction>
   </xs:simpleType>
 

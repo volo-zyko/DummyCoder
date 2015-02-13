@@ -1,8 +1,6 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
-import rng_attribute
 import rng_base
-import rng_element
 
 
 def rng_name(attrs, parent_element, factory, grammar_path, all_grammars):
@@ -39,15 +37,10 @@ class RngName(rng_base.RngBase):
         self.qualified = self._is_qualified(ns)
 
     def _is_qualified(self, ns):
-        qualified = ns is not None
+        if ns is not None:
+            return ns != ''
 
-        for p in self.factory.element_stack:
-            if isinstance(p, rng_element.RngElement):
-                qualified = self.factory.get_ns() != ''
-            elif isinstance(p, rng_attribute.RngAttribute):
-                break
-
-        return qualified
+        return self.factory.get_ns() != ''
 
     def _dump_internals(self, fhandle, indent):
         fhandle.write(' ns="{}">{}'.format(self.ns, self.name))

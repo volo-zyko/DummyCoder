@@ -2,10 +2,11 @@
 
 from dumco.utils.decorators import method_once
 
-import dumco.schema.elements
+import dumco.schema.model
 import dumco.schema.uses
 
-import xsd_base
+import base
+import utils
 import xsd_element
 
 
@@ -19,15 +20,14 @@ def xsd_all(attrs, parent_element, factory, schema_path, all_schemata):
     })
 
 
-class XsdAll(xsd_base.XsdBase):
+class XsdAll(base.XsdBase):
     def __init__(self, attrs, parent_schema, factory):
         super(XsdAll, self).__init__(attrs)
 
         self.schema_element = dumco.schema.uses.Particle(
-            False,
             factory.particle_min_occurs(attrs),
             factory.particle_max_occurs(attrs),
-            dumco.schema.elements.Interleave(parent_schema.schema_element))
+            dumco.schema.model.Interleave())
 
     @method_once
     def finalize(self, factory):
@@ -37,4 +37,4 @@ class XsdAll(xsd_base.XsdBase):
 
             self.schema_element.term.members.append(c.finalize(factory))
 
-        return self.schema_element
+        return utils.reduce_particle(self.schema_element)
