@@ -115,16 +115,14 @@ class _SchemaDumpContext(XmlWriter):
 
                 if checks.has_supported_simple_content(ct, self.om):
                     dump_simple_content(ct, schema, self)
-                elif checks.has_supported_complex_content(ct, self.om):
+                    continue
+
+                if checks.has_supported_complex_content(ct, self.om):
                     dump_particle(ct, schema, self)
 
-                    dump_attribute_uses(ct, schema, self)
-                elif [u for u in ct.attribute_uses()
-                      if not self.om.is_opaque_ct_member(ct, u.attribute,
-                                                         is_attr=True)]:
-                    assert checks.has_supported_empty_content(ct, self.om), \
-                        'Expected empty CT'
-
+                if (checks.is_single_attribute_type(ct) or
+                        next(enums.enum_supported_attributes_flat(ct, self.om),
+                             None) is not None):
                     dump_attribute_uses(ct, schema, self)
 
         attr_groups = self.agroups.get(schema, {})
@@ -253,7 +251,7 @@ def _is_in_top_elements(e, top_elements):
 def _do_for_single_valued_type(t, om, do_ctypes, do_stypes):
     # This function traverses single-valued types and invokes given
     # handlers for found types.
-    if not checks.is_supported_single_valued_type(t, om):
+    if not checks.is_single_valued_type(t):
         return
 
     if checks.is_simple_type(t):
@@ -271,10 +269,10 @@ def _do_for_single_valued_type(t, om, do_ctypes, do_stypes):
     elif checks.is_complex_type(t):
         do_ctypes(t)
 
-        if checks.is_supported_text_complex_type(t, om):
+        if checks.is_text_complex_type(t):
             _do_for_single_valued_type(t.text().type, om, do_ctypes, do_stypes)
-        elif checks.is_supported_single_attribute_type(t, om):
-            attr = enums.get_supported_single_attribute(t, om).attribute
+        elif checks.is_single_attribute_type(t):
+            attr = enums.get_single_attribute(t).attribute
             _do_for_single_valued_type(attr.type, om, do_ctypes, do_stypes)
     # If the type is native type then we don't need to process it.
 

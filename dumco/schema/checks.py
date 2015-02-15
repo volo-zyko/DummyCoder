@@ -12,13 +12,6 @@ def _attribute_count(schema_type):
     return 0
 
 
-def _supported_attribute_count(schema_type, om):
-    if is_complex_type(schema_type):
-        return len([u for u in schema_type.attribute_uses()
-                    if not om.is_opaque_ct_member(schema_type, u.attribute)])
-    return 0
-
-
 # General checks.
 def is_xsd_namespace(uri):
     return (uri == xsd_types.XSD_NAMESPACE or
@@ -62,20 +55,6 @@ def has_empty_content(schema_type):
         return schema_type.text() is None
 
 
-def has_supported_empty_content(schema_type, om):
-    # If CT has neither particles nor text then it has empty content.
-    # Note: Attributes are not checked.
-    if not is_complex_type(schema_type):
-        return False
-
-    if any([not om.is_opaque_ct_member(schema_type, p.term)
-            for p in schema_type.particles()]):
-        return False
-    else:
-        return (schema_type.text() is None or
-                om.is_opaque_ct_member(schema_type, schema_type.text()))
-
-
 def has_simple_content(schema_type):
     # If CT has only text content then it has simple content.
     # Note: Attributes are not checked.
@@ -117,11 +96,6 @@ def is_empty_complex_type(schema_type):
             _attribute_count(schema_type) == 0)
 
 
-def is_supported_empty_complex_type(schema_type, om):
-    return (has_supported_empty_content(schema_type, om) and
-            _supported_attribute_count(schema_type, om) == 0)
-
-
 def is_enumeration_type(schema_type):
     return (is_restriction_type(schema_type) and
             len(schema_type.restriction.enumerations) > 0)
@@ -159,11 +133,6 @@ def is_single_attribute_type(schema_type):
             _attribute_count(schema_type) == 1)
 
 
-def is_supported_single_attribute_type(schema_type, om):
-    return (has_supported_empty_content(schema_type, om) and
-            _supported_attribute_count(schema_type, om) == 1)
-
-
 def is_single_valued_type(schema_type):
     # A type with either single attribute or with text content only or
     # empty complex type or simple type.
@@ -173,23 +142,9 @@ def is_single_valued_type(schema_type):
             is_single_attribute_type(schema_type))
 
 
-def is_supported_single_valued_type(schema_type, om):
-    # A type with either single attribute or with text content only or
-    # empty complex type or simple type.
-    return (is_primitive_type(schema_type) or
-            is_supported_empty_complex_type(schema_type, om) or
-            is_supported_text_complex_type(schema_type, om) or
-            is_supported_single_attribute_type(schema_type, om))
-
-
 def is_text_complex_type(schema_type):
     return (has_simple_content(schema_type) and
             _attribute_count(schema_type) == 0)
-
-
-def is_supported_text_complex_type(schema_type, om):
-    return (has_supported_simple_content(schema_type, om) and
-            _supported_attribute_count(schema_type, om) == 0)
 
 
 def is_union_type(schema_type):
