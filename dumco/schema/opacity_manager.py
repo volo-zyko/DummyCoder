@@ -71,6 +71,7 @@ class OpacityManager(object):
                                   ct.schema.target_ns, ct.name)
                         status = False
                     elif (not self.is_opaque_ct_member(ct, x.term) and
+                            checks.is_complex_type(x.term.type) and
                             self.is_opaque_ct(x.term.type) and
                             not checks.is_single_valued_type(x.term.type)):
                         horn.honk('ComplexType {}:{} which is referenced '
@@ -108,8 +109,7 @@ class OpacityManager(object):
                 element_set.add(elem.name)
 
                 if (self.is_opaque_top_element(elem) or
-                        checks.is_primitive_type(elem.type) or
-                        checks.is_empty_complex_type(elem.type)):
+                        checks.is_single_valued_type(elem.type)):
                     continue
 
                 if self.is_opaque_ct(elem.type):

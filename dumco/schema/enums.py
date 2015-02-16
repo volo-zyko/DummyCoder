@@ -3,8 +3,13 @@
 import checks
 
 
-def enum_flat(ct):
+def enum_attributes_flat(ct):
     for u in ct.attribute_uses():
+        yield u
+
+
+def enum_flat(ct):
+    for u in enum_attributes_flat(ct):
         yield u
 
     if ct.text() is not None:
@@ -73,8 +78,8 @@ def enum_supported_hierarchy(ct, om):
         yield p
 
 
-def get_supported_single_attribute(ct, om):
-    assert checks.is_supported_single_attribute_type(ct, om)
+def get_single_attribute(ct):
+    assert checks.is_single_attribute_type(ct)
 
-    for u in enum_supported_attributes_flat(ct, om):
+    for u in enum_attributes_flat(ct):
         return u

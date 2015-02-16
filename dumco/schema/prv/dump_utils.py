@@ -403,6 +403,10 @@ def dump_particle(ct, schema, context):
 
 def dump_attribute_uses(ct, schema, context):
     def enum_sorted_attributes(ct, schema):
+        if checks.is_single_attribute_type(ct):
+            yield enums.get_single_attribute(ct)
+            return
+
         for u in sorted(enums.enum_supported_attributes_flat(ct, context.om),
                         key=lambda u: uses.attribute_key(u, schema),
                         reverse=True):
