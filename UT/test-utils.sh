@@ -1,6 +1,6 @@
 function build_schema_validator()
 {
-    which cmake &>/dev/null || { echo 'cmake is not found' ; return 1 ; }
+    which cmake &>/dev/null || { echo 'cmake is not found'; return 1; }
 
     build_dir="$1"
 
@@ -78,12 +78,13 @@ function single_schema_set_dump()
 
     renames="$(get_renames "$input")"
     supported="$(get_supported_list "$input")"
-    xsd_output="$BASE_OUTPUT_DIR/$(basename "$input")-${syntax}-xsd"
-    xsd_output2="$BASE_OUTPUT_DIR/second-xsd-xsd-dump"
+    dump_output="$BASE_OUTPUT_DIR/schema-dumps"
+    xsd_output="$dump_output/$(basename "$input")-${syntax}-xsd"
+    xsd_output2="$dump_output/second-xsd-xsd-dump"
     # These variables can be unused when dumping non-RNG schemata.
-    rng_output="$BASE_OUTPUT_DIR/$(basename "$input")-rng-rng"
-    rng_output2="$BASE_OUTPUT_DIR/second-rng-rng-dump"
-    xsd_output3="$BASE_OUTPUT_DIR/second-rng-xsd-dump"
+    rng_output="$dump_output/$(basename "$input")-rng-rng"
+    rng_output2="$dump_output/second-rng-rng-dump"
+    xsd_output3="$dump_output/second-rng-xsd-dump"
 
     if [ "$dumpmode" = 'rdumpxsd' -a -n "$supported" ]; then
         xsd_output="$xsd_output-lst"
@@ -124,7 +125,7 @@ function single_schema_set_dump()
     echo "### $RUNNER -i $xsd_output dumpxsd -o $xsd_output2"
     $RUNNER -i "$xsd_output" dumpxsd -o "$xsd_output2"
 
-    diff_schemata "$xsd_output" "$xsd_output2" "$BASE_OUTPUT_DIR/$(basename "$xsd_output").diff"
+    diff_schemata "$xsd_output" "$xsd_output2" "$dump_output/$(basename "$xsd_output").diff"
 
     validate_schemata "$xsd_output2"
 
@@ -132,8 +133,8 @@ function single_schema_set_dump()
         echo "### $RUNNER -i $rng_output dumpxsd -o $xsd_output3 --dump-rng-model-to-dir $rng_output2"
         $RUNNER -s rng -i "$rng_output" dumpxsd -o "$xsd_output3" --dump-rng-model-to-dir "$rng_output2"
 
-        diff_schemata "$xsd_output2" "$xsd_output3" "$BASE_OUTPUT_DIR/$(basename "$xsd_output2").diff"
-        diff_schemata "$rng_output" "$rng_output2" "$BASE_OUTPUT_DIR/$(basename "$rng_output").diff"
+        diff_schemata "$xsd_output2" "$xsd_output3" "$dump_output/$(basename "$xsd_output2").diff"
+        diff_schemata "$rng_output" "$rng_output2" "$dump_output/$(basename "$rng_output").diff"
 
         validate_schemata "$rng_output2"
     fi
@@ -142,6 +143,8 @@ function single_schema_set_dump()
         echo ''
         single_schema_set_dump "$input" "$syntax" rdumpxsd
     fi
+
+    rm -rf "$xsd_output2" "$xsd_output3" "$rng_output2" &>/dev/null
 }
 
 function single_generation_run()
