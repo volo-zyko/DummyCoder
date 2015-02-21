@@ -100,8 +100,11 @@ def max_occurs_op(occurs1, occurs2, op):
 
 
 def attribute_key(attr_use, referencing_schema):
+    # This function returns such keys that if used for sorting then attributes
+    # from other schema will go first, after that will go local attributes and
+    # then attribute wildcards.
     if checks.is_any(attr_use.attribute):
-        return ('', '')
+        return (referencing_schema.target_ns, '~')
     elif attr_use.attribute.schema != referencing_schema:
-        return (attr_use.attribute.schema.prefix, attr_use.attribute.name)
-    return ('', attr_use.attribute.name)
+        return (' ' + attr_use.attribute.schema.prefix, attr_use.attribute.name)
+    return ('!', attr_use.attribute.name)

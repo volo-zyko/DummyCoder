@@ -9,6 +9,8 @@ SCRIPT_DIR="$(dirname "$BASH_SOURCE")/.."
 SOURCE_DIR="$(cd "$SCRIPT_DIR" && pwd)"
 BASE_OUTPUT_DIR="$WORKING_DIR/dumco-$NOW"
 LAST_OUTPUT_DIR="$WORKING_DIR/dumco-last"
+LOG_FILE="$WORKING_DIR/dumco-$NOW.log"
+DIFF_FILE="$WORKING_DIR/dumco-$NOW.diff"
 RUNNER="$SOURCE_DIR/dumco.py"
 READLINK='readlink -f'
 if [ "$(uname -s)" = 'Darwin' ]; then
@@ -22,7 +24,7 @@ else
 fi
 COVERAGE_BEGIN_COMMAND=''
 COVERAGE_APPEND_COMMAND=''
-COVERAGE_REPORT_DIR="$WORKING_DIR/htmlcov"
+COVERAGE_REPORT_DIR="$WORKING_DIR/htmlcov-$NOW"
 
 VALIDATE_SCHEMATA=0
 VALIDATOR_BUILD_DIR="$WORKING_DIR/svbuild"
@@ -81,6 +83,15 @@ done
 
 . "$SOURCE_DIR/UT/test-utils.sh"
 
+# Save old stdout, stderr.
+exec 3>&1
+exec 4>&2
+# Redirect stdout, stderr.
+exec > >(tee "$LOG_FILE")
+exec 2>&1
+
+trap "remove_current_output" EXIT
+
 if [ "$VALIDATE_SCHEMATA" -ne 0 ]; then
     VALIDATOR="$VALIDATOR_BUILD_DIR/schema-validator"
 
@@ -99,9 +110,9 @@ $COVERAGE_APPEND_COMMAND "$RUNNER" rfilter --help && echo '###'
 $COVERAGE_APPEND_COMMAND "$RUNNER" --version
 
 syntaxes=('xsd')
-if [ -n "$COVERAGE_BEGIN_COMMAND" ]; then
-    syntaxes+=('rng')
-fi
+# if [ -n "$COVERAGE_BEGIN_COMMAND" ]; then
+#     syntaxes+=('rng')
+# fi
 
 for syntax in "${syntaxes[@]}"
 do
@@ -118,14 +129,14 @@ do
     done
 done
 
+# Restore stdout, stderr.
+exec 1>&3
+exec 2>&4
+
 if [ -d "$LAST_OUTPUT_DIR" ]; then
     last_output_path=$($READLINK "$LAST_OUTPUT_DIR")
-    diff_file="$WORKING_DIR/dumco-$NOW.diff"
 
-    if diff -urb "$last_output_path" "$BASE_OUTPUT_DIR" >"$diff_file"; then
-        # There is no difference between test runs and thus no point in storing their results.
-        rm -rf "$BASE_OUTPUT_DIR" "$diff_file"
-    else
+    if ! diff -urb "$last_output_path" "$BASE_OUTPUT_DIR" >"$DIFF_FILE"; then
         while true; do
             echo 'There are changes between dumped schemata and schemata from previous run. What shall we do?'
             echo 'A(ccept them as new standard)/R(eject and fix dumping)/V(iew diff)'
@@ -135,16 +146,20 @@ if [ -d "$LAST_OUTPUT_DIR" ]; then
                 ln -shF "$BASE_OUTPUT_DIR" "$LAST_OUTPUT_DIR"
                 break
             elif [ "$action" = 'R' -o "$action" = 'r' ]; then
-                rm -rf "$BASE_OUTPUT_DIR" "$diff_file"
+                remove_current_output
                 break
             elif [ "$action" = 'V' -o "$action" = 'v' ]; then
                 if [ -z "$DUMCO_DIFF_VIEWER" ]; then
-                    cat "$diff_file" | less
+                    cat "$DIFF_FILE" | less
                 else
-                    $DUMCO_DIFF_VIEWER "$diff_file"
+                    $DUMCO_DIFF_VIEWER "$DIFF_FILE"
                 fi
             fi
         done
+    else
+        # There is no difference between test runs and thus no point in storing their results.
+        echo "Test runs were the same, cleaning duplicate results"
+        remove_current_output
     fi
 else
     ln -shF "$BASE_OUTPUT_DIR" "$LAST_OUTPUT_DIR"
@@ -160,3 +175,5 @@ if [ -n "$COVERAGE_BEGIN_COMMAND" ]; then
         xdg-open "$COVERAGE_REPORT_DIR/index.html"
     fi
 fi
+
+trap - EXIT

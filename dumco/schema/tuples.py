@@ -41,6 +41,10 @@ class HashableModel(object):
         return _ComponentProxy(getattr(self._component, name),
                                self, self._containing_dict)
 
+    @property
+    def component(self):
+        return self._component
+
 
 class HashableAttributeUse(HashableModel):
     def _get_as_tuple(self):

@@ -28,6 +28,11 @@ function build_schema_validator()
     return $res
 }
 
+function remove_current_output()
+{
+    rm -rf "$BASE_OUTPUT_DIR" "$DIFF_FILE" "$LOG_FILE" &>/dev/null
+}
+
 function get_renames()
 {
     input="$1"

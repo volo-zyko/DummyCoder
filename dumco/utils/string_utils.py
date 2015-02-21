@@ -6,8 +6,8 @@ import xml.sax.saxutils
 import dumco.schema.checks
 
 
-def cxx_name(ct, member):
-    if ct.schema == member.schema:
+def cxx_name(member, other_schema):
+    if other_schema == member.schema:
         return cxx_norm_name(member.name)
     elif dumco.schema.checks.is_xml_attribute(member):
         return 'xml_{}'.format(cxx_norm_name(member.name))
