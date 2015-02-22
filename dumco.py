@@ -188,7 +188,7 @@ if __name__ == '__main__':
 
         gd.generate()
 
-    horn.beep('{} in {} seconds!',
+    horn.beep('{0} in {1:f} seconds!',
               ('Done' if status == 0 else 'Failed'),
               time.time() - start_time)
     sys.exit(status)

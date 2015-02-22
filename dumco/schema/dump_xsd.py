@@ -110,7 +110,7 @@ class _SchemaDumpContext(XmlWriter):
         for ct in sorted(complex_types.itervalues(), key=lambda x: x.name):
             with TagGuard('complexType', self):
                 self.add_attribute('name', ct.name)
-                if ct.mixed:
+                if ct.mixed and not self.om.is_opaque_ct_member(ct, ct.text()):
                     self.add_attribute('mixed', str(ct.mixed).lower())
 
                 if checks.has_supported_simple_content(ct, self.om):

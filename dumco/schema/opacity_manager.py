@@ -6,9 +6,10 @@ import re
 import dumco.schema.checks as checks
 import dumco.schema.enums as enums
 import dumco.schema.model as model
+import dumco.schema.tuples as tuples
 import dumco.schema.uses as uses
 from dumco.utils.horn import horn
-import dumco.utils.string_utils
+from dumco.utils.string_utils import cxx_name
 
 
 class OpacityManager(object):
@@ -41,7 +42,7 @@ class OpacityManager(object):
 
     def is_opaque_ct_member(self, ct, member, is_attr=False):
         return (self.is_opaque_anything() and
-                _get_member_predicate(ct, member, is_attr) not in
+                _get_member_predicate(member, ct.schema, is_attr) not in
                 self.supported_cts.get(ct.schema.target_ns, {}).get(ct.name,
                                                                     set()))
 
@@ -49,49 +50,55 @@ class OpacityManager(object):
         if not self.is_opaque_anything():
             return True
 
-        def cumulative_min_occurs(parents, particle):
-            min_occurs = 1
-            for p in parents + [particle]:
-                if checks.is_complex_type(p):
-                    continue
-
-                min_occurs = \
-                    uses.min_occurs_op(min_occurs, p.min_occurs, operator.mul)
-
-            return min_occurs
-
         def check_schema_consistency(ct):
+            def cumulative_min_occurs(parents, particle):
+                min_occurs = 1
+                for p in parents + [particle]:
+                    if checks.is_complex_type(p):
+                        continue
+
+                    min_occurs = uses.min_occurs_op(
+                        min_occurs, p.min_occurs, operator.mul)
+
+                return min_occurs
+
             status = True
             for (ps, x) in enums.enum_hierarchy(ct):
                 if checks.is_particle(x):
                     if (cumulative_min_occurs(ps, x) > 0 and
                             self.is_opaque_ct_member(ct, x.term)):
                         horn.honk('Element {} in {}:{} is required but is '
-                                  'opaque', x.term.name,
-                                  ct.schema.target_ns, ct.name)
+                                  'opaque, you may want to add the following '
+                                  'to supported list\n{}|{}|{}\n', x.term.name,
+                                  ct.schema.target_ns, ct.name,
+                                  ct.schema.target_ns, ct.name,
+                                  cxx_name(x.term, ct.schema))
                         status = False
                     elif (not self.is_opaque_ct_member(ct, x.term) and
                             checks.is_complex_type(x.term.type) and
                             self.is_opaque_ct(x.term.type) and
                             not checks.is_single_valued_type(x.term.type)):
                         horn.honk('ComplexType {}:{} which is referenced '
-                                  'from {}:{}#{} is opaque',
+                                  'from {}:{}#{} is opaque\n',
                                   x.term.type.schema.target_ns,
                                   x.term.type.name, ct.schema.target_ns,
-                                  ct.name, x.term.name)
+                                  ct.name, cxx_name(x.term, ct.schema))
                         status = False
                 elif (checks.is_attribute_use(x) and x.required and
                         self.is_opaque_ct_member(ct, x.attribute, True)):
                     horn.honk('Attribute {} in {}:{} is required but is '
-                              'opaque', x.attribute.name,
-                              ct.schema.target_ns, ct.name)
+                              'opaque, you may want to add the following to '
+                              'supported list\n{}|{}|@{}\n', x.attribute.name,
+                              ct.schema.target_ns, ct.name,
+                              ct.schema.target_ns, ct.name,
+                              cxx_name(x.attribute, ct.schema))
                     status = False
                 elif (checks.is_text(x) and
                         self.is_opaque_ct_member(ct, x) and
                         checks.has_simple_content(ct) and
-                        checks.is_simple_type(x.type)):
+                        checks.is_primitive_type(x.type)):
                     horn.honk('Text content in non-opaque ComplexType '
-                              '{}:{} with simple content is opaque',
+                              '{}:{} with simple content is opaque\n',
                               ct.schema.target_ns, ct.name)
                     status = False
 
@@ -100,6 +107,10 @@ class OpacityManager(object):
         consistent = True
         schemata_cts = {}
         schemata_elements = {}
+        occurences = {}
+
+        # Check whether schema constraints (required elements/attributes/
+        # complex types, etc) are obeyed by supported list.
         for schema in schemata:
             if self.is_opaque_ns(schema.target_ns):
                 continue
@@ -113,9 +124,10 @@ class OpacityManager(object):
                     continue
 
                 if self.is_opaque_ct(elem.type):
-                    horn.honk('ComplexType {}:{} is required by {}:{} '
-                              'but is opaque', elem.type.schema.target_ns,
-                              elem.type.name, elem.schema.target_ns, elem.name)
+                    horn.honk('ComplexType {}:{} is required by top-level '
+                              'element {}:{} but is opaque\n',
+                              elem.type.schema.target_ns, elem.type.name,
+                              elem.schema.target_ns, elem.name)
                     consistent = False
 
             ct_map = schemata_cts.setdefault(schema.target_ns, {})
@@ -123,21 +135,69 @@ class OpacityManager(object):
                 if checks.is_single_valued_type(ct):
                     continue
 
+                can_ignore = self.is_opaque_ct(ct)
                 member_set = ct_map.setdefault(ct.name, set())
                 for m in enums.enum_flat(ct):
                     if checks.is_particle(m):
-                        member_set.add(_get_member_predicate(ct, m.term, False))
-                    elif checks.is_attribute_use(m):
+                        if not can_ignore and checks.is_element(m.term):
+                            cts = occurences.setdefault(
+                                tuples.HashableParticle(m, None), [])
+                            cts.append(ct)
                         member_set.add(
-                            _get_member_predicate(ct, m.attribute, True))
+                            _get_member_predicate(m.term, ct.schema, False))
+                    elif checks.is_attribute_use(m):
+                        if not can_ignore and checks.is_attribute(m.attribute):
+                            cts = occurences.setdefault(
+                                tuples.HashableAttributeUse(m, None), [])
+                            cts.append(ct)
+                        member_set.add(
+                            _get_member_predicate(m.attribute, ct.schema, True))
                     elif checks.is_text(m):
-                        member_set.add(_get_member_predicate(ct, m, False))
+                        member_set.add(
+                            _get_member_predicate(m, ct.schema, False))
 
-                if self.is_opaque_ct(ct):
+                if can_ignore:
                     continue
 
                 consistent = check_schema_consistency(ct) and consistent
 
+        # Check whether same elements/attributes (probably originally
+        # referenced through group/attributeGroup) are fully supported or fully
+        # unsupported across all complex types from which they were referenced.
+        for (m, cts) in occurences.iteritems():
+            if len(cts) == 1:
+                continue
+
+            member = m.component
+            if checks.is_particle(member):
+                support_in_ct = [
+                    (self.is_opaque_ct_member(ct, member.term), ct)
+                    for ct in cts]
+                if not all([p[0] == support_in_ct[0][0]
+                            for p in support_in_ct]):
+                    horn.howl('Probably the same element \'{}\' is supported '
+                              'in {} and is non-supported in {}\n',
+                              member.term.name,
+                              str([str(ct.name) for (s, ct)
+                                   in support_in_ct if s]),
+                              str([str(ct.name) for (s, ct)
+                                   in support_in_ct if not s]))
+            elif checks.is_attribute_use(member):
+                support_in_ct = [
+                    (self.is_opaque_ct_member(ct, member.attribute), ct)
+                    for ct in cts]
+                if not all([p[0] == support_in_ct[0][0]
+                            for p in support_in_ct]):
+                    horn.howl('Probably the same attribute \'{}\' is supported '
+                              'in {} and is non-supported in {}\n',
+                              member.attribute.name,
+                              str([str(ct.name) for (s, ct)
+                                   in support_in_ct if s]),
+                              str([str(ct.name) for (s, ct)
+                                   in support_in_ct if not s]))
+
+        # Check whether top-level elements mentioned as supported are present
+        # in schemata.
         for (target_ns, list_file_elems) in self.supported_elems.iteritems():
             schema_elems = schemata_elements.get(target_ns, set())
 
@@ -145,9 +205,11 @@ class OpacityManager(object):
                 if not member in schema_elems:
                     horn.honk('Top-level element {}|{} is marked as supported '
                               'but does not correspond to anything in schema '
-                              'files', target_ns, member)
+                              'files\n', target_ns, member)
                     consistent = False
 
+        # Check whether complex types and their content mentioned as supported
+        # are present in schemata.
         for (target_ns, list_file_cts) in self.supported_cts.iteritems():
             schema_cts = schemata_cts.get(target_ns, {})
 
@@ -155,7 +217,7 @@ class OpacityManager(object):
                 if not ct_name in schema_cts:
                     horn.honk('Complex type {}|{} is marked as supported but '
                               'does not correspond to anything in schema '
-                              'files or is primitive type by its nature',
+                              'files or is primitive type by its nature\n',
                               target_ns, ct_name)
                     consistent = False
 
@@ -165,7 +227,7 @@ class OpacityManager(object):
                     if not member in schema_members:
                         horn.honk('Schema component {}|{}|{} is marked as '
                                   'supported but does not correspond to '
-                                  'anything in schema files', target_ns,
+                                  'anything in schema files\n', target_ns,
                                   ct_name, member)
                         consistent = False
 
@@ -204,11 +266,11 @@ class OpacityManager(object):
                 member_set.add(member_name)
 
 
-def _get_member_predicate(ct, member, is_attr):
+def _get_member_predicate(member, other_schema, is_attr):
     if checks.is_element(member):
-        return dumco.utils.string_utils.cxx_name(ct, member)
+        return cxx_name(member, other_schema)
     elif checks.is_attribute(member):
-        return '@' + dumco.utils.string_utils.cxx_name(ct, member)
+        return '@' + cxx_name(member, other_schema)
     elif checks.is_text(member):
         return 'text()'
     elif checks.is_any(member):

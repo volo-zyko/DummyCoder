@@ -12,16 +12,19 @@ class Horn(object):
         if Horn._verbosity is None:
             Horn._verbosity = verbosity
 
-    def peep(self, format, *args):
+    def peep(self, form, *args):
         if self._verbosity >= 2:
-            print(format.format(*[str(a) for a in args]), file=sys.stdout)
+            print(form.format(*args), file=sys.stdout)
 
-    def beep(self, format, *args):
+    def beep(self, form, *args):
         if self._verbosity >= 1:
-            print(format.format(*[str(a) for a in args]), file=sys.stdout)
+            print(form.format(*args), file=sys.stdout)
 
-    def honk(self, format, *args):
-        print(format.format(*[str(a) for a in args]), file=sys.stderr)
+    def howl(self, form, *args):
+        print('WARNING: ' + form.format(*args), file=sys.stderr)
+
+    def honk(self, form, *args):
+        print('ERROR: ' + form.format(*args), file=sys.stderr)
 
 
 horn = Horn()

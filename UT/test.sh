@@ -2,11 +2,20 @@
 
 set -o errexit
 
-cd "$(dirname "$BASH_SOURCE")/.."
+NOW="$(echo $(gnudate +%F)-$(printf "%05d" $[$[$(gnudate +%s) - $(gnudate -d "today 00:00:00" +%s)] % 86400]))"
 
-SOURCE_DIR="$PWD"
-BASE_OUTPUT_DIR='/tmp/dumco'
+WORKING_DIR="$PWD"
+SCRIPT_DIR="$(dirname "$BASH_SOURCE")/.."
+SOURCE_DIR="$(cd "$SCRIPT_DIR" && pwd)"
+BASE_OUTPUT_DIR="$WORKING_DIR/dumco-$NOW"
+LAST_OUTPUT_DIR="$WORKING_DIR/dumco-last"
+LOG_FILE="$WORKING_DIR/dumco-$NOW.log"
+DIFF_FILE="$WORKING_DIR/dumco-$NOW.diff"
 RUNNER="$SOURCE_DIR/dumco.py"
+READLINK='readlink -f'
+if [ "$(uname -s)" = 'Darwin' ]; then
+    READLINK=readlink
+fi
 
 if [ "$(uname -s)" = 'Darwin' ]; then
     COVERAGE=coverage
@@ -15,24 +24,25 @@ else
 fi
 COVERAGE_BEGIN_COMMAND=''
 COVERAGE_APPEND_COMMAND=''
-COVERAGE_REPORT_DIR="$SOURCE_DIR/htmlcov"
+COVERAGE_REPORT_DIR="$WORKING_DIR/htmlcov-$NOW"
 
 VALIDATE_SCHEMATA=0
-VALIDATOR_BUILD_DIR="$BASE_OUTPUT_DIR/svbuild"
+VALIDATOR_BUILD_DIR="$WORKING_DIR/svbuild"
 
 DUMP_RNG=0
-DUMP_RNG_DIR="$BASE_OUTPUT_DIR/rng-dumps"
 
 function print_help()
 {
-    echo "Usage: $0 -f|[-v [<dir>]] [-c [<dir>]] [-r [<dir>]]"
+    echo "Usage: $0 -f|[-v [<dir>]] [-c [<dir>]] [-r]"
     echo ' -f           do full check (includes all options below)'
     echo " -v [<dir>]   build schema-validator in <dir> (default $VALIDATOR_BUILD_DIR) and validate XSD schemata"
     echo '              (both input and output), in order to build schema-validator one needs boost-system,'
     echo '              boost-filesystem, xerces-c and libxml2 libraries, set CMAKE_CXX_COMPILER environment variable'
     echo '              for changing default C++ compiler'
     echo " -c [<dir>]   generate coverage report to <dir> (default $COVERAGE_REPORT_DIR)"
-    echo " -r [<dir>]   dump RNG to <dir> for additional checks (default $DUMP_RNG_DIR)"
+    echo ' -r           dump RNG model for additional checks'
+    echo ''
+    echo "Note: DUMCO_DIFF_VIEWER environment variable is used for showing differences between tests' runs"
 }
 
 if [ $# -eq 1 -a "$1" = '-f' ]; then
@@ -56,11 +66,6 @@ do
         -r)
             shift
             DUMP_RNG=1
-            if [ $# -gt 0 -a "${1:0:1}" != '-' ]; then
-                shift
-                DUMP_RNG_DIR="$1"
-            fi
-            rm -rf "$DUMP_RNG_DIR"
             ;;
         -v)
             shift
@@ -77,6 +82,15 @@ do
 done
 
 . "$SOURCE_DIR/UT/test-utils.sh"
+
+# Save old stdout, stderr.
+exec 3>&1
+exec 4>&2
+# Redirect stdout, stderr.
+exec > >(tee "$LOG_FILE")
+exec 2>&1
+
+trap "remove_current_output" EXIT
 
 if [ "$VALIDATE_SCHEMATA" -ne 0 ]; then
     VALIDATOR="$VALIDATOR_BUILD_DIR/schema-validator"
@@ -96,9 +110,9 @@ $COVERAGE_APPEND_COMMAND "$RUNNER" rfilter --help && echo '###'
 $COVERAGE_APPEND_COMMAND "$RUNNER" --version
 
 syntaxes=('xsd')
-if [ -n "$COVERAGE_BEGIN_COMMAND" ]; then
-    syntaxes+=('rng')
-fi
+# if [ -n "$COVERAGE_BEGIN_COMMAND" ]; then
+#     syntaxes+=('rng')
+# fi
 
 for syntax in "${syntaxes[@]}"
 do
@@ -106,7 +120,7 @@ do
     echo "### Doing schema dump tests for syntax='$syntax'"
     echo '###'
 
-    find "$PWD/UT/schemata" -mindepth 1 -maxdepth 1 -type d | while read dir
+    find "$SOURCE_DIR/UT/schemata" -mindepth 1 -maxdepth 1 -type d | while read dir
     do
         if [ -n "$(find "$dir" -maxdepth 1 -name "*.$syntax")" ]; then
             echo ''
@@ -114,6 +128,42 @@ do
         fi
     done
 done
+
+# Restore stdout, stderr.
+exec 1>&3
+exec 2>&4
+
+if [ -d "$LAST_OUTPUT_DIR" ]; then
+    last_output_path=$($READLINK "$LAST_OUTPUT_DIR")
+
+    if ! diff -urb "$last_output_path" "$BASE_OUTPUT_DIR" >"$DIFF_FILE"; then
+        while true; do
+            echo 'There are changes between dumped schemata and schemata from previous run. What shall we do?'
+            echo 'A(ccept them as new standard)/R(eject and fix dumping)/V(iew diff)'
+            read action
+
+            if [ "$action" = 'A' -o "$action" = 'a' ]; then
+                ln -shF "$BASE_OUTPUT_DIR" "$LAST_OUTPUT_DIR"
+                break
+            elif [ "$action" = 'R' -o "$action" = 'r' ]; then
+                remove_current_output
+                break
+            elif [ "$action" = 'V' -o "$action" = 'v' ]; then
+                if [ -z "$DUMCO_DIFF_VIEWER" ]; then
+                    cat "$DIFF_FILE" | less
+                else
+                    $DUMCO_DIFF_VIEWER "$DIFF_FILE"
+                fi
+            fi
+        done
+    else
+        # There is no difference between test runs and thus no point in storing their results.
+        echo "Test runs were the same, cleaning duplicate results"
+        remove_current_output
+    fi
+else
+    ln -shF "$BASE_OUTPUT_DIR" "$LAST_OUTPUT_DIR"
+fi
 
 if [ -n "$COVERAGE_BEGIN_COMMAND" ]; then
     test -d "$COVERAGE_REPORT_DIR" && rm -rf "$COVERAGE_REPORT_DIR"
@@ -125,3 +175,5 @@ if [ -n "$COVERAGE_BEGIN_COMMAND" ]; then
         xdg-open "$COVERAGE_REPORT_DIR/index.html"
     fi
 fi
+
+trap - EXIT

@@ -408,8 +408,7 @@ def dump_attribute_uses(ct, schema, context):
             return
 
         for u in sorted(enums.enum_supported_attributes_flat(ct, context.om),
-                        key=lambda u: uses.attribute_key(u, schema),
-                        reverse=True):
+                        key=lambda u: uses.attribute_key(u, schema)):
             yield u
 
     anys = []
