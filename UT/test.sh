@@ -105,11 +105,10 @@ $COVERAGE_ERASE_COMMAND
 
 $COVERAGE_BEGIN_COMMAND "$RUNNER" -h && echo '###'
 $COVERAGE_APPEND_COMMAND "$RUNNER" dumpxsd --help && echo '###'
-$COVERAGE_APPEND_COMMAND "$RUNNER" rdumpxsd --help && echo '###'
 $COVERAGE_APPEND_COMMAND "$RUNNER" rfilter --help && echo '###'
 $COVERAGE_APPEND_COMMAND "$RUNNER" --version
 
-syntaxes=('xsd')
+syntaxes=('rng')
 # if [ -n "$COVERAGE_BEGIN_COMMAND" ]; then
 #     syntaxes+=('rng')
 # fi
@@ -124,7 +123,7 @@ do
     do
         if [ -n "$(find "$dir" -maxdepth 1 -name "*.$syntax")" ]; then
             echo ''
-            single_schema_set_dump "$dir" $syntax dumpxsd
+            single_schema_set_dump "$dir" $syntax 1
         fi
     done
 done
@@ -136,7 +135,7 @@ exec 2>&4
 if [ -d "$LAST_OUTPUT_DIR" ]; then
     last_output_path=$($READLINK "$LAST_OUTPUT_DIR")
 
-    if ! diff -urb "$last_output_path" "$BASE_OUTPUT_DIR" >"$DIFF_FILE"; then
+    if ! diff -rub "$last_output_path" "$BASE_OUTPUT_DIR" >"$DIFF_FILE"; then
         while true; do
             echo 'There are changes between dumped schemata and schemata from previous run. What shall we do?'
             echo 'A(ccept them as new standard)/R(eject and fix dumping)/V(iew diff)'

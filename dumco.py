@@ -73,23 +73,12 @@ def process_arguments():
         'directory (works only for rng input syntax)')
     parser_dumpxsd.add_argument(
         '--xml-xsd-location', default=dumco.schema.xsd_types.XML_XSD_URI,
-        help='location for xml.xsd which must be dumped in schema files '
+        help='location for xml.xsd which must be referenced in schema files '
         '{default: %(default)s}')
     parser_dumpxsd.add_argument(
-        '-o', '--output-dir', required=True, help='output directory')
-
-    parser_rdumpxsd = subparsers.add_parser(
-        'rdumpxsd', help='dump reduced XSD serialization of schema files '
-        '(only elements from supported elements file are dumped)')
-    parser_rdumpxsd.add_argument(
-        '--xml-xsd-location', default=dumco.schema.xsd_types.XML_XSD_URI,
-        help='location for xml.xsd which must be dumped in schema files '
-        '{default: %(default)s}')
-    parser_rdumpxsd.add_argument(
-        '-d', '--supported-elements-file', required=True, default=None,
-        help='file with a list of supported schema elements (works only '
-        'for xsd input syntax)')
-    parser_rdumpxsd.add_argument(
+        '-d', '--supported-elements-file', default=None,
+        help='file with a list of supported schema elements')
+    parser_dumpxsd.add_argument(
         '-o', '--output-dir', required=True, help='output directory')
 
     parser_rfilter = subparsers.add_parser(
@@ -125,11 +114,6 @@ def process_arguments():
                 args.input_syntax != 'rng' and args.input_syntax != 'rnc'):
             parser.error('--dump-rng-model-to-dir is only applicable to '
                          'RelaxNG input syntax')
-    elif args.mode == 'rdumpxsd':
-        if (args.supported_elements_file is not None and
-                args.input_syntax != 'xsd'):
-            parser.error('-d/--supported-elements-file is only applicable to '
-                         'XML Schema input syntax')
 
     return args
 
@@ -160,12 +144,8 @@ if __name__ == '__main__':
 
     all_schemata = loader.load_xml(args.input_path, args.max_dir_depth)
 
-    if args.mode == 'dumpxsd' or args.mode == 'rdumpxsd':
-        elements_file = None
-        if args.mode == 'rdumpxsd':
-            elements_file = args.supported_elements_file
-
-        opacity_manager = OpacityManager(elements_file)
+    if args.mode == 'dumpxsd':
+        opacity_manager = OpacityManager(args.supported_elements_file)
 
         if opacity_manager.ensure_consistency(all_schemata):
             dump_xsd(all_schemata, args.output_dir, args.xml_xsd_location,
