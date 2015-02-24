@@ -178,10 +178,10 @@ class OpacityManager(object):
                     horn.howl('Probably the same element \'{}\' is supported '
                               'in {} and is non-supported in {}\n',
                               member.term.name,
-                              str([str(ct.name) for (s, ct)
-                                   in support_in_ct if s]),
-                              str([str(ct.name) for (s, ct)
-                                   in support_in_ct if not s]))
+                              str(['{}:{}'.format(ct.schema.target_ns, ct.name)
+                                   for (s, ct) in support_in_ct if not s]),
+                              str(['{}:{}'.format(ct.schema.target_ns, ct.name)
+                                   for (s, ct) in support_in_ct if s]))
             elif checks.is_attribute_use(member):
                 support_in_ct = [
                     (self.is_opaque_ct_member(ct, member.attribute), ct)
@@ -191,10 +191,10 @@ class OpacityManager(object):
                     horn.howl('Probably the same attribute \'{}\' is supported '
                               'in {} and is non-supported in {}\n',
                               member.attribute.name,
-                              str([str(ct.name) for (s, ct)
-                                   in support_in_ct if s]),
-                              str([str(ct.name) for (s, ct)
-                                   in support_in_ct if not s]))
+                              str(['{}:{}'.format(ct.schema.target_ns, ct.name)
+                                   for (s, ct) in support_in_ct if not s]),
+                              str(['{}:{}'.format(ct.schema.target_ns, ct.name)
+                                   for (s, ct) in support_in_ct if s]))
 
         # Check whether top-level elements mentioned as supported are present
         # in schemata.
