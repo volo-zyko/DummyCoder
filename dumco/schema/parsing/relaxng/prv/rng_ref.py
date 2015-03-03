@@ -2,40 +2,33 @@
 
 from dumco.utils.decorators import method_once
 
-import rng_base
+import base
 
 
 def rng_ref(attrs, parent_element, factory, grammar_path, all_grammars):
-    ref = RngRef(attrs)
-    parent_element.children.append(ref)
+    name = factory.get_attribute(attrs, 'name').strip()
+    parent_element.children.append(RngRef(name))
 
-    return (ref, {})
+    return (parent_element.children[-1], {})
 
 
-class RngRef(rng_base.RngBase):
-    def __init__(self, attrs):
-        super(RngRef, self).__init__(attrs)
+class RngRef(base.RngBase):
+    def __init__(self, name):
+        super(RngRef, self).__init__()
 
+        self.name = name
         self.ref_pattern = None
-
-    def get_ref_pattern(self, grammar):
-        if self.ref_pattern is None:
-            name = self.attr('name').strip()
-
-            define = grammar.get_define(name)
-            define.prefinalize(grammar)
-
-            self.ref_pattern = define.pattern
-
-        assert self.ref_pattern is not None, 'Reference is malformed'
-
-        return self.ref_pattern
 
     @method_once
     def finalize(self, grammar, factory):
-        # Make self.ref_pattern valid.
-        self.get_ref_pattern(grammar)
+        define = grammar.get_define(self.name)
 
-        self.ref_pattern.finalize(grammar, factory)
+        self.ref_pattern = define.pattern
+        while (len(self.ref_pattern) == 1 and
+                isinstance(self.ref_pattern[0], RngRef)):
+            self.ref_pattern = self.ref_pattern[0].ref_pattern
 
-        return super(RngRef, self).finalize(grammar, factory)
+        assert self.ref_pattern is not None, 'Reference is malformed'
+
+        super(RngRef, self).finalize(grammar, factory)
+        return self.ref_pattern

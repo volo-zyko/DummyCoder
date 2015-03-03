@@ -2,8 +2,8 @@
 
 from dumco.utils.decorators import method_once
 
+import base
 import rng_anyName
-import rng_base
 import rng_choice
 import rng_data
 import rng_empty
@@ -16,15 +16,20 @@ import rng_nsName
 import rng_oneOrMore
 import rng_ref
 import rng_text
-import rng_utils
 import rng_value
+import utils
 
 
 def rng_attribute(attrs, parent_element, factory, grammar_path, all_grammars):
-    attr = RngAttribute(attrs, factory)
-    parent_element.children.append(attr)
+    try:
+        text_name = factory.get_attribute(attrs, 'name').strip()
+        name_obj = rng_name.create_name(text_name, factory)
+    except LookupError:
+        name_obj = None
 
-    return (attr, {
+    parent_element.children.append(RngAttribute(name_obj))
+
+    return (parent_element.children[-1], {
         'anyName': rng_anyName.rng_anyName,
         'choice': rng_choice.rng_choice,
         'data': rng_data.rng_data,
@@ -46,62 +51,50 @@ def rng_attribute(attrs, parent_element, factory, grammar_path, all_grammars):
     })
 
 
-class RngAttribute(rng_base.RngBase):
-    def __init__(self, attrs, factory):
-        super(RngAttribute, self).__init__(attrs)
+class RngAttribute(base.RngBase):
+    def __init__(self, name):
+        super(RngAttribute, self).__init__()
 
-        try:
-            text_name = factory.get_attribute(attrs, 'name').strip()
-            name = rng_name.RngName({}, text_name, factory)
-            self.children.append(name)
-        except LookupError:
-            pass
-
-        self.name = None
+        self.name = name
         self.pattern = None
+
+        if name is not None:
+            self.children.append(name)
 
     @method_once
     def finalize(self, grammar, factory):
-        for c in self.children[1:]:
-            assert rng_utils.is_pattern(c), 'Wrong content of attribute'
-
-            c = c.finalize(grammar, factory)
-
-            assert self.pattern is None, 'Wrong pattern in attribute'
-            if isinstance(c, rng_ref.RngRef):
-                self.pattern = c.get_ref_pattern(grammar)
-            elif isinstance(c, rng_notAllowed.RngNotAllowed):
-                return c
-            else:
-                self.pattern = c
-
-        if self.pattern is None:
-            self.pattern = rng_text.RngText({})
-
-        return super(RngAttribute, self).finalize(grammar, factory)
-
-    @method_once
-    def simplify_name(self, grammar, factory):
-        assert rng_utils.is_name_class(self.children[0]), \
+        assert utils.is_name_class(self.children[0]), \
             'Wrong name in attribute'
+
         self.name = self.children[0]
         self.name.finalize(grammar, factory)
 
         if isinstance(self.name, rng_choice.RngChoiceName):
-            choice = rng_choice.RngChoicePattern({})
+            choice = rng_choice.RngChoicePattern()
+
             for n in self.name.name_classes:
-                child = RngAttribute({}, factory)
-                child.end_element(factory)
-                child.children.append(n)
+                child = RngAttribute(n)
                 child.children.extend(self.children[1:])
                 choice.children.append(child)
 
-            return choice
+            return choice.finalize(grammar, factory)
 
-        return self
+        for c in self.children[1:]:
+            assert utils.is_pattern(c), 'Wrong content of attribute'
 
-    def _dump_internals(self, fhandle, indent):
-        fhandle.write('>\n')
-        self.name.dump(fhandle, indent)
-        self.pattern.dump(fhandle, indent)
-        return rng_base.RngBase._CLOSING_TAG
+            self.pattern = c.finalize(grammar, factory)
+
+            assert self.pattern is None, 'Wrong pattern in attribute'
+
+            if isinstance(c, rng_notAllowed.RngNotAllowed):
+                return c
+
+        if self.pattern is None:
+            self.pattern = rng_text.RngText()
+
+        return super(RngAttribute, self).finalize(grammar, factory)
+
+    def dump(self, context):
+        with utils.RngTagGuard('attribute', context):
+            self.name.dump(context)
+            self.pattern.dump(context)

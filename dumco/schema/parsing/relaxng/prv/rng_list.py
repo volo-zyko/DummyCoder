@@ -2,7 +2,7 @@
 
 from dumco.utils.decorators import method_once
 
-import rng_base
+import base
 import rng_choice
 import rng_data
 import rng_empty
@@ -11,13 +11,13 @@ import rng_notAllowed
 import rng_oneOrMore
 import rng_ref
 import rng_value
+import utils
 
 
 def rng_list(attrs, parent_element, factory, grammar_path, all_grammars):
-    lst = RngList(attrs)
-    parent_element.children.append(lst)
+    parent_element.children.append(RngList())
 
-    return (lst, {
+    return (parent_element.children[-1], {
         'choice': rng_choice.rng_choice,
         'data': rng_data.rng_data,
         'empty': rng_empty.rng_empty,
@@ -33,9 +33,9 @@ def rng_list(attrs, parent_element, factory, grammar_path, all_grammars):
     })
 
 
-class RngList(rng_base.RngBase):
-    def __init__(self, attrs):
-        super(RngList, self).__init__(attrs)
+class RngList(base.RngBase):
+    def __init__(self, ):
+        super(RngList, self).__init__()
 
         self.data_pattern = None
 
@@ -49,14 +49,13 @@ class RngList(rng_base.RngBase):
         if len(patterns) == 1:
             self.data_pattern = patterns[0]
         else:
-            self.data_pattern = rng_group.RngGroup({})
+            self.data_pattern = rng_group.RngGroup()
             self.data_pattern.children = patterns
 
         self.data_pattern.finalize(grammar, factory)
 
         return super(RngList, self).finalize(grammar, factory)
 
-    def _dump_internals(self, fhandle, indent):
-        fhandle.write('>\n')
-        self.data_pattern.dump(fhandle, indent)
-        return rng_base.RngBase._CLOSING_TAG
+    def dump(self, context):
+        with utils.RngTagGuard('list', context):
+            self.data_pattern.dump(context)

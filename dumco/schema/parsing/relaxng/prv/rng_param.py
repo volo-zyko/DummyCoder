@@ -1,28 +1,30 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
-import dumco.utils.string_utils
+from dumco.utils.string_utils import quote_xml_string
 
-import rng_base
+import base
+import utils
 
 
 def rng_param(attrs, parent_element, factory, grammar_path, all_grammars):
-    param = RngParam(attrs)
-    parent_element.children.append(param)
+    name = factory.get_attribute(attrs, 'name').strip()
 
-    return (param, {})
+    parent_element.children.append(RngParam(name))
+
+    return (parent_element.children[-1], {})
 
 
-class RngParam(rng_base.RngBase):
-    def __init__(self, attrs):
-        super(RngParam, self).__init__(attrs)
+class RngParam(base.RngBase):
+    def __init__(self, name, value=None):
+        super(RngParam, self).__init__()
 
-        self.name = self.attr('name').strip()
-        self.value = None
+        self.name = name
+        self.value = value
 
-    def append_text(self, text):
+    def append_text(self, text, factory):
         self.value = text if self.value is None else self.value + text
 
-    def _dump_internals(self, fhandle, indent):
-        fhandle.write(' name="{}">{}'.format(
-            self.name, dumco.utils.string_utils.quote_xml_string(self.value)))
-        return rng_base.RngBase._CLOSING_TAG_INLINE
+    def dump(self, context):
+        with utils.RngTagGuard('param', context):
+            context.add_attribute('name', self.name)
+            context.add_text(quote_xml_string(self.value))

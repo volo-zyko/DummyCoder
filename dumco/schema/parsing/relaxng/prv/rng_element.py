@@ -1,10 +1,11 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
+from dumco.schema.rng_types import RNG_NAMESPACE
 from dumco.utils.decorators import method_once
 
+import base
 import rng_anyName
 import rng_attribute
-import rng_base
 import rng_choice
 import rng_data
 import rng_empty
@@ -17,15 +18,20 @@ import rng_nsName
 import rng_oneOrMore
 import rng_ref
 import rng_text
-import rng_utils
 import rng_value
+import utils
 
 
 def rng_element(attrs, parent_element, factory, grammar_path, all_grammars):
-    elem = RngElement(attrs, factory)
-    parent_element.children.append(elem)
+    try:
+        text_name = factory.get_attribute(attrs, 'name').strip()
+        name_obj = rng_name.create_name(text_name, factory)
+    except LookupError:
+        name_obj = None
 
-    return (elem, {
+    parent_element.children.append(RngElement(name_obj))
+
+    return (parent_element.children[-1], {
         'anyName': rng_anyName.rng_anyName,
         'attribute': rng_attribute.rng_attribute,
         'choice': rng_choice.rng_choice,
@@ -50,53 +56,75 @@ def rng_element(attrs, parent_element, factory, grammar_path, all_grammars):
     })
 
 
-class RngElement(rng_base.RngBase):
-    def __init__(self, attrs, factory):
-        super(RngElement, self).__init__(attrs)
+class RngElement(base.RngBase):
+    def __init__(self, name):
+        super(RngElement, self).__init__()
 
-        try:
-            text_name = factory.get_attribute(attrs, 'name').strip()
-            name = rng_name.RngName({}, text_name, factory)
-            self.children.append(name)
-        except LookupError:
-            pass
+        self.name = name
+        self.pattern = None
+        self.not_allowed = False
 
         # Temporary for dumping to RNG.
         self.define_name = None
 
-        self.name = None
-        self.pattern = None
-        self.not_allowed = False
-
     @method_once
-    def finalize_name(self, grammar, factory):
-        assert rng_utils.is_name_class(self.children[0]), \
-            'Wrong name in element'
-        self.name = self.children[0]
-        self.name.finalize(grammar, factory)
+    def prefinalize(self, grammar, factory):
+        if self.name is None:
+            assert utils.is_name_class(self.children[0]), \
+                'Wrong name in element'
+
+            self.name = self.children[0]
+            self.name.finalize(grammar, factory)
+
+            self.children = self.children[1:]
+
+        if isinstance(self.name, rng_choice.RngChoiceName):
+            choice = rng_choice.RngChoicePattern()
+            for n in self.name.name_classes:
+                child = RngElement(n)
+                child.children.append(n)
+                child.children.extend(self.children)
+                choice.children.append(child)
+            return choice
+        elif isinstance(self.name, rng_name.RngName):
+            if self.name.ns in grammar.known_prefixes:
+                prefix = grammar.known_prefixes[self.name.ns]
+                name = '{}-{}-element'.format(prefix, self.name.name)
+            else:
+                name = '{}-element'.format(self.name.name)
+        elif (isinstance(self.name, rng_anyName.RngAnyName) or
+              isinstance(self.name, rng_nsName.RngNsName)):
+            name = 'any'
+
+        if name in grammar.named_elements:
+            name = '{}{}'.format(name, grammar.element_counter)
+            grammar.element_counter += 1
+
+        assert name not in grammar.named_elements, 'Invalid name for define'
+
+        self.define_name = name
+        grammar.named_elements[name] = self
+
+        return self
 
     @method_once
     def finalize(self, grammar, factory):
-        self.finalize_name(grammar, factory)
+        self.prefinalize(grammar, factory)
 
         patterns = []
         has_empty = False
-        for c in self.children[1:]:
-            assert rng_utils.is_pattern(c), 'Wrong content of element'
+        for c in self.children:
+            assert utils.is_pattern(c), 'Wrong content of element'
 
             if isinstance(c, rng_ref.RngRef):
-                c = c.get_ref_pattern(grammar)
+                c = c.finalize(grammar, factory)
 
             if isinstance(c, rng_empty.RngEmpty):
                 has_empty = True
                 continue
             elif isinstance(c, RngElement):
-                c.finalize_name(grammar, factory)
-                c = c.define_and_simplify_name(grammar, factory)
-                patterns.append(c)
+                patterns.append(c.prefinalize(grammar, factory))
                 continue
-            elif isinstance(c, rng_attribute.RngAttribute):
-                c = c.simplify_name(grammar, factory)
 
             c = c.finalize(grammar, factory)
 
@@ -116,59 +144,24 @@ class RngElement(rng_base.RngBase):
             patterns.append(c)
 
         assert has_empty or patterns, 'Wrong pattern in element'
+
         if not patterns:
-            self.pattern = rng_empty.RngEmpty({})
+            self.pattern = rng_empty.RngEmpty()
         elif len(patterns) == 1:
             self.pattern = patterns[0]
         else:
-            self.pattern = rng_group.RngGroup({})
+            self.pattern = rng_group.RngGroup()
             self.pattern.children = patterns
 
         self.pattern = self.pattern.finalize(grammar, factory)
 
         return super(RngElement, self).finalize(grammar, factory)
 
-    def define_and_simplify_name(self, grammar, factory):
-        if self.define_name is None:
-            assert rng_utils.is_name_class(self.name), 'Element has bad name'
-
-            if isinstance(self.name, rng_choice.RngChoiceName):
-                choice = rng_choice.RngChoicePattern({})
-                for n in self.name.name_classes:
-                    child = RngElement({}, factory)
-                    child.children.append(n)
-                    child.children.extend(self.children[1:])
-                    choice.children.append(child)
-
-                choice.finalize(grammar, factory)
-                return choice
-            elif isinstance(self.name, rng_name.RngName):
-                if self.name.ns in grammar.known_prefixes:
-                    prefix = grammar.known_prefixes[self.name.ns]
-                    name = '{}-{}-element'.format(prefix, self.name.name)
-                else:
-                    name = '{}-element'.format(self.name.name)
-            elif (isinstance(self.name, rng_anyName.RngAnyName) or
-                  isinstance(self.name, rng_nsName.RngNsName)):
-                name = 'any'
-
-            if name in grammar.named_elements:
-                name = '{}{}'.format(name, grammar.element_counter)
-                grammar.element_counter += 1
-
-            assert name not in grammar.named_elements, \
-                'Invalid name for define'
-            self.define_name = name
-            grammar.named_elements[name] = self
-
-        return self
-
-    def dump_element_ref(self, fhandle, indent):
-        fhandle.write(
-            '{}<ref name="{}"/>\n'.format(' ' * indent, self.define_name))
-
-    def _dump_internals(self, fhandle, indent):
-        fhandle.write('>\n')
-        self.name.dump(fhandle, indent)
-        self.pattern.dump(fhandle, indent)
-        return rng_base.RngBase._CLOSING_TAG
+    def dump(self, context):
+        if context.parent_stack[-2] == RNG_NAMESPACE + ':define':
+            with utils.RngTagGuard('ref', context):
+                context.add_attribute('name', self.define_name)
+        else:
+            with utils.RngTagGuard('element', context):
+                self.name.dump(context)
+                self.pattern.dump(context)

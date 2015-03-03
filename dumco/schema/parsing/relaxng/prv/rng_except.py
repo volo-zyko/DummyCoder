@@ -2,8 +2,8 @@
 
 from dumco.utils.decorators import method_once
 
+import base
 import rng_anyName
-import rng_base
 import rng_choice
 import rng_data
 import rng_empty
@@ -15,16 +15,15 @@ import rng_notAllowed
 import rng_nsName
 import rng_oneOrMore
 import rng_ref
-import rng_utils
 import rng_value
+import utils
 
 
 def rng_except(attrs, parent_element, factory, grammar_path, all_grammars):
     if isinstance(parent_element, rng_data.RngData):
-        excpt = RngExceptPattern(attrs)
-        parent_element.children.append(excpt)
+        parent_element.children.append(RngExceptPattern())
 
-        return (excpt, {
+        return (parent_element.children[-1], {
             'choice': rng_choice.rng_choice,
             'data': rng_data.rng_data,
             'empty': rng_empty.rng_empty,
@@ -41,10 +40,9 @@ def rng_except(attrs, parent_element, factory, grammar_path, all_grammars):
             'zeroOrMore': factory.rng_zeroOrMore,
         })
     else:
-        excpt = RngExceptName(attrs)
-        parent_element.children.append(excpt)
+        parent_element.children.append(RngExceptName())
 
-        return (excpt, {
+        return (parent_element.children[-1], {
             'anyName': rng_anyName.rng_anyName,
             'choice': rng_choice.rng_choice,
             'name': rng_name.rng_name,
@@ -52,19 +50,16 @@ def rng_except(attrs, parent_element, factory, grammar_path, all_grammars):
         })
 
 
-class RngExceptPattern(rng_base.RngBase):
-    def __init__(self, attrs):
-        super(RngExceptPattern, self).__init__(attrs)
+class RngExceptPattern(base.RngBase):
+    def __init__(self):
+        super(RngExceptPattern, self).__init__()
 
         self.patterns = []
 
     @method_once
     def finalize(self, grammar, factory):
         for c in self.children:
-            assert rng_utils.is_pattern(c), 'Wrong content of except pattern'
-
-            if isinstance(c, rng_ref.RngRef):
-                c = c.get_ref_pattern(grammar)
+            assert utils.is_pattern(c), 'Wrong content of except pattern'
 
             c = c.finalize(grammar, factory)
 
@@ -87,29 +82,24 @@ class RngExceptPattern(rng_base.RngBase):
 
         return super(RngExceptPattern, self).finalize(grammar, factory)
 
-    def _tag_name(self):
-        return 'except'
-
-    def _dump_internals(self, fhandle, indent):
+    def dump(self, context):
         assert self.patterns, 'Empty except pattern'
 
-        fhandle.write('>\n')
-        for p in self.patterns:
-            p.dump(fhandle, indent)
-
-        return rng_base.RngBase._CLOSING_TAG
+        with utils.RngTagGuard('except', context):
+            for p in self.patterns:
+                p.dump(context)
 
 
-class RngExceptName(rng_base.RngBase):
-    def __init__(self, attrs):
-        super(RngExceptName, self).__init__(attrs)
+class RngExceptName(base.RngBase):
+    def __init__(self):
+        super(RngExceptName, self).__init__()
 
         self.name_classes = []
 
     @method_once
     def finalize(self, grammar, factory):
         for c in self.children:
-            assert rng_utils.is_name_class(c), 'Wrong content of except name'
+            assert utils.is_name_class(c), 'Wrong content of except name'
 
             c.finalize(grammar, factory)
             self.name_classes.append(c)
@@ -123,14 +113,9 @@ class RngExceptName(rng_base.RngBase):
 
         super(RngExceptName, self).finalize(grammar, factory)
 
-    def _tag_name(self):
-        return 'except'
-
-    def _dump_internals(self, fhandle, indent):
+    def dump(self, context):
         assert self.name_classes, 'Empty except name'
 
-        fhandle.write('>\n')
-        for n in self.name_classes:
-            n.dump(fhandle, indent)
-
-        return rng_base.RngBase._CLOSING_TAG
+        with utils.RngTagGuard('except', context):
+            for n in self.name_classes:
+                n.dump(context)

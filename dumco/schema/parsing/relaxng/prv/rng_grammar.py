@@ -10,12 +10,13 @@ from dumco.schema.rng_types import RNG_NAMESPACE
 
 import dumco.schema.parsing.xml_parser
 
-import rng_base
+import base
 import rng_define
 import rng_choice
 import rng_element
 import rng_interleave
 import rng_start
+import utils
 
 
 def rng_grammar(attrs, parent_element, factory, grammar_path, all_grammars):
@@ -30,7 +31,7 @@ def rng_grammar(attrs, parent_element, factory, grammar_path, all_grammars):
     })
 
 
-class RngGrammar(rng_base.RngBase):
+class RngGrammar(base.RngBase):
     def __init__(self, attrs, grammar_path, factory):
         super(RngGrammar, self).__init__(attrs)
 
@@ -181,27 +182,24 @@ class RngGrammar(rng_base.RngBase):
         raise dumco.schema.parsing.xml_parser.ParseRestart(
             StringIO.StringIO(rng_root.toxml('utf-8')))
 
-    def _dump_internals(self, fhandle, indent):
-        fhandle.write(' xmlns="{}"'.format(RNG_NAMESPACE))
-        for (uri, prefix) in sorted(self.known_prefixes.iteritems()):
-            if not dumco.schema.checks.is_xml_namespace(uri):
-                fhandle.write(' xmlns:{}="{}"'.format(prefix, uri))
-        fhandle.write('>\n')
+    def dump(self, context):
+        with utils.RngTagGuard('grammar', context):
+            context.define_namespace('', RNG_NAMESPACE)
 
-        self.start.dump(fhandle, indent)
+            for (uri, prefix) in sorted(self.known_prefixes.iteritems()):
+                if not dumco.schema.checks.is_xml_namespace(uri):
+                    context.define_namespace(prefix, uri)
 
-        for e in sorted(self.named_elements.itervalues(),
-                        key=lambda e: e.define_name):
-            assert isinstance(e, rng_element.RngElement), \
-                'Only elements should be defined in RNG dump'
+            self.start.dump(context)
 
-            space = ' ' * indent
-            fhandle.write('{}<define name="{}">\n'.format(space,
-                                                          e.define_name))
-            e.dump(fhandle, indent + self._tab)
-            fhandle.write('{}</define>\n'.format(space))
+            for e in sorted(self.named_elements.itervalues(),
+                            key=lambda e: e.define_name):
+                assert isinstance(e, rng_element.RngElement), \
+                    'Only elements should be defined in RNG dump'
 
-        return rng_base.RngBase._CLOSING_TAG
+                with utils.RngTagGuard('define', context):
+                    context.add_attribute('name', e.define_name)
+                    e.dump(context)
 
 
 class _RngIncludeLogic(dumco.schema.parsing.xml_parser.IncludeLogic):
@@ -240,6 +238,6 @@ def _make_combine(combine_type):
         'Combine can be either choice or interleave'
 
     if combine_type == 'choice':
-        return rng_choice.RngChoicePattern({})
+        return rng_choice.RngChoicePattern()
     elif combine_type == 'interleave':
-        return rng_interleave.RngInterleave({})
+        return rng_interleave.RngInterleave()

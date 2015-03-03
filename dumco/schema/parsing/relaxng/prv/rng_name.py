@@ -1,47 +1,51 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
-import rng_base
+import base
+import utils
+
+
+def create_name(qname, factory):
+    (ns, name) = factory.parse_qname(qname)
+    ns = factory.get_ns() if ns is None else ns
+    name = None if name == '' else name
+
+    return RngName(ns, name, _is_qualified(ns, factory))
 
 
 def rng_name(attrs, parent_element, factory, grammar_path, all_grammars):
-    name = RngName(attrs, '', factory)
-    parent_element.children.append(name)
+    parent_element.children.append(create_name('', factory))
 
-    return (name, {})
+    return (parent_element.children[-1], {})
 
 
-class RngName(rng_base.RngBase):
-    def __init__(self, attrs, text, factory):
-        super(RngName, self).__init__(attrs)
+class RngName(base.RngBase):
+    def __init__(self, ns, name, qualified=None):
+        super(RngName, self).__init__()
 
-        (ns, name) = factory.parse_qname(text)
-        self.ns = factory.get_ns() if ns is None else ns
-        self.name = None if name == '' else name
+        self.ns = ns
+        self.name = name
 
-        # Temporary for append_text().
-        self.factory = factory
+        # It's necessary for conversion to dumco model.
+        self.qualified = qualified
 
-        # It's necessary for conversion to XSD.
-        self.qualified = self._is_qualified(ns)
-
-    def append_text(self, text):
+    def append_text(self, text, factory):
         assert self.name is None, \
             'Name is defined as both attribute and name class'
 
-        (ns, name) = self.factory.parse_qname(text.strip())
-        if name != '':
-            self.name = name
-        if ns is not None:
-            self.ns = ns
+        name_obj = create_name(text, factory)
 
-        self.qualified = self._is_qualified(ns)
+        self.ns = name_obj.ns
+        self.name = name_obj.name
+        self.qualified = name_obj.qualified
 
-    def _is_qualified(self, ns):
-        if ns is not None:
-            return ns != ''
+    def dump(self, context):
+        with utils.RngTagGuard('name', context):
+            context.add_attribute('ns', self.ns)
+            context.add_text(self.name)
 
-        return self.factory.get_ns() != ''
 
-    def _dump_internals(self, fhandle, indent):
-        fhandle.write(' ns="{}">{}'.format(self.ns, self.name))
-        return rng_base.RngBase._CLOSING_TAG_INLINE
+def _is_qualified(self, ns, factory):
+    if ns is not None:
+        return ns != ''
+
+    return factory.get_ns() != ''

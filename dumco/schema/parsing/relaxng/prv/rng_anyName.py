@@ -2,22 +2,22 @@
 
 from dumco.utils.decorators import method_once
 
-import rng_base
+import base
 import rng_except
+import utils
 
 
 def rng_anyName(attrs, parent_element, factory, grammar_path, all_grammars):
-    any_name = RngAnyName(attrs)
-    parent_element.children.append(any_name)
+    parent_element.children.append(RngAnyName())
 
-    return (any_name, {
+    return (parent_element.children[-1], {
         'except': rng_except.rng_except,
     })
 
 
-class RngAnyName(rng_base.RngBase):
-    def __init__(self, attrs):
-        super(RngAnyName, self).__init__(attrs)
+class RngAnyName(base.RngBase):
+    def __init__(self):
+        super(RngAnyName, self).__init__()
 
         self.except_name_class = None
 
@@ -33,10 +33,7 @@ class RngAnyName(rng_base.RngBase):
 
         super(RngAnyName, self).finalize(grammar, factory)
 
-    def _dump_internals(self, fhandle, indent):
-        if self.except_name_class is None:
-            return rng_base.RngBase._CLOSING_EMPTY_TAG
-        else:
-            fhandle.write('>\n')
-            self.except_name_class.dump(fhandle, indent)
-            return rng_base.RngBase._CLOSING_TAG
+    def dump(self, context):
+        with utils.RngTagGuard('anyName', context):
+            if self.except_name_class is not None:
+                self.except_name_class.dump(context)

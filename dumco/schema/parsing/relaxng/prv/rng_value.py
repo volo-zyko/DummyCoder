@@ -1,35 +1,41 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
-import rng_base
+from dumco.utils.string_utils import quote_xml_string
+
+import base
+import utils
 
 
 def rng_value(attrs, parent_element, factory, grammar_path, all_grammars):
-    value = RngValue(attrs, factory)
-    parent_element.children.append(value)
+    datatypes_uri = factory.get_datatypes_uri()
+    try:
+        type_name = factory.get_attribute(attrs, 'type').strip()
+        builtin_type = factory.builtin_types(datatypes_uri)[type_name]
+    except LookupError:
+        datatypes_uri = ''
+        builtin_type = factory.builtin_types(None)['token']
 
-    return (value, {})
+    parent_element.children.append(
+        RngValue(factory.get_ns(), datatypes_uri, builtin_type))
+
+    return (parent_element.children[-1], {})
 
 
-class RngValue(rng_base.RngBase):
-    def __init__(self, attrs, factory):
-        super(RngValue, self).__init__(attrs)
+class RngValue(base.RngBase):
+    def __init__(self, ns, datatypes_uri, builtin_type, value=None):
+        super(RngValue, self).__init__()
 
-        self.value = None
-        self.ns = factory.get_ns()
-        self.datatypes_uri = factory.get_datatypes_uri()
-        try:
-            type_name = factory.get_attribute(attrs, 'type').strip()
-            self.type = factory.builtin_types(self.datatypes_uri)[type_name]
-        except LookupError:
-            self.datatypes_uri = ''
-            self.type = factory.builtin_types(None)['token']
+        self.ns = ns
+        self.datatypes_uri = datatypes_uri
+        self.type = builtin_type
+        self.value = value
 
-    def append_text(self, text):
+    def append_text(self, text, factory):
         self.value = text if self.value is None else self.value + text
 
-    def _dump_internals(self, fhandle, indent):
-        fhandle.write(
-            ' type="{}" datatypeLibrary="{}" ns="{}">{}'.format(
-                self.type.name, self.datatypes_uri, self.ns, self.value))
-
-        return rng_base.RngBase._CLOSING_TAG_INLINE
+    def dump(self, context):
+        with utils.RngTagGuard('value', context):
+            context.add_attribute('type', self.type.name)
+            context.add_attribute('datatypeLibrary', self.datatypes_uri)
+            context.add_attribute('ns', self.ns)
+            context.add_text(quote_xml_string(self.value))

@@ -110,15 +110,12 @@ class RelaxElementFactory(object):
                 attrs, self.element, self, schema_path, all_grammars)
 
     def finalize_current_element(self, name):
-        old_element = self.element
         self.element = self.element_stack.pop()
 
         # Here we don't support anything non-RelaxNG.
         if name[0] != RNG_NAMESPACE:
             return
 
-        if old_element is not None:
-            old_element.end_element(self)
         self.dispatcher = self.dispatcher_stack.pop()
         self.datatypes_stack.pop()
         self.ns_attribute_stack.pop()
@@ -131,7 +128,7 @@ class RelaxElementFactory(object):
 
     def current_element_append_text(self, text):
         if self.element is not None:
-            self.element.append_text(text)
+            self.element.append_text(text, self)
 
     def finalize_documents(self, all_grammars):
         all_schemata = {}
@@ -163,14 +160,15 @@ class RelaxElementFactory(object):
             if not os.path.exists(self.arguments.dump_rng_model_to_dir):
                 os.makedirs(self.arguments.dump_rng_model_to_dir)
             for (c, grammar) in enumerate(all_grammars.itervalues(), start=1):
-                stream = StringIO.StringIO()
-                stream.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-                grammar.dump(stream, 0)
+                pass
+                # stream = StringIO.StringIO()
+                # stream.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+                # grammar.dump(stream, 0)
 
-                path = os.path.join(self.arguments.dump_rng_model_to_dir,
-                                    os.path.basename(grammar.grammar_path))
-                with open(path, 'w') as f:
-                    f.write(stream.getvalue())
+                # path = os.path.join(self.arguments.dump_rng_model_to_dir,
+                #                     os.path.basename(grammar.grammar_path))
+                # with open(path, 'w') as f:
+                #     f.write(stream.getvalue())
 
         sorted_all_schemata = [s for s in all_schemata.itervalues()]
         sorted_all_schemata.sort(key=lambda s: s.target_ns)

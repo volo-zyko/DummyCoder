@@ -2,24 +2,24 @@
 
 from dumco.utils.decorators import method_once
 
-import rng_base
+import base
 import rng_except
+import utils
 
 
 def rng_nsName(attrs, parent_element, factory, grammar_path, all_grammars):
-    ns_name = RngNsName(attrs, factory)
-    parent_element.children.append(ns_name)
+    parent_element.children.append(RngNsName(factory.get_ns()))
 
-    return (ns_name, {
+    return (parent_element.children[-1], {
         'except': rng_except.rng_except,
     })
 
 
-class RngNsName(rng_base.RngBase):
-    def __init__(self, attrs, factory):
-        super(RngNsName, self).__init__(attrs)
+class RngNsName(base.RngBase):
+    def __init__(self, ns):
+        super(RngNsName, self).__init__()
 
-        self.ns = factory.get_ns()
+        self.ns = ns
         self.except_name_class = None
 
     @method_once
@@ -34,11 +34,9 @@ class RngNsName(rng_base.RngBase):
 
         super(RngNsName, self).finalize(grammar, factory)
 
-    def _dump_internals(self, fhandle, indent):
-        fhandle.write(' ns="{}"'.format(self.ns))
-        if self.except_name_class is None:
-            return rng_base.RngBase._CLOSING_EMPTY_TAG
-        else:
-            fhandle.write('>\n')
-            self.except_name_class.dump(fhandle, indent)
-            return rng_base.RngBase._CLOSING_TAG
+    def dump(self, context):
+        with utils.RngTagGuard('nsName', context):
+            context.add_attribute('ns', self.ns)
+
+            if self.except_name_class is not None:
+                self.except_name_class.dump(context)

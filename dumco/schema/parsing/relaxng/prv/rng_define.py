@@ -2,8 +2,8 @@
 
 from dumco.utils.decorators import method_once
 
+import base
 import rng_attribute
-import rng_base
 import rng_choice
 import rng_data
 import rng_element
@@ -16,18 +16,22 @@ import rng_notAllowed
 import rng_oneOrMore
 import rng_ref
 import rng_text
-import rng_utils
 import rng_value
+import utils
 
 
 def rng_define(attrs, parent_element, factory, grammar_path, all_grammars):
     assert isinstance(parent_element, rng_grammar.RngGrammar), \
         'Define only expected to be in grammar'
 
-    define = RngDefine(attrs, factory)
-    define = parent_element.add_define(define)
+    try:
+        combine = factory.get_attribute(attrs, 'combine').strip()
+    except LookupError:
+        combine = ''
 
-    return (define, {
+    name = factory.get_attribute(attrs, 'name').strip()
+
+    return (parent_element.add_define(RngDefine(combine, name)), {
         'attribute': rng_attribute.rng_attribute,
         'choice': rng_choice.rng_choice,
         'data': rng_data.rng_data,
@@ -49,37 +53,30 @@ def rng_define(attrs, parent_element, factory, grammar_path, all_grammars):
     })
 
 
-class RngDefine(rng_base.RngBase):
-    def __init__(self, attrs, factory):
-        super(RngDefine, self).__init__(attrs)
-
-        # Temporary for handling of multiple defines with same name.
-        try:
-            self.combine = factory.get_attribute(attrs, 'combine').strip()
-        except LookupError:
-            self.combine = ''
+class RngDefine(base.RngBase):
+    def __init__(self, name, combine=''):
+        super(RngDefine, self).__init__()
 
         self.pattern = None
-        self.name = factory.get_attribute(attrs, 'name').strip()
+        self.name = name
+
+        # Temporary for handling of multiple defines with same name.
+        self.combine = combine
 
     @method_once
     def prefinalize(self, grammar):
-        if self.pattern is not None:
-            return
-
         if len(self.children) == 1:
-            assert rng_utils.is_pattern(self.children[0]), \
+            assert utils.is_pattern(self.children[0]), \
                 'Wrong content of define'
+
             self.pattern = self.children[0]
-            if isinstance(self.pattern, rng_ref.RngRef):
-                self.pattern = self.pattern.get_ref_pattern(grammar)
         else:
             patterns = []
             for c in self.children:
-                assert rng_utils.is_pattern(c), 'Wrong content of define'
+                assert utils.is_pattern(c), 'Wrong content of define'
 
                 patterns.append(c)
 
             assert patterns, 'Wrong pattern in define'
-            self.pattern = rng_group.RngGroup({})
+            self.pattern = rng_group.RngGroup()
             self.pattern.children = patterns

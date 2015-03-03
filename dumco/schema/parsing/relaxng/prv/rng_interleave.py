@@ -2,8 +2,8 @@
 
 from dumco.utils.decorators import method_once
 
+import base
 import rng_attribute
-import rng_base
 import rng_choice
 import rng_data
 import rng_element
@@ -14,15 +14,14 @@ import rng_notAllowed
 import rng_oneOrMore
 import rng_ref
 import rng_text
-import rng_utils
 import rng_value
+import utils
 
 
 def rng_interleave(attrs, parent_element, factory, grammar_path, all_grammars):
-    interleave = RngInterleave(attrs)
-    parent_element.children.append(interleave)
+    parent_element.children.append(RngInterleave())
 
-    return (interleave, {
+    return (parent_element.children[-1], {
         'attribute': rng_attribute.rng_attribute,
         'choice': rng_choice.rng_choice,
         'data': rng_data.rng_data,
@@ -44,29 +43,25 @@ def rng_interleave(attrs, parent_element, factory, grammar_path, all_grammars):
     })
 
 
-class RngInterleave(rng_base.RngBase):
-    def __init__(self, attrs):
-        super(RngInterleave, self).__init__(attrs)
+class RngInterleave(base.RngBase):
+    def __init__(self, ):
+        super(RngInterleave, self).__init__()
 
         self.patterns = []
 
     @method_once
     def finalize(self, grammar, factory):
         for c in self.children:
-            assert rng_utils.is_pattern(c), 'Wrong content of interleave'
+            assert utils.is_pattern(c), 'Wrong content of interleave'
 
             if isinstance(c, rng_ref.RngRef):
-                c = c.get_ref_pattern(grammar)
+                c = c.finalize(grammar, factory)
 
             if isinstance(c, rng_empty.RngEmpty):
                 continue
             elif isinstance(c, rng_element.RngElement):
-                c.finalize_name(grammar, factory)
-                c = c.define_and_simplify_name(grammar, factory)
-                self.patterns.append(c)
+                self.patterns.append(c.prefinalize(grammar, factory))
                 continue
-            elif isinstance(c, rng_attribute.RngAttribute):
-                c = c.simplify_name(grammar, factory)
 
             c = c.finalize(grammar, factory)
 
@@ -88,16 +83,11 @@ class RngInterleave(rng_base.RngBase):
 
         return super(RngInterleave, self).finalize(grammar, factory)
 
-    def _dump_internals(self, fhandle, indent):
+    def dump(self, context):
         assert self.patterns, 'Empty interleave pattern'
 
-        fhandle.write('>\n')
-        for p in self.patterns:
-            if isinstance(p, rng_element.RngElement):
-                p.dump_element_ref(fhandle, indent)
-            else:
+        with utils.RngTagGuard('interleave', context):
+            for p in self.patterns:
                 assert not isinstance(p, rng_empty.RngEmpty), \
                     'Empty is not allowed'
-                p.dump(fhandle, indent)
-
-        return rng_base.RngBase._CLOSING_TAG
+                p.dump(context)

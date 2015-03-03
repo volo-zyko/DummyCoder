@@ -1,5 +1,8 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
+from dumco.schema.dumping.write_xml import TagGuard
+from dumco.schema.rng_types import RNG_NAMESPACE
+
 import rng_anyName
 import rng_attribute
 import rng_choice
@@ -41,3 +44,8 @@ def is_pattern(value):
             isinstance(value, rng_ref.RngRef) or
             isinstance(value, rng_text.RngText) or
             isinstance(value, rng_value.RngValue))
+
+
+class RngTagGuard(TagGuard):
+    def __init__(self, tag, writer):
+        super(self, TagGuard).__init__(writer, tag, RNG_NAMESPACE)

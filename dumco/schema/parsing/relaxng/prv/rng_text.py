@@ -1,15 +1,16 @@
 # Distributed under the GPLv2 License; see accompanying file COPYING.
 
-import rng_base
+import base
+import utils
 
 
 def rng_text(attrs, parent_element, factory, grammar_path, all_grammars):
-    text = RngText(attrs)
-    parent_element.children.append(text)
+    parent_element.children.append(RngText())
 
-    return (text, {})
+    return (parent_element.children[-1], {})
 
 
-class RngText(rng_base.RngBase):
-    def _dump_internals(self, fhandle, indent):
-        return rng_base.RngBase._CLOSING_EMPTY_TAG
+class RngText(base.RngBase):
+    def dump(self, context):
+        with utils.RngTagGuard('text', context):
+            pass

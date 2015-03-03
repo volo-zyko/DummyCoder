@@ -2,8 +2,8 @@
 
 from dumco.utils.decorators import method_once
 
+import base
 import rng_attribute
-import rng_base
 import rng_choice
 import rng_data
 import rng_element
@@ -16,18 +16,20 @@ import rng_notAllowed
 import rng_oneOrMore
 import rng_ref
 import rng_text
-import rng_utils
 import rng_value
+import utils
 
 
 def rng_start(attrs, parent_element, factory, grammar_path, all_grammars):
     assert isinstance(parent_element, rng_grammar.RngGrammar), \
         'Start only expected to be in grammar'
 
-    start = RngStart(attrs, factory)
-    start = parent_element.add_start(start)
+    try:
+        combine = factory.get_attribute(attrs, 'combine').strip()
+    except LookupError:
+        combine = ''
 
-    return (start, {
+    return (parent_element.add_start(RngStart(combine)), {
         'attribute': rng_attribute.rng_attribute,
         'choice': rng_choice.rng_choice,
         'data': rng_data.rng_data,
@@ -49,43 +51,29 @@ def rng_start(attrs, parent_element, factory, grammar_path, all_grammars):
     })
 
 
-class RngStart(rng_base.RngBase):
-    def __init__(self, attrs, factory):
-        super(RngStart, self).__init__(attrs)
-
-        # Temporary for handling of multiple starts.
-        try:
-            self.combine = factory.get_attribute(attrs, 'combine').strip()
-        except LookupError:
-            self.combine = ''
+class RngStart(base.RngBase):
+    def __init__(self, combine=''):
+        super(RngStart, self).__init__()
 
         self.pattern = None
         self.not_allowed = False
 
+        # Temporary for handling of multiple starts.
+        self.combine = combine
+
     @method_once
     def finalize(self, grammar, factory):
         assert (len(self.children) == 1 and
-                rng_utils.is_pattern(self.children[0])), \
+                utils.is_pattern(self.children[0])), \
             'Wrong content of start'
 
-        if isinstance(self.children[0], rng_ref.RngRef):
-            self.pattern = self.children[0].get_ref_pattern(grammar)
-        else:
-            self.pattern = self.children[0]
-
-        self.pattern.finalize(grammar, factory)
+        self.pattern = self.children[0].finalize(grammar, factory)
 
         if isinstance(self.pattern, rng_element.RngElement):
-            self.pattern = self.pattern.define_and_simplify_name(
-                grammar, factory)
+            self.pattern = self.prefinalize(grammar, factory)
 
         return super(RngStart, self).finalize(grammar, factory)
 
-    def _dump_internals(self, fhandle, indent):
-        fhandle.write('>\n')
-        if isinstance(self.pattern, rng_element.RngElement):
-            self.pattern.dump_element_ref(fhandle, indent)
-        else:
-            self.pattern.dump(fhandle, indent)
-
-        return rng_base.RngBase._CLOSING_TAG
+    def dump(self, context):
+        with utils.RngTagGuard('start', context):
+            self.pattern.dump(context)

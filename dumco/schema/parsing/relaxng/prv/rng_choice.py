@@ -2,9 +2,9 @@
 
 from dumco.utils.decorators import method_once
 
+import base
 import rng_anyName
 import rng_attribute
-import rng_base
 import rng_data
 import rng_element
 import rng_empty
@@ -18,8 +18,8 @@ import rng_nsName
 import rng_oneOrMore
 import rng_ref
 import rng_text
-import rng_utils
 import rng_value
+import utils
 
 
 def rng_choice(attrs, parent_element, factory, grammar_path, all_grammars):
@@ -28,20 +28,18 @@ def rng_choice(attrs, parent_element, factory, grammar_path, all_grammars):
         ((isinstance(parent_element, rng_element.RngElement) or
           isinstance(parent_element, rng_attribute.RngAttribute)) and
          not parent_element.children)):
-        choice = RngChoiceName(attrs)
-        parent_element.children.append(choice)
+        parent_element.children.append(RngChoiceName())
 
-        return (choice, {
+        return (parent_element.children[-1], {
             'anyName': rng_anyName.rng_anyName,
             'choice': rng_choice,
             'name': rng_name.rng_name,
             'nsName': rng_nsName.rng_nsName,
         })
     else:
-        choice = RngChoicePattern(attrs)
-        parent_element.children.append(choice)
+        parent_element.children.append(RngChoicePattern())
 
-        return (choice, {
+        return (parent_element.children[-1], {
             'attribute': rng_attribute.rng_attribute,
             'choice': rng_choice,
             'data': rng_data.rng_data,
@@ -63,9 +61,9 @@ def rng_choice(attrs, parent_element, factory, grammar_path, all_grammars):
         })
 
 
-class RngChoicePattern(rng_base.RngBase):
-    def __init__(self, attrs):
-        super(RngChoicePattern, self).__init__(attrs)
+class RngChoicePattern(base.RngBase):
+    def __init__(self):
+        super(RngChoicePattern, self).__init__()
 
         self.patterns = []
 
@@ -73,21 +71,17 @@ class RngChoicePattern(rng_base.RngBase):
     def finalize(self, grammar, factory):
         has_empty = False
         for c in self.children:
-            assert rng_utils.is_pattern(c), 'Wrong content of choice pattern'
+            assert utils.is_pattern(c), 'Wrong content of choice pattern'
 
             if isinstance(c, rng_ref.RngRef):
-                c = c.get_ref_pattern(grammar)
+                c = c.finalize(grammar, factory)
 
             if isinstance(c, rng_empty.RngEmpty):
                 has_empty = True
                 continue
             elif isinstance(c, rng_element.RngElement):
-                c.finalize_name(grammar, factory)
-                c = c.define_and_simplify_name(grammar, factory)
-                self.patterns.append(c)
+                self.patterns.append(c.prefinalize(grammar, factory))
                 continue
-            elif isinstance(c, rng_attribute.RngAttribute):
-                c = c.simplify_name(grammar, factory)
 
             c = c.finalize(grammar, factory)
 
@@ -108,38 +102,30 @@ class RngChoicePattern(rng_base.RngBase):
             self.patterns.append(c)
 
         if has_empty and self.patterns:
-            self.patterns.insert(0, rng_empty.RngEmpty({}))
+            self.patterns.insert(0, rng_empty.RngEmpty())
 
         return super(RngChoicePattern, self).finalize(grammar, factory)
 
-    def _tag_name(self):
-        return 'choice'
-
-    def _dump_internals(self, fhandle, indent):
+    def dump(self, context):
         assert self.patterns, 'Empty choice pattern'
 
-        fhandle.write('>\n')
-        for (i, p) in enumerate(self.patterns):
-            if isinstance(p, rng_element.RngElement):
-                p.dump_element_ref(fhandle, indent)
-            else:
+        with utils.RngTagGuard('choice', context):
+            for (i, p) in enumerate(self.patterns):
                 assert not isinstance(p, rng_empty.RngEmpty) or i == 0, \
                     'Empty is allowed only as first pattern'
-                p.dump(fhandle, indent)
-
-        return rng_base.RngBase._CLOSING_TAG
+                p.dump(context)
 
 
-class RngChoiceName(rng_base.RngBase):
-    def __init__(self, attrs):
-        super(RngChoiceName, self).__init__(attrs)
+class RngChoiceName(base.RngBase):
+    def __init__(self):
+        super(RngChoiceName, self).__init__()
 
         self.name_classes = []
 
     @method_once
     def finalize(self, grammar, factory):
         for c in self.children:
-            assert rng_utils.is_name_class(c), 'Wrong content of choice name'
+            assert utils.is_name_class(c), 'Wrong content of choice name'
 
             c.finalize(grammar, factory)
             self.name_classes.append(c)
@@ -148,14 +134,9 @@ class RngChoiceName(rng_base.RngBase):
 
         super(RngChoiceName, self).finalize(grammar, factory)
 
-    def _tag_name(self):
-        return 'choice'
-
-    def _dump_internals(self, fhandle, indent):
+    def dump(self, context):
         assert self.name_classes, 'Empty choice name'
 
-        fhandle.write('>\n')
-        for n in self.name_classes:
-            n.dump(fhandle, indent)
-
-        return rng_base.RngBase._CLOSING_TAG
+        with utils.RngTagGuard('choice', context):
+            for n in self.name_classes:
+                n.dump(context)
