@@ -5,7 +5,7 @@ from dumco.utils.decorators import method_once
 import base
 import utils
 import xsd_all
-import xsd_any
+import xsd_any_attribute
 import xsd_attribute
 import xsd_attribute_group
 import xsd_choice
@@ -13,15 +13,18 @@ import xsd_group
 import xsd_sequence
 
 
-def xsd_restriction_in_complexContent(attrs, parent_element, factory,
-                                      schema_path, all_schemata):
-    new_element = XsdComplexRestriction(attrs, all_schemata[schema_path])
-    parent_element.children.append(new_element)
+def xsd_restriction(attrs, parent, factory, schema_path, all_schemata):
+    base_name = factory.get_attribute(attrs, 'base')
+    base_name = factory.parse_qname(base_name)
+
+    new_element = XsdComplexRestriction(base_name,
+                                        parent_schema=all_schemata[schema_path])
+    parent.children.append(new_element)
 
     return (new_element, {
         'all': xsd_all.xsd_all,
         'annotation': factory.noop_handler,
-        'anyAttribute': xsd_any.xsd_anyAttribute,
+        'anyAttribute': xsd_any_attribute.xsd_anyAttribute,
         'attribute': xsd_attribute.xsd_attribute,
         'attributeGroup': xsd_attribute_group.xsd_attributeGroup,
         'choice': xsd_choice.xsd_choice,
@@ -31,15 +34,17 @@ def xsd_restriction_in_complexContent(attrs, parent_element, factory,
 
 
 class XsdComplexRestriction(base.XsdBase):
-    def __init__(self, attrs, parent_schema):
-        super(XsdComplexRestriction, self).__init__(attrs)
+    def __init__(self, base_name, parent_schema=None):
+        super(XsdComplexRestriction, self).__init__()
 
-        self.schema = parent_schema
-        self.part = None
-        self.attr_uses = []
+        self.base_name = base_name
+        self.parent_schema = parent_schema
 
     @method_once
     def finalize(self, factory):
+        part = None
+        attr_uses = []
+
         redefined_attr_uses = []
         prohibited_attr_uses = []
         for c in self.children:
@@ -47,27 +52,26 @@ class XsdComplexRestriction(base.XsdBase):
                     isinstance(c, xsd_choice.XsdChoice) or
                     isinstance(c, xsd_sequence.XsdSequence) or
                     isinstance(c, xsd_group.XsdGroup)):
-                assert self.part is None, 'Content model overridden'
-                self.part = c.finalize(factory)
+                assert part is None, 'Content model overridden'
+                part = c.finalize(factory)
             elif isinstance(c, xsd_attribute_group.XsdAttributeGroup):
-                self.attr_uses.extend(c.finalize(factory).attr_uses)
+                attr_uses.extend(c.finalize(factory))
             elif isinstance(c, xsd_attribute.XsdAttribute):
                 if c.prohibited:
                     prohibited_attr_uses.append(c.finalize(factory))
                 else:
                     redefined_attr_uses.append(c.finalize(factory))
-            elif isinstance(c, xsd_any.XsdAny):
-                self.attr_uses.append(c.finalize(factory))
+            elif isinstance(c, xsd_any_attribute.XsdAnyAttribute):
+                attr_uses.append(c.finalize(factory))
             else:  # pragma: no cover
                 assert False, 'Wrong content of complex Restriction'
 
-        base_ct = factory.resolve_complex_type(self.attr('base'), self.schema)
+        base_ct = factory.resolve_complex_type(self.base_name,
+                                               self.parent_schema)
 
-        self.attr_uses.extend(
-            utils.restrict_base_attributes(base_ct, factory,
-                                           prohibited_attr_uses,
-                                           redefined_attr_uses))
+        attr_uses.extend(utils.restrict_base_attributes(base_ct, factory,
+                                                        prohibited_attr_uses,
+                                                        redefined_attr_uses))
+        attr_uses.extend(redefined_attr_uses)
 
-        self.attr_uses.extend(redefined_attr_uses)
-
-        return self
+        return (part, attr_uses)

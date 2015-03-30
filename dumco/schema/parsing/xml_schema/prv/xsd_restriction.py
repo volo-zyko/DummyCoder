@@ -7,13 +7,20 @@ import dumco.schema.model
 import dumco.schema.uses
 
 import base
+import utils
 import xsd_enumeration
 import xsd_simple_type
 
 
-def xsd_restriction(attrs, parent_element, factory, schema_path, all_schemata):
-    new_element = XsdRestriction(attrs, all_schemata[schema_path])
-    parent_element.children.append(new_element)
+def xsd_restriction(attrs, parent, factory, schema_path, all_schemata):
+    base_name = factory.get_attribute(attrs, 'base', default=None)
+    base_name = factory.parse_qname(base_name)
+
+    restriction = dumco.schema.model.Restriction()
+
+    new_element = XsdRestriction(restriction, base_name,
+                                 parent_schema=all_schemata[schema_path])
+    parent.children.append(new_element)
 
     return (new_element, {
         'annotation': factory.noop_handler,
@@ -33,202 +40,48 @@ def xsd_restriction(attrs, parent_element, factory, schema_path, all_schemata):
     })
 
 
-class XsdRestriction(base.XsdBase):
-    def __init__(self, attrs, parent_schema):
-        super(XsdRestriction, self).__init__(attrs)
+class XsdRestriction(base.XsdRestrictionBase):
+    def __init__(self, restriction, base_name, parent_schema=None):
+        super(XsdRestriction, self).__init__()
 
-        self.schema = parent_schema
-        self.schema_element = dumco.schema.model.Restriction()
+        self.dom_element = restriction
+        self.base_name = base_name
+        self.parent_schema = parent_schema
 
     @method_once
     def finalize(self, factory):
-        base = None
-        if self.attr('base') is None:
+        base_type = None
+        if self.base_name is None:
             for t in self.children:
                 assert ((isinstance(t, xsd_simple_type.XsdSimpleType) or
                          isinstance(t, xsd_enumeration.XsdEnumeration)) and
-                        base is None), \
+                        base_type is None), \
                     'Wrong content of Restriction'
 
                 if isinstance(t, xsd_simple_type.XsdSimpleType):
-                    base = t.finalize(factory)
+                    base_type = t.finalize(factory)
                 elif isinstance(t, xsd_enumeration.XsdEnumeration):
-                    enum = dumco.schema.model.EnumerationValue(
-                        t.value, t.schema_element.doc)
-                    self.schema_element.enumerations.append(enum)
+                    enum = dumco.schema.model.EnumerationValue(t.value,
+                                                               ' '.join(t.text))
+                    self.dom_element.enumerations.append(enum)
         else:
-            base = factory.resolve_simple_type(self.attr('base'), self.schema)
+            base_type = factory.resolve_simple_type(self.base_name,
+                                                    self.parent_schema)
             for x in self.children:
                 assert isinstance(x, xsd_enumeration.XsdEnumeration), \
                     'Expected only Enumerations'
-                enum = dumco.schema.model.EnumerationValue(
-                    x.value, x.schema_element.doc)
-                self.schema_element.enumerations.append(enum)
 
-        assert base is not None, 'Restriction does not have base type'
+                enum = dumco.schema.model.EnumerationValue(x.value,
+                                                           ' '.join(x.text))
+                self.dom_element.enumerations.append(enum)
 
-        return self.connect_restriction_base(base)
+        assert base_type is not None, 'Restriction does not have base type'
 
-    def connect_restriction_base(self, base):
-        if dumco.schema.checks.is_list_type(base):
-            simplify_list_restiction(base, self.schema_element.length,
-                                     self.schema_element.min_length,
-                                     self.schema_element.max_length)
-            return base
+        return utils.connect_restriction_base(self.dom_element, base_type)
 
-        self.schema_element.base = self.merge_base_restriction(base)
+    def dump(self, context):
+        with utils.XsdTagGuard('restriction', context):
+            context.add_attribute('base', self.item_name)
 
-        return self.schema_element
-
-    def merge_base_restriction(self, base):
-        def merge(attr):
-            if not getattr(self.schema_element, attr):
-                value = getattr(base.restriction, attr)
-                if not value:
-                    setattr(self.schema_element, attr, value)
-
-        if dumco.schema.checks.is_restriction_type(base):
-            merge('enumerations')
-            merge('fraction_digits')
-            merge('length')
-            merge('max_exclusive')
-            merge('max_inclusive')
-            merge('max_length')
-            merge('min_exclusive')
-            merge('min_inclusive')
-            merge('min_length')
-            merge('patterns')
-            merge('total_digits')
-            merge('white_space')
-
-            base = self.merge_base_restriction(base.restriction.base)
-
-        return base
-
-    @staticmethod
-    def _value_handler(fieldname, attrs, parent_element, factory,
-                       schema_path, all_schemata):
-        assert hasattr(parent_element.schema_element, fieldname)
-        setattr(parent_element.schema_element, fieldname,
-                factory.get_attribute(attrs, 'value'))
-
-        return (parent_element, {
-            'annotation': factory.noop_handler,
-        })
-
-    @staticmethod
-    def xsd_fractionDigits(attrs, parent_element, factory,
-                           schema_path, all_schemata):
-        return XsdRestriction._value_handler(
-            'fraction_digits', attrs, parent_element,
-            factory, schema_path, all_schemata)
-
-    @staticmethod
-    def xsd_length(attrs, parent_element, factory,
-                   schema_path, all_schemata):
-        return XsdRestriction._value_handler(
-            'length', attrs, parent_element,
-            factory, schema_path, all_schemata)
-
-    @staticmethod
-    def xsd_maxExclusive(attrs, parent_element, factory,
-                         schema_path, all_schemata):
-        return XsdRestriction._value_handler(
-            'max_exclusive', attrs, parent_element,
-            factory, schema_path, all_schemata)
-
-    @staticmethod
-    def xsd_maxInclusive(attrs, parent_element, factory,
-                         schema_path, all_schemata):
-        return XsdRestriction._value_handler(
-            'max_inclusive', attrs, parent_element,
-            factory, schema_path, all_schemata)
-
-    @staticmethod
-    def xsd_maxLength(attrs, parent_element, factory,
-                      schema_path, all_schemata):
-        return XsdRestriction._value_handler(
-            'max_length', attrs, parent_element,
-            factory, schema_path, all_schemata)
-
-    @staticmethod
-    def xsd_minExclusive(attrs, parent_element, factory,
-                         schema_path, all_schemata):
-        return XsdRestriction._value_handler(
-            'min_exclusive', attrs, parent_element,
-            factory, schema_path, all_schemata)
-
-    @staticmethod
-    def xsd_minInclusive(attrs, parent_element, factory,
-                         schema_path, all_schemata):
-        return XsdRestriction._value_handler(
-            'min_inclusive', attrs, parent_element,
-            factory, schema_path, all_schemata)
-
-    @staticmethod
-    def xsd_minLength(attrs, parent_element, factory,
-                      schema_path, all_schemata):
-        return XsdRestriction._value_handler(
-            'min_length', attrs, parent_element,
-            factory, schema_path, all_schemata)
-
-    @staticmethod
-    def xsd_pattern(attrs, parent_element, factory,
-                    schema_path, all_schemata):
-        parent_element.schema_element.patterns.append(
-            factory.get_attribute(attrs, 'value'))
-
-        return (parent_element, {
-            'annotation': factory.noop_handler,
-        })
-
-    @staticmethod
-    def xsd_totalDigits(attrs, parent_element, factory,
-                        schema_path, all_schemata):
-        return XsdRestriction._value_handler(
-            'total_digits', attrs, parent_element,
-            factory, schema_path, all_schemata)
-
-    @staticmethod
-    def xsd_whiteSpace(attrs, parent_element, factory,
-                       schema_path, all_schemata):
-        assert hasattr(parent_element.schema_element, 'white_space')
-
-        value = factory.get_attribute(attrs, 'value')
-        if value == 'preserve':
-            parent_element.schema_element.white_space = \
-                dumco.schema.model.Restriction.WS_PRESERVE
-        elif value == 'replace':
-            parent_element.schema_element.white_space = \
-                dumco.schema.model.Restriction.WS_REPLACE
-        elif value == 'collapse':
-            parent_element.schema_element.white_space = \
-                dumco.schema.model.Restriction.WS_COLLAPSE
-        else:  # pragma: no cover
-            assert False, 'Unknown token for whiteSpace'
-
-        return (parent_element, {
-            'annotation': factory.noop_handler,
-        })
-
-
-def simplify_list_restiction(base, length, min_length, max_length):
-    assert dumco.schema.checks.is_list_type(base)
-
-    itemtype = base.listitems[0]
-
-    min_occurs = itemtype.min_occurs
-    max_occurs = itemtype.max_occurs
-
-    if length is not None:
-        min_occurs = length
-        max_occurs = length
-
-    if min_length is not None:
-        min_occurs = min_length
-
-    if max_length is not None:
-        max_occurs = max_length
-
-    base.listitems[0] = dumco.schema.uses.ListTypeCardinality(
-        itemtype[0], min_occurs, max_occurs)
+            for c in self.children:
+                c.dump(context)

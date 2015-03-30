@@ -12,7 +12,7 @@ import dumco.schema.uses
 import base
 import utils
 import xsd_all
-import xsd_any
+import xsd_any_attribute
 import xsd_attribute
 import xsd_attribute_group
 import xsd_choice
@@ -20,15 +20,18 @@ import xsd_group
 import xsd_sequence
 
 
-def xsd_extension_in_complexContent(attrs, parent_element, factory,
-                                    schema_path, all_schemata):
-    new_element = XsdComplexExtension(attrs, all_schemata[schema_path])
-    parent_element.children.append(new_element)
+def xsd_extension(attrs, parent, factory, schema_path, all_schemata):
+    base_name = factory.get_attribute(attrs, 'base')
+    base_name = factory.parse_qname(base_name)
+
+    new_element = XsdComplexExtension(base_name,
+                                      parent_schema=all_schemata[schema_path])
+    parent.children.append(new_element)
 
     return (new_element, {
         'all': xsd_all.xsd_all,
         'annotation': factory.noop_handler,
-        'anyAttribute': xsd_any.xsd_anyAttribute,
+        'anyAttribute': xsd_any_attribute.xsd_anyAttribute,
         'attribute': xsd_attribute.xsd_attribute,
         'attributeGroup': xsd_attribute_group.xsd_attributeGroup,
         'choice': xsd_choice.xsd_choice,
@@ -38,63 +41,67 @@ def xsd_extension_in_complexContent(attrs, parent_element, factory,
 
 
 class XsdComplexExtension(base.XsdBase):
-    def __init__(self, attrs, parent_schema):
-        super(XsdComplexExtension, self).__init__(attrs)
+    def __init__(self, base_name, parent_schema=None):
+        super(XsdComplexExtension, self).__init__()
 
-        self.schema = parent_schema
-        self.part = None
-        self.attr_uses = []
+        self.base_name = base_name
+        self.parent_schema = parent_schema
 
     @method_once
     def finalize(self, factory):
+        part = None
+        attr_uses = []
+
         for c in self.children:
             if (isinstance(c, xsd_all.XsdAll) or
                     isinstance(c, xsd_choice.XsdChoice) or
                     isinstance(c, xsd_sequence.XsdSequence) or
                     isinstance(c, xsd_group.XsdGroup)):
-                assert self.part is None, 'Content model overridden'
-                self.part = c.finalize(factory)
+                assert part is None, 'Content model overridden'
+                part = c.finalize(factory)
             elif isinstance(c, xsd_attribute_group.XsdAttributeGroup):
-                self.attr_uses.extend(c.finalize(factory).attr_uses)
+                attr_uses.extend(c.finalize(factory))
             elif isinstance(c, xsd_attribute.XsdAttribute):
                 if not c.prohibited:
-                    self.attr_uses.append(c.finalize(factory))
-            elif isinstance(c, xsd_any.XsdAny):
-                self.attr_uses.append(c.finalize(factory))
+                    attr_uses.append(c.finalize(factory))
+            elif isinstance(c, xsd_any_attribute.XsdAnyAttribute):
+                attr_uses.append(c.finalize(factory))
             else:  # pragma: no cover
                 assert False, 'Wrong content of complex Extension'
 
-        base_ct = factory.resolve_complex_type(self.attr('base'), self.schema)
+        base_ct = factory.resolve_complex_type(self.base_name,
+                                               self.parent_schema)
 
-        self.part = self._merge_content(base_ct)
-        self.attr_uses.extend(base_ct.attribute_uses())
+        part = _merge_content(part, base_ct)
+        attr_uses.extend(base_ct.attribute_uses())
 
-        return self
+        return (part, attr_uses)
 
-    def _merge_content(self, base_ct):
-        assert base_ct is not None
 
-        base_part = None
-        if base_ct.structure is not None:
-            base_part = copy.copy(base_ct.structure)
-            base_part.term = copy.copy(base_ct.structure.term)
-            base_part.term.members = [m for m in base_ct.structure.term.members
-                                      if dumco.schema.checks.is_particle(m)]
+def _merge_content(part, base_ct):
+    assert base_ct is not None
 
-            if not base_part.term.members:
-                base_part = None
+    base_part = None
+    if base_ct.structure is not None:
+        base_part = copy.copy(base_ct.structure)
+        base_part.term = copy.copy(base_ct.structure.term)
+        base_part.term.members = [m for m in base_ct.structure.term.members
+                                  if dumco.schema.checks.is_particle(m)]
 
-            base_part = utils.reduce_particle(base_part)
+        if not base_part.term.members:
+            base_part = None
 
-        if self.part is None:
-            return base_part
-        elif base_part is None:
-            return self.part
+        base_part = utils.reduce_particle(base_part)
 
-        new_seq = dumco.schema.model.Sequence()
-        copy_self = dumco.schema.uses.Particle(self.part.min_occurs,
-                                               self.part.max_occurs,
-                                               self.part.term)
-        new_seq.members.extend([base_part, copy_self])
+    if part is None:
+        return base_part
+    elif base_part is None:
+        return part
 
-        return dumco.schema.uses.Particle(1, 1, new_seq)
+    new_seq = dumco.schema.model.Sequence()
+    copy_self = dumco.schema.uses.Particle(part.min_occurs,
+                                           part.max_occurs,
+                                           part.term)
+    new_seq.members.extend([base_part, copy_self])
+
+    return dumco.schema.uses.Particle(1, 1, new_seq)

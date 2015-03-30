@@ -13,9 +13,15 @@ import xsd_group
 import xsd_sequence
 
 
-def xsd_choice(attrs, parent_element, factory, schema_path, all_schemata):
-    new_element = XsdChoice(attrs, all_schemata[schema_path], factory)
-    parent_element.children.append(new_element)
+def xsd_choice(attrs, parent, factory, schema_path, all_schemata):
+    min_occurs = factory.particle_min_occurs(attrs)
+    max_occurs = factory.particle_max_occurs(attrs)
+
+    particle = dumco.schema.uses.Particle(
+        min_occurs, max_occurs, dumco.schema.model.Choice())
+
+    new_element = XsdChoice(particle)
+    parent.children.append(new_element)
 
     return (new_element, {
         'annotation': factory.noop_handler,
@@ -28,13 +34,12 @@ def xsd_choice(attrs, parent_element, factory, schema_path, all_schemata):
 
 
 class XsdChoice(base.XsdBase):
-    def __init__(self, attrs, parent_schema, factory):
-        super(XsdChoice, self).__init__(attrs)
+    def __init__(self, particle, min_occurs=None, max_occurs=None):
+        super(XsdChoice, self).__init__()
 
-        self.schema_element = dumco.schema.uses.Particle(
-            factory.particle_min_occurs(attrs),
-            factory.particle_max_occurs(attrs),
-            dumco.schema.model.Choice())
+        self.dom_element = particle
+        self.min_occurs = min_occurs
+        self.max_occurs = max_occurs
 
     @method_once
     def finalize(self, factory):
@@ -46,6 +51,16 @@ class XsdChoice(base.XsdBase):
                     isinstance(c, xsd_sequence.XsdSequence)), \
                 'Wrong content of Choice'
 
-            self.schema_element.term.members.append(c.finalize(factory))
+            self.dom_element.term.members.append(c.finalize(factory))
 
-        return utils.reduce_particle(self.schema_element)
+        return utils.reduce_particle(self.dom_element)
+
+    def dump(self, context):
+        with utils.XsdTagGuard('choice', context):
+            if self.dom_element.min_occurs != 1:
+                context.add_attribute('minOccurs', self.dom_element.min_occurs)
+            if self.dom_element.max_occurs != 1:
+                context.add_attribute('maxOccurs', self.dom_element.max_occurs)
+
+            for c in self.children:
+                c.dump(context)

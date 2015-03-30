@@ -13,6 +13,7 @@ import dumco.schema.xsd_types
 import dumco.schema.parsing.xml_parser
 
 import base
+import utils
 import xsd_attribute
 import xsd_attribute_group
 import xsd_complex_type
@@ -28,10 +29,21 @@ def xsd_schema(attrs, parent_element, factory, schema_path, all_schemata):
 
         raise dumco.schema.parsing.xml_parser.SkipParse()
 
-    schema = XsdSchema(attrs, schema_path)
-    all_schemata[schema_path] = schema
+    target_ns = factory.get_attribute(attrs, 'targetNamespace', default=None)
+    aqualified = factory.get_attribute(attrs, 'attributeFormDefault',
+                                       default=False) == 'qualified'
+    equalified = factory.get_attribute(attrs, 'elementFormDefault',
+                                       default=False) == 'qualified'
 
-    return (schema, {
+    schema = dumco.schema.model.Schema(target_ns)
+
+    assert schema_path.endswith('.xsd')
+    schema.filename = os.path.splitext(os.path.basename(schema_path))[0]
+
+    new_element = XsdSchema(schema, aqualified, equalified, path=schema_path)
+    all_schemata[schema_path] = new_element
+
+    return (new_element, {
         'annotation': factory.noop_handler,
         'attribute': xsd_attribute.xsd_attribute,
         'attributeGroup': xsd_attribute_group.xsd_attributeGroup,
@@ -47,21 +59,13 @@ def xsd_schema(attrs, parent_element, factory, schema_path, all_schemata):
 
 
 class XsdSchema(base.XsdBase):
-    def __init__(self, attrs, schema_path):
-        super(XsdSchema, self).__init__(attrs)
+    def __init__(self, schema, aqualified, equalified, path=None):
+        super(XsdSchema, self).__init__()
 
-        self.path = schema_path
-
-        self.attributes_qualified = \
-            self.attr('attributeFormDefault') == 'qualified'
-        self.elements_qualified = \
-            self.attr('elementFormDefault') == 'qualified'
-
-        self.schema_element = dumco.schema.model.Schema(
-            self.attr('targetNamespace'))
-        assert schema_path.endswith('.xsd')
-        self.schema_element.filename = \
-            os.path.splitext(os.path.basename(schema_path))[0]
+        self.dom_element = schema
+        self.attributes_qualified = aqualified
+        self.elements_qualified = equalified
+        self.path = path
 
         self.attributes = {}
         self.attribute_groups = {}
@@ -80,20 +84,18 @@ class XsdSchema(base.XsdBase):
 
             schema = all_schemata[path]
 
-            assert schema.schema_element.target_ns not in self.imports, \
+            assert schema.dom_element.target_ns not in self.imports, \
                 'Attempting to redefine imported schema for {}'.format(
-                    schema.schema_element.target_ns)
+                    schema.dom_element.target_ns)
 
-            self.imports[schema.schema_element.target_ns] = schema
+            self.imports[schema.dom_element.target_ns] = schema
 
     @method_once
     def finalize(self, all_schemata, factory):
-        key_extractor = lambda x: x.schema_element.name
-
-        for st in sorted(self.simple_types.itervalues(), key=key_extractor):
+        for st in sorted(self.simple_types.itervalues(), key=lambda x: x.name):
             st.finalize(factory)
 
-        for ct in sorted(self.complex_types.itervalues(), key=key_extractor):
+        for ct in sorted(self.complex_types.itervalues(), key=lambda x: x.name):
             ct.finalize(factory)
 
         for xsd_type in self.unnamed_types:
@@ -101,10 +103,26 @@ class XsdSchema(base.XsdBase):
 
         for elem in self.elements.itervalues():
             particle = elem.finalize(factory)
-            self.schema_element.elements.append(particle.term)
+            self.dom_element.elements.append(particle.term)
 
         for attr in self.attributes.itervalues():
             attr.finalize(factory)
+
+    def dump(self, context):
+        with utils.XsdTagGuard('schema', context):
+            if self.dom_element.target_ns is not None:
+                context.add_attribute('targetNamespace',
+                                      self.dom_element.target_ns)
+
+            context.add_attribute('elementFormDefault',
+                                  'qualified' if self.elements_qualified
+                                  else 'unqualified')
+            context.add_attribute('attributeFormDefault',
+                                  'qualified' if self.attributes_qualified
+                                  else 'unqualified')
+
+            for c in self.children:
+                c.dump(context)
 
     @staticmethod
     def _get_schema_location(attrs, factory, schema_path):
@@ -129,8 +147,9 @@ class XsdSchema(base.XsdBase):
                 'File {} does not exist'.format(new_schema_path)
 
             if os.path.isfile(new_schema_path):
-                all_schemata[new_schema_path] = all_schemata[new_schema_path] \
-                    if new_schema_path in all_schemata else None
+                all_schemata[new_schema_path] = (
+                    all_schemata[new_schema_path]
+                    if new_schema_path in all_schemata else None)
 
         return (parent_element, {
             'annotation': factory.noop_handler,

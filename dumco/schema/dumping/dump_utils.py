@@ -12,6 +12,27 @@ import dumco.schema.uses as uses
 from dumco.utils.horn import horn
 
 
+XSD_PREFIX = 'xsd'
+XML_PREFIX = 'xml'
+
+
+class XmlWriter(object):
+    pass
+
+
+class TagGuard(object):
+    pass
+
+
+def _qname(name, own_schema, other_schema, context):
+    if own_schema != other_schema:
+        if own_schema is not None:
+            context.store_import_namespace(own_schema.prefix,
+                                           own_schema.target_ns)
+        return '{}:{}'.format(own_schema.prefix, name)
+    return name
+
+
 def _type_qname(name, own_schema, other_schema, context):
     if own_schema.target_ns == rng_types.RNG_NAMESPACE:
         return 'xsd:{}'.format(name)

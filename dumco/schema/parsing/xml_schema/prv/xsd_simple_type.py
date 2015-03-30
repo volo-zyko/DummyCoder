@@ -8,14 +8,18 @@ import dumco.schema.model
 import dumco.schema.uses
 
 import base
+import utils
 import xsd_list
 import xsd_restriction
 import xsd_union
 
 
-def xsd_simpleType(attrs, parent_element, factory, schema_path, all_schemata):
-    new_element = XsdSimpleType(attrs, all_schemata[schema_path])
-    parent_element.children.append(new_element)
+def xsd_simpleType(attrs, parent, factory, schema_path, all_schemata):
+    name = factory.get_attribute(attrs, 'name', default=None)
+
+    new_element = XsdSimpleType(name,
+                                all_schemata[schema_path])
+    parent.children.append(new_element)
 
     factory.add_to_parent_schema(new_element, attrs, all_schemata[schema_path],
                                  'simple_types', is_type=True)
@@ -29,14 +33,17 @@ def xsd_simpleType(attrs, parent_element, factory, schema_path, all_schemata):
 
 
 class XsdSimpleType(base.XsdBase):
-    def __init__(self, attrs, parent_schema):
-        super(XsdSimpleType, self).__init__(attrs)
+    def __init__(self, name, parent_schema=None):
+        super(XsdSimpleType, self).__init__()
 
-        self.schema_element = dumco.schema.model.SimpleType(
-            self.attr('name'), parent_schema.schema_element)
+        self.name = name
+        self.parent_schema = parent_schema
 
     @method_once
     def finalize(self, factory):
+        simple_type = dumco.schema.model.SimpleType(
+            self.name, self.parent_schema.dom_element)
+
         for c in self.children:
             assert (isinstance(c, xsd_restriction.XsdRestriction) or
                     isinstance(c, xsd_list.XsdList) or
@@ -46,45 +53,32 @@ class XsdSimpleType(base.XsdBase):
             if isinstance(c, xsd_restriction.XsdRestriction):
                 restriction_or_type = c.finalize(factory)
                 if dumco.schema.checks.is_restriction(restriction_or_type):
-                    self.schema_element.restriction = restriction_or_type
+                    simple_type.restriction = restriction_or_type
                 else:
-                    self.schema_element = restriction_or_type
+                    simple_type = restriction_or_type
             elif isinstance(c, xsd_list.XsdList):
                 listitem = dumco.schema.uses.ListTypeCardinality(
-                    c.finalize(factory).itemtype,
-                    0, dumco.schema.base.UNBOUNDED)
-                self.schema_element.listitems.append(listitem)
+                    c.finalize(factory), 0, dumco.schema.base.UNBOUNDED)
+                simple_type.listitems.append(listitem)
             elif isinstance(c, xsd_union.XsdUnion):
-                self.schema_element.union = c.finalize(factory).membertypes
+                simple_type.union = c.finalize(factory)
 
-        assert ((self.schema_element.restriction is not None and
-                 self.schema_element.listitems == [] and
-                 self.schema_element.union == []) or
-                (self.schema_element.listitems != [] and
-                 self.schema_element.restriction is None and
-                 self.schema_element.union == []) or
-                (self.schema_element.union != [] and
-                 self.schema_element.listitems == [] and
-                 self.schema_element.restriction is None)), \
+        assert ((simple_type.restriction is not None and
+                 simple_type.listitems == [] and
+                 simple_type.union == []) or
+                (simple_type.listitems != [] and
+                 simple_type.restriction is None and
+                 simple_type.union == []) or
+                (simple_type.union != [] and
+                 simple_type.listitems == [] and
+                 simple_type.restriction is None)), \
             'SimpleType must be any of restriction, list, union'
 
-        return eliminate_degenerate_simple_type(self.schema_element)
+        return utils.eliminate_degenerate_simple_type(simple_type)
 
+    def dump(self, context):
+        with utils.XsdTagGuard('simpleType', context):
+            context.add_attribute('name', self.name)
 
-def eliminate_degenerate_simple_type(st):
-    if (dumco.schema.checks.is_restriction_type(st) and
-            not st.restriction.enumerations and
-            st.restriction.fraction_digits is None and
-            st.restriction.length is None and
-            st.restriction.max_exclusive is None and
-            st.restriction.max_inclusive is None and
-            st.restriction.max_length is None and
-            st.restriction.min_exclusive is None and
-            st.restriction.min_inclusive is None and
-            st.restriction.min_length is None and
-            not st.restriction.patterns and
-            st.restriction.total_digits is None and
-            st.restriction.white_space is None):
-        return st.restriction.base
-
-    return st
+            for c in self.children:
+                c.dump(context)

@@ -7,39 +7,39 @@ import xsd_extension_cc
 import xsd_restriction_cc
 
 
-def xsd_complexContent(attrs, parent_element, factory,
-                       schema_path, all_schemata):
-    new_element = XsdComplexContent(attrs)
-    parent_element.children.append(new_element)
+def xsd_complexContent(attrs, parent, factory, schema_path, all_schemata):
+    mixed = factory.get_attribute(attrs, 'mixed', default=None)
+    mixed = (None if mixed is None
+             else (mixed == 'true' or mixed == '1'))
+
+    new_element = XsdComplexContent(mixed)
+    parent.children.append(new_element)
 
     return (new_element, {
         'annotation': factory.noop_handler,
-        'extension': xsd_extension_cc.xsd_extension_in_complexContent,
-        'restriction': xsd_restriction_cc.xsd_restriction_in_complexContent,
+        'extension': xsd_extension_cc.xsd_extension,
+        'restriction': xsd_restriction_cc.xsd_restriction,
     })
 
 
 class XsdComplexContent(base.XsdBase):
-    def __init__(self, attrs):
-        super(XsdComplexContent, self).__init__(attrs)
+    def __init__(self, mixed):
+        super(XsdComplexContent, self).__init__()
 
-        self.mixed = (
-            None if self.attr('mixed') is None
-            else (self.attr('mixed') == 'true' or self.attr('mixed') == '1'))
-        self.part = None
-        self.attr_uses = []
+        self.mixed = mixed
 
     @method_once
     def finalize(self, factory):
+        part = None
+        attr_uses = []
+
         for c in self.children:
             assert (
                 (isinstance(c, xsd_extension_cc.XsdComplexExtension) or
                  isinstance(c, xsd_restriction_cc.XsdComplexRestriction)) and
-                self.part is None), 'Wrong content of ComplexContent'
+                part is None and not attr_uses), \
+                'Wrong content of ComplexContent'
 
-            c.finalize(factory)
+            (part, attr_uses) = c.finalize(factory)
 
-            self.part = c.part
-            self.attr_uses = c.attr_uses
-
-        return self
+        return (part, attr_uses)

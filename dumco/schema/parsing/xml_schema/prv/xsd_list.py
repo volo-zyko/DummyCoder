@@ -3,12 +3,16 @@
 from dumco.utils.decorators import method_once
 
 import base
+import utils
 import xsd_simple_type
 
 
-def xsd_list(attrs, parent_element, factory, schema_path, all_schemata):
-    new_element = XsdList(attrs, all_schemata[schema_path])
-    parent_element.children.append(new_element)
+def xsd_list(attrs, parent, factory, schema_path, all_schemata):
+    item_name = factory.get_attribute(attrs, 'itemType', default=None)
+    item_name = factory.parse_qname(item_name)
+
+    new_element = XsdList(item_name, parent_schema=all_schemata[schema_path])
+    parent.children.append(new_element)
 
     return (new_element, {
         'annotation': factory.noop_handler,
@@ -17,23 +21,28 @@ def xsd_list(attrs, parent_element, factory, schema_path, all_schemata):
 
 
 class XsdList(base.XsdBase):
-    def __init__(self, attrs, parent_schema):
-        super(XsdList, self).__init__(attrs)
+    def __init__(self, item_name, parent_schema=None):
+        super(XsdList, self).__init__()
 
-        self.schema = parent_schema
-        self.itemtype = None
+        self.item_name = item_name
+        self.parent_schema = parent_schema
 
     @method_once
     def finalize(self, factory):
-        if self.attr('itemType') is None:
+        item_type = None
+        if self.item_name is None:
             for t in self.children:
                 assert (isinstance(t, xsd_simple_type.XsdSimpleType) and
-                        self.itemtype is None), \
+                        item_type is None), \
                     'Wrong content of List'
 
-                self.itemtype = t.finalize(factory)
+                item_type = t.finalize(factory)
         else:
-            self.itemtype = \
-                factory.resolve_simple_type(self.attr('itemType'), self.schema)
+            item_type = factory.resolve_simple_type(self.item_name,
+                                                    self.parent_schema)
 
-        return self
+        return item_type
+
+    def dump(self, context):
+        with utils.XsdTagGuard('list', context):
+            context.add_attribute('itemType', self.item_name)

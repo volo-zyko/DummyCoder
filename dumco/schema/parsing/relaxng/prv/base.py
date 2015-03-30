@@ -2,13 +2,12 @@
 
 import sys
 
-import dumco.schema.prv.xml_dumper
 from dumco.utils.decorators import method_once
 
 
-class RngBase(dumco.schema.prv.xml_dumper.XmlDumper):
+class RngBase(object):
     def __init__(self):
-        super(dumco.schema.prv.xml_dumper.XmlDumper, self).__init__()
+        super(RngBase, self).__init__()
 
         self.children = []
         self.text = ''

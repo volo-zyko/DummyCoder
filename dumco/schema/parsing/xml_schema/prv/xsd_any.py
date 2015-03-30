@@ -6,21 +6,17 @@ import dumco.schema.model
 import dumco.schema.uses
 
 import base
+import utils
 
 
-def xsd_any(attrs, parent_element, factory, schema_path, all_schemata):
-    new_element = XsdAny(attrs, all_schemata[schema_path], factory, False)
-    parent_element.children.append(new_element)
+def xsd_any(attrs, parent, factory, schema_path, all_schemata):
+    namespace = factory.get_attribute(attrs, 'namespace', default='##any')
+    min_occurs = factory.particle_min_occurs(attrs)
+    max_occurs = factory.particle_max_occurs(attrs)
 
-    return (new_element, {
-        'annotation': factory.noop_handler,
-    })
-
-
-def xsd_anyAttribute(attrs, parent_element, factory,
-                     schema_path, all_schemata):
-    new_element = XsdAny(attrs, all_schemata[schema_path], factory, True)
-    parent_element.children.append(new_element)
+    new_element = XsdAny(namespace, min_occurs, max_occurs,
+                         parent_schema=all_schemata[schema_path])
+    parent.children.append(new_element)
 
     return (new_element, {
         'annotation': factory.noop_handler,
@@ -28,61 +24,37 @@ def xsd_anyAttribute(attrs, parent_element, factory,
 
 
 class XsdAny(base.XsdBase):
-    def __init__(self, attrs, parent_schema, factory, is_attribute):
-        super(XsdAny, self).__init__(attrs)
+    def __init__(self, namespace, min_occurs, max_occurs, parent_schema=None):
+        super(XsdAny, self).__init__()
 
-        constraints = []
-        Any = dumco.schema.model.Any
-
-        if self.attr('namespace') is not None:
-            value = self.attr('namespace').strip()
-            if value == '##any':
-                constraints = []
-            elif value == '##other':
-                if parent_schema.schema_element.target_ns is not None:
-                    constraints = [Any.Not(
-                        Any.Name(parent_schema.schema_element.target_ns, None))]
-            else:
-                def fold_namespaces(accum, u):
-                    if u == '##targetNamespace':
-                        if parent_schema.schema_element.target_ns is None:
-                            return accum
-                        return accum + [Any.Name(
-                            parent_schema.schema_element.target_ns, None)]
-                    elif u == '##local':
-                        return accum
-                    return accum + [Any.Name(u, None)]
-
-                constraints = reduce(fold_namespaces, value.split(), [])
-
-        if len(constraints) == 0:
-            anys = [Any(None, parent_schema.schema_element)]
-        elif len(constraints) == 1:
-            anys = [Any(constraints[0], parent_schema.schema_element)]
-        else:
-            anys = [Any(c, parent_schema.schema_element) for c in constraints]
-
-        if is_attribute:
-            uses = [dumco.schema.uses.AttributeUse(None, False, False, a)
-                    for a in anys]
-        else:
-            min_occurs = factory.particle_min_occurs(attrs)
-            max_occurs = factory.particle_max_occurs(attrs)
-
-            uses = []
-            if max_occurs > 0:
-                uses = [dumco.schema.uses.Particle(min_occurs, max_occurs, a)
-                        for a in anys]
-
-        if len(uses) == 0:
-            self.schema_element = None
-        if len(uses) == 1:
-            self.schema_element = uses[0]
-        else:
-            self.schema_element = \
-                dumco.schema.uses.Particle(1, 1, dumco.schema.model.Choice())
-            self.schema_element.term.members = uses
+        self.namespace = namespace
+        self.min_occurs = min_occurs
+        self.max_occurs = max_occurs
+        self.parent_schema = parent_schema
 
     @method_once
     def finalize(self, factory):
-        return self.schema_element
+        anys = utils.parse_any_namespace(self.namespace, self.parent_schema)
+
+        assert len(anys) != 0
+
+        if len(anys) == 1:
+            dom_any = dumco.schema.uses.Particle(self.min_occurs,
+                                                 self.max_occurs, anys[0])
+        else:
+            dom_any = \
+                dumco.schema.uses.Particle(self.min_occurs, self.max_occurs,
+                                           dumco.schema.model.Choice())
+            dom_any.term.members.extend([dumco.schema.model.Particle(1, 1, a)
+                                         for a in anys])
+
+        return dom_any
+
+    def dump(self, context):
+        with utils.XsdTagGuard('any', context):
+            if self.min_occurs != 1:
+                context.add_attribute('minOccurs', self.min_occurs)
+            if self.max_occurs != 1:
+                context.add_attribute('maxOccurs', self.max_occurs)
+
+            context.add_attribute('namespace', self.namespace)

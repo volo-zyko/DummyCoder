@@ -5,19 +5,22 @@ from dumco.utils.decorators import method_once
 import dumco.schema.checks
 import dumco.schema.model
 
+import base
 import utils
-import xsd_any
+import xsd_any_attribute
 import xsd_attribute
 import xsd_attribute_group
 import xsd_enumeration
-import xsd_restriction
 import xsd_simple_type
 
 
-def xsd_restriction_in_simpleContent(attrs, parent_element, factory,
-                                     schema_path, all_schemata):
-    new_element = XsdSimpleRestriction(attrs, all_schemata[schema_path])
-    parent_element.children.append(new_element)
+def xsd_restriction(attrs, parent, factory, schema_path, all_schemata):
+    base_name = factory.get_attribute(attrs, 'base', default='')
+    base_name = factory.parse_qname(base_name)
+
+    new_element = XsdSimpleRestriction(base_name,
+                                       parent_schema=all_schemata[schema_path])
+    parent.children.append(new_element)
 
     # Simple restriction is just like the simple type.
     factory.add_to_parent_schema(new_element, attrs, all_schemata[schema_path],
@@ -25,7 +28,7 @@ def xsd_restriction_in_simpleContent(attrs, parent_element, factory,
 
     return (new_element, {
         'annotation': factory.noop_handler,
-        'anyAttribute': xsd_any.xsd_anyAttribute,
+        'anyAttribute': xsd_any_attribute.xsd_anyAttribute,
         'attribute': xsd_attribute.xsd_attribute,
         'attributeGroup': xsd_attribute_group.xsd_attributeGroup,
         'enumeration': xsd_enumeration.xsd_enumeration,
@@ -44,18 +47,21 @@ def xsd_restriction_in_simpleContent(attrs, parent_element, factory,
     })
 
 
-class XsdSimpleRestriction(xsd_restriction.XsdRestriction):
-    def __init__(self, attrs, parent_schema):
-        super(XsdSimpleRestriction, self).__init__(attrs, parent_schema)
+class XsdSimpleRestriction(base.XsdRestrictionBase):
+    def __init__(self, base_name, parent_schema=None):
+        super(XsdSimpleRestriction, self).__init__()
 
-        self.base = dumco.schema.model.SimpleType(
-            None, parent_schema.schema_element)
-        self.attr_uses = []
+        self.base_name = base_name
+        self.parent_schema = parent_schema
+        self.dom_element = dumco.schema.model.Restriction()
 
     @method_once
     def finalize(self, factory):
-        simple_type = None
+        base_type = dumco.schema.model.SimpleType(
+            None, self.parent_schema.dom_element)
+        attr_uses = []
 
+        local_simple_type = None
         redefined_attr_uses = []
         prohibited_attr_uses = []
         for c in self.children:
@@ -63,50 +69,52 @@ class XsdSimpleRestriction(xsd_restriction.XsdRestriction):
                     isinstance(c, xsd_enumeration.XsdEnumeration) or
                     isinstance(c, xsd_attribute_group.XsdAttributeGroup) or
                     isinstance(c, xsd_attribute.XsdAttribute) or
-                    isinstance(c, xsd_any.XsdAny)), \
+                    isinstance(c, xsd_any_attribute.XsdAnyAttribute)), \
                 'Wrong content of simple Restriction'
 
             if isinstance(c, xsd_simple_type.XsdSimpleType):
-                simple_type = c.finalize(factory)
+                local_simple_type = c.finalize(factory)
             elif isinstance(c, xsd_enumeration.XsdEnumeration):
-                enum = dumco.schema.model.EnumerationValue(
-                    c.value, c.schema_element.doc)
-                self.schema_element.enumerations.append(enum)
+                enum = dumco.schema.model.EnumerationValue(c.value,
+                                                           ' '.join(c.text))
+                self.dom_element.enumerations.append(enum)
             elif isinstance(c, xsd_attribute_group.XsdAttributeGroup):
-                self.attr_uses.extend(c.finalize(factory).attr_uses)
+                attr_uses.extend(c.finalize(factory))
             elif isinstance(c, xsd_attribute.XsdAttribute):
                 if c.prohibited:
                     prohibited_attr_uses.append(c.finalize(factory))
                 else:
                     redefined_attr_uses.append(c.finalize(factory))
-            elif isinstance(c, xsd_any.XsdAny):
-                self.attr_uses.append(c.finalize(factory))
+            elif isinstance(c, xsd_any_attribute.XsdAnyAttribute):
+                attr_uses.append(c.finalize(factory))
 
         # Only complex type can be here. That's the essence of restriction.
-        base_ct = factory.resolve_complex_type(self.attr('base'), self.schema)
+        base_ct = factory.resolve_complex_type(self.base_name,
+                                               self.parent_schema)
 
         if dumco.schema.checks.is_complex_type(base_ct):
-            self.attr_uses.extend(
+            attr_uses.extend(
                 utils.restrict_base_attributes(base_ct, factory,
                                                prohibited_attr_uses,
                                                redefined_attr_uses))
 
-        self.attr_uses.extend(redefined_attr_uses)
+        attr_uses.extend(redefined_attr_uses)
 
-        if simple_type is None:
-            base_type = base_ct.text().type
-            assert dumco.schema.checks.is_primitive_type(base_type), \
+        if local_simple_type is None:
+            base_st = base_ct.text().type
+            assert dumco.schema.checks.is_primitive_type(base_st), \
                 'Simple Restriction must restrict only Simple Content'
         else:
-            base_type = simple_type
+            base_st = local_simple_type
 
-        restriction_or_type = self.connect_restriction_base(base_type)
+        restriction_or_type = utils.connect_restriction_base(self.dom_element,
+                                                             base_st)
 
         if dumco.schema.checks.is_restriction(restriction_or_type):
-            self.base.restriction = restriction_or_type
+            base_type.restriction = restriction_or_type
         else:
-            self.base = restriction_or_type
+            base_type = restriction_or_type
 
-        self.base = xsd_simple_type.eliminate_degenerate_simple_type(self.base)
+        base_type = utils.eliminate_degenerate_simple_type(base_type)
 
-        return self
+        return (base_type, attr_uses)

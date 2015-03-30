@@ -14,9 +14,16 @@ import xsd_choice
 import xsd_sequence
 
 
-def xsd_group(attrs, parent_element, factory, schema_path, all_schemata):
-    new_element = XsdGroup(attrs, all_schemata[schema_path], factory)
-    parent_element.children.append(new_element)
+def xsd_group(attrs, parent, factory, schema_path, all_schemata):
+    ref = factory.get_attribute(attrs, 'ref', default=None)
+    ref = factory.parse_qname(ref)
+
+    min_occurs = factory.particle_min_occurs(attrs)
+    max_occurs = factory.particle_max_occurs(attrs)
+
+    new_element = XsdGroup(ref, min_occurs, max_occurs,
+                           parent_schema=all_schemata[schema_path])
+    parent.children.append(new_element)
 
     factory.add_to_parent_schema(new_element, attrs, all_schemata[schema_path],
                                  'groups')
@@ -30,22 +37,24 @@ def xsd_group(attrs, parent_element, factory, schema_path, all_schemata):
 
 
 class XsdGroup(base.XsdBase):
-    def __init__(self, attrs, parent_schema, factory):
-        super(XsdGroup, self).__init__(attrs)
+    def __init__(self, name, min_occurs, max_occurs, parent_schema=None):
+        super(XsdGroup, self).__init__()
 
-        self.schema = parent_schema
-        self.min_occurs = factory.particle_min_occurs(attrs)
-        self.max_occurs = factory.particle_max_occurs(attrs)
+        self.name = name
+        self.min_occurs = min_occurs
+        self.max_occurs = max_occurs
+        self.parent_schema = parent_schema
 
     @method_once
     def finalize(self, factory):
         particle = None
-        if self.attr('ref') is not None:
+
+        if self.name is not None:
             # We need this step to pass min/max occurs values to higher levels.
             particle = dumco.schema.uses.Particle(
                 self.min_occurs, self.max_occurs, dumco.schema.model.Sequence())
             particle.term.members.append(
-                factory.resolve_group(self.attr('ref'), self.schema))
+                factory.resolve_group(self.name, self.parent_schema))
         else:
             for c in self.children:
                 assert ((isinstance(c, xsd_all.XsdAll) or
@@ -56,3 +65,13 @@ class XsdGroup(base.XsdBase):
                 particle = c.finalize(factory)
 
         return utils.reduce_particle(particle)
+
+    def dump(self, context):
+        with utils.XsdTagGuard('group', context):
+            if self.children:
+                context.add_attribute('name', self.name)
+
+                for c in self.children:
+                    c.dump(context)
+            else:
+                context.add_attribute('ref', self.name)

@@ -7,6 +7,7 @@ import StringIO
 import dumco.schema.base
 import dumco.schema.checks
 import dumco.schema.model
+from dumco.schema.dumping.write_xml import XmlWriter
 from dumco.schema.rng_types import RNG_NAMESPACE, rng_builtin_types
 from dumco.schema.xsd_types import xsd_builtin_types
 
@@ -159,16 +160,13 @@ class RelaxElementFactory(object):
             # for validity of loaded grammars.
             if not os.path.exists(self.arguments.dump_rng_model_to_dir):
                 os.makedirs(self.arguments.dump_rng_model_to_dir)
-            for (c, grammar) in enumerate(all_grammars.itervalues(), start=1):
-                pass
-                # stream = StringIO.StringIO()
-                # stream.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-                # grammar.dump(stream, 0)
 
-                # path = os.path.join(self.arguments.dump_rng_model_to_dir,
-                #                     os.path.basename(grammar.grammar_path))
-                # with open(path, 'w') as f:
-                #     f.write(stream.getvalue())
+            for (c, grammar) in enumerate(all_grammars.itervalues(), start=1):
+                path = os.path.join(self.arguments.dump_rng_model_to_dir,
+                                    os.path.basename(grammar.grammar_path))
+                with open(path, 'w') as f:
+                    writer = XmlWriter(f)
+                    grammar.dump(writer)
 
         sorted_all_schemata = [s for s in all_schemata.itervalues()]
         sorted_all_schemata.sort(key=lambda s: s.target_ns)
