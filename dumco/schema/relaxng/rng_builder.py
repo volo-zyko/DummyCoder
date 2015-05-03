@@ -2,7 +2,6 @@
 
 import itertools
 import os.path
-import StringIO
 
 import dumco.schema.base
 import dumco.schema.checks
