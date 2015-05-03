@@ -19,24 +19,24 @@ import rng_start
 import utils
 
 
-def rng_grammar(attrs, parent_element, factory, grammar_path, all_grammars):
-    grammar = RngGrammar(attrs, grammar_path, factory)
+def rng_grammar(attrs, parent_element, builder, grammar_path, all_grammars):
+    grammar = RngGrammar(attrs, grammar_path, builder)
     all_grammars[grammar_path] = grammar
 
     return (grammar, {
         'define': rng_define.rng_define,
-        'div': factory.rng_div,
+        'div': builder.rng_div,
         'include': RngGrammar.rng_include,
         'start': rng_start.rng_start,
     })
 
 
 class RngGrammar(base.RngBase):
-    def __init__(self, attrs, grammar_path, factory):
+    def __init__(self, attrs, grammar_path, builder):
         super(RngGrammar, self).__init__(attrs)
 
         # Temporaries.
-        self.known_prefixes = factory.all_namespace_prefixes
+        self.known_prefixes = builder.all_namespace_prefixes
         self.grammar_path = grammar_path
         # In start_combined, defines_combined members we track combine
         # attribute in start and define elements.
@@ -52,7 +52,7 @@ class RngGrammar(base.RngBase):
         self.named_elements = {}
 
     @method_once
-    def finalize(self, grammar, factory):
+    def finalize(self, grammar, builder):
         # Collect children in defines without finalizing them. This
         # prevents finalization loops.
         for d in self.defines.itervalues():
@@ -60,7 +60,7 @@ class RngGrammar(base.RngBase):
 
         # Finalize everything from grammar start. This also collects
         # all elements in a grammar and assigns them new names.
-        self.start.finalize(grammar, factory)
+        self.start.finalize(grammar, builder)
 
         # Finish finalization of elements. Elements are not finalized when
         # start is finalized because this might create infinite finalization
@@ -69,13 +69,13 @@ class RngGrammar(base.RngBase):
         remaining = element_set
         while remaining:
             for e in sorted(remaining, key=lambda e: e.define_name):
-                e.finalize(grammar, factory)
+                e.finalize(grammar, builder)
 
             new_element_set = set(self.named_elements.itervalues())
             remaining = new_element_set - element_set
             element_set = new_element_set
 
-        super(RngGrammar, self).finalize(grammar, factory)
+        super(RngGrammar, self).finalize(grammar, builder)
 
     def add_start(self, start):
         assert (self.start is None or start.combine == '' or
@@ -171,13 +171,13 @@ class RngGrammar(base.RngBase):
             return combine
 
     @staticmethod
-    def rng_include(attrs, parent_element, factory,
+    def rng_include(attrs, parent_element, builder,
                     grammar_path, all_grammars):
         # Restart parsing with a new rng.
-        include_logic = _RngIncludeLogic(grammar_path, factory)
+        include_logic = _RngIncludeLogic(grammar_path, builder)
         rng_root = include_logic.include_xml(grammar_path)
         all_grammars[grammar_path] = None
-        factory.reset()
+        builder.reset()
 
         raise dumco.schema.parsing.xml_parser.ParseRestart(
             StringIO.StringIO(rng_root.toxml('utf-8')))

@@ -9,15 +9,15 @@ import base
 import utils
 
 
-def xsd_anyAttribute(attrs, parent, factory, schema_path, all_schemata):
-    namespace = factory.get_attribute(attrs, 'namespace', default='##any')
+def xsd_anyAttribute(attrs, parent, builder, schema_path, all_schemata):
+    namespace = builder.get_attribute(attrs, 'namespace', default='##any')
 
     new_element = XsdAnyAttribute(namespace,
                                   parent_schema=all_schemata[schema_path])
     parent.children.append(new_element)
 
     return (new_element, {
-        'annotation': factory.noop_handler,
+        'annotation': builder.noop_handler,
     })
 
 
@@ -29,7 +29,7 @@ class XsdAnyAttribute(base.XsdBase):
         self.parent_schema = parent_schema
 
     @method_once
-    def finalize(self, factory):
+    def finalize(self, builder):
         anys = utils.parse_any_namespace(self.namespace, self.parent_schema)
 
         assert len(anys) != 0

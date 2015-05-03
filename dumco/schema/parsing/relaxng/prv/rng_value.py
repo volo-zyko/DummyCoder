@@ -6,17 +6,17 @@ import base
 import utils
 
 
-def rng_value(attrs, parent_element, factory, grammar_path, all_grammars):
-    datatypes_uri = factory.get_datatypes_uri()
+def rng_value(attrs, parent_element, builder, grammar_path, all_grammars):
+    datatypes_uri = builder.get_datatypes_uri()
     try:
-        type_name = factory.get_attribute(attrs, 'type').strip()
-        builtin_type = factory.builtin_types(datatypes_uri)[type_name]
+        type_name = builder.get_attribute(attrs, 'type').strip()
+        builtin_type = builder.builtin_types(datatypes_uri)[type_name]
     except LookupError:
         datatypes_uri = ''
-        builtin_type = factory.builtin_types(None)['token']
+        builtin_type = builder.builtin_types(None)['token']
 
     parent_element.children.append(
-        RngValue(factory.get_ns(), datatypes_uri, builtin_type))
+        RngValue(builder.get_ns(), datatypes_uri, builtin_type))
 
     return (parent_element.children[-1], {})
 
@@ -30,7 +30,7 @@ class RngValue(base.RngBase):
         self.type = builtin_type
         self.value = value
 
-    def append_text(self, text, factory):
+    def append_text(self, text, builder):
         self.value = text if self.value is None else self.value + text
 
     def dump(self, context):

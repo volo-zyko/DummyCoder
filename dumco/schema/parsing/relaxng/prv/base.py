@@ -12,7 +12,7 @@ class RngBase(object):
         self.children = []
         self.text = ''
 
-    def append_text(self, text, factory):
+    def append_text(self, text, builder):
         self.text += text.strip()
 
     def __setattr__(self, name, value):
@@ -24,7 +24,7 @@ class RngBase(object):
         self.__dict__[name] = value
 
     @method_once
-    def finalize(self, grammar, factory):
+    def finalize(self, grammar, builder):
         del self.children
         del self.text
         return self

@@ -20,9 +20,9 @@ import xsd_group
 import xsd_sequence
 
 
-def xsd_extension(attrs, parent, factory, schema_path, all_schemata):
-    base_name = factory.get_attribute(attrs, 'base')
-    base_name = factory.parse_qname(base_name)
+def xsd_extension(attrs, parent, builder, schema_path, all_schemata):
+    base_name = builder.get_attribute(attrs, 'base')
+    base_name = builder.parse_qname(base_name)
 
     new_element = XsdComplexExtension(base_name,
                                       parent_schema=all_schemata[schema_path])
@@ -30,7 +30,7 @@ def xsd_extension(attrs, parent, factory, schema_path, all_schemata):
 
     return (new_element, {
         'all': xsd_all.xsd_all,
-        'annotation': factory.noop_handler,
+        'annotation': builder.noop_handler,
         'anyAttribute': xsd_any_attribute.xsd_anyAttribute,
         'attribute': xsd_attribute.xsd_attribute,
         'attributeGroup': xsd_attribute_group.xsd_attributeGroup,
@@ -48,7 +48,7 @@ class XsdComplexExtension(base.XsdBase):
         self.parent_schema = parent_schema
 
     @method_once
-    def finalize(self, factory):
+    def finalize(self, builder):
         part = None
         attr_uses = []
 
@@ -58,18 +58,18 @@ class XsdComplexExtension(base.XsdBase):
                     isinstance(c, xsd_sequence.XsdSequence) or
                     isinstance(c, xsd_group.XsdGroup)):
                 assert part is None, 'Content model overridden'
-                part = c.finalize(factory)
+                part = c.finalize(builder)
             elif isinstance(c, xsd_attribute_group.XsdAttributeGroup):
-                attr_uses.extend(c.finalize(factory))
+                attr_uses.extend(c.finalize(builder))
             elif isinstance(c, xsd_attribute.XsdAttribute):
                 if not c.prohibited:
-                    attr_uses.append(c.finalize(factory))
+                    attr_uses.append(c.finalize(builder))
             elif isinstance(c, xsd_any_attribute.XsdAnyAttribute):
-                attr_uses.append(c.finalize(factory))
+                attr_uses.append(c.finalize(builder))
             else:  # pragma: no cover
                 assert False, 'Wrong content of complex Extension'
 
-        base_ct = factory.resolve_complex_type(self.base_name,
+        base_ct = builder.resolve_complex_type(self.base_name,
                                                self.parent_schema)
 
         part = _merge_content(part, base_ct)

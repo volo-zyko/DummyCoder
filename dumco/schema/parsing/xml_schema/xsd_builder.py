@@ -9,9 +9,9 @@ import dumco.schema.xsd_types
 import prv.xsd_schema
 
 
-class XsdElementFactory(object):
+class XsdElementBuilder(object):
     def __init__(self, arguments, namer):
-        # Reset internals of this factory.
+        # Reset internals of this builder.
         self.reset()
 
         # These internals should not be reset.
@@ -20,7 +20,7 @@ class XsdElementFactory(object):
         # All prefixes encountered during schemata loading.
         self.all_namespace_prefixes = {dumco.schema.base.XML_NAMESPACE: 'xml'}
 
-        # This is part of the factory's interface.
+        # This is part of the builder's interface.
         self.arguments = arguments
         self.namer = namer
         self.extension = '.xsd'
@@ -279,12 +279,12 @@ class XsdElementFactory(object):
             return (self.namespaces[splitted[0]], splitted[1])
 
     @staticmethod
-    def noop_handler(attrs, parent, factory, schema_path, all_schemata):
+    def noop_handler(attrs, parent, builder, schema_path, all_schemata):
         return (parent, None)
 
     @staticmethod
-    def xsd_annotation(attrs, parent, factory, schema_path, all_schemata):
+    def xsd_annotation(attrs, parent, builder, schema_path, all_schemata):
         return (parent, {
-            'appinfo': factory.noop_handler,
-            'documentation': factory.noop_handler,
+            'appinfo': builder.noop_handler,
+            'documentation': builder.noop_handler,
         })

@@ -9,17 +9,17 @@ import base
 import utils
 
 
-def xsd_any(attrs, parent, factory, schema_path, all_schemata):
-    namespace = factory.get_attribute(attrs, 'namespace', default='##any')
-    min_occurs = factory.particle_min_occurs(attrs)
-    max_occurs = factory.particle_max_occurs(attrs)
+def xsd_any(attrs, parent, builder, schema_path, all_schemata):
+    namespace = builder.get_attribute(attrs, 'namespace', default='##any')
+    min_occurs = builder.particle_min_occurs(attrs)
+    max_occurs = builder.particle_max_occurs(attrs)
 
     new_element = XsdAny(namespace, min_occurs, max_occurs,
                          parent_schema=all_schemata[schema_path])
     parent.children.append(new_element)
 
     return (new_element, {
-        'annotation': factory.noop_handler,
+        'annotation': builder.noop_handler,
     })
 
 
@@ -33,7 +33,7 @@ class XsdAny(base.XsdBase):
         self.parent_schema = parent_schema
 
     @method_once
-    def finalize(self, factory):
+    def finalize(self, builder):
         anys = utils.parse_any_namespace(self.namespace, self.parent_schema)
 
         assert len(anys) != 0

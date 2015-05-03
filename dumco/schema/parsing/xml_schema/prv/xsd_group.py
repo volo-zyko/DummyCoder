@@ -14,23 +14,23 @@ import xsd_choice
 import xsd_sequence
 
 
-def xsd_group(attrs, parent, factory, schema_path, all_schemata):
-    ref = factory.get_attribute(attrs, 'ref', default=None)
-    ref = factory.parse_qname(ref)
+def xsd_group(attrs, parent, builder, schema_path, all_schemata):
+    ref = builder.get_attribute(attrs, 'ref', default=None)
+    ref = builder.parse_qname(ref)
 
-    min_occurs = factory.particle_min_occurs(attrs)
-    max_occurs = factory.particle_max_occurs(attrs)
+    min_occurs = builder.particle_min_occurs(attrs)
+    max_occurs = builder.particle_max_occurs(attrs)
 
     new_element = XsdGroup(ref, min_occurs, max_occurs,
                            parent_schema=all_schemata[schema_path])
     parent.children.append(new_element)
 
-    factory.add_to_parent_schema(new_element, attrs, all_schemata[schema_path],
+    builder.add_to_parent_schema(new_element, attrs, all_schemata[schema_path],
                                  'groups')
 
     return (new_element, {
         'all': xsd_all.xsd_all,
-        'annotation': factory.noop_handler,
+        'annotation': builder.noop_handler,
         'choice': xsd_choice.xsd_choice,
         'sequence': xsd_sequence.xsd_sequence,
     })
@@ -46,7 +46,7 @@ class XsdGroup(base.XsdBase):
         self.parent_schema = parent_schema
 
     @method_once
-    def finalize(self, factory):
+    def finalize(self, builder):
         particle = None
 
         if self.name is not None:
@@ -54,7 +54,7 @@ class XsdGroup(base.XsdBase):
             particle = dumco.schema.uses.Particle(
                 self.min_occurs, self.max_occurs, dumco.schema.model.Sequence())
             particle.term.members.append(
-                factory.resolve_group(self.name, self.parent_schema))
+                builder.resolve_group(self.name, self.parent_schema))
         else:
             for c in self.children:
                 assert ((isinstance(c, xsd_all.XsdAll) or
@@ -62,7 +62,7 @@ class XsdGroup(base.XsdBase):
                          isinstance(c, xsd_sequence.XsdSequence)) and
                         particle is None), 'Wrong content of Group'
 
-                particle = c.finalize(factory)
+                particle = c.finalize(builder)
 
         return utils.reduce_particle(particle)
 

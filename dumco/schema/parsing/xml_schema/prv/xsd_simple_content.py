@@ -8,12 +8,12 @@ import xsd_extension_sc
 import xsd_restriction_sc
 
 
-def xsd_simpleContent(attrs, parent, factory, schema_path, all_schemata):
+def xsd_simpleContent(attrs, parent, builder, schema_path, all_schemata):
     new_element = XsdSimpleContent()
     parent.children.append(new_element)
 
     return (new_element, {
-        'annotation': factory.noop_handler,
+        'annotation': builder.noop_handler,
         'extension': xsd_extension_sc.xsd_extension,
         'restriction': xsd_restriction_sc.xsd_restriction,
     })
@@ -21,7 +21,7 @@ def xsd_simpleContent(attrs, parent, factory, schema_path, all_schemata):
 
 class XsdSimpleContent(base.XsdBase):
     @method_once
-    def finalize(self, factory):
+    def finalize(self, builder):
         content_type = None
         attr_uses = []
 
@@ -31,7 +31,7 @@ class XsdSimpleContent(base.XsdBase):
                     content_type is None and not attr_uses), \
                 'Wrong content of SimpleContent'
 
-            (content_type, attr_uses) = c.finalize(factory)
+            (content_type, attr_uses) = c.finalize(builder)
 
         return (content_type, attr_uses)
 

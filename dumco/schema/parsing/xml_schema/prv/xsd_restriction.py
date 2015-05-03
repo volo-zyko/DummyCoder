@@ -12,9 +12,9 @@ import xsd_enumeration
 import xsd_simple_type
 
 
-def xsd_restriction(attrs, parent, factory, schema_path, all_schemata):
-    base_name = factory.get_attribute(attrs, 'base', default=None)
-    base_name = factory.parse_qname(base_name)
+def xsd_restriction(attrs, parent, builder, schema_path, all_schemata):
+    base_name = builder.get_attribute(attrs, 'base', default=None)
+    base_name = builder.parse_qname(base_name)
 
     restriction = dumco.schema.model.Restriction()
 
@@ -23,7 +23,7 @@ def xsd_restriction(attrs, parent, factory, schema_path, all_schemata):
     parent.children.append(new_element)
 
     return (new_element, {
-        'annotation': factory.noop_handler,
+        'annotation': builder.noop_handler,
         'enumeration': xsd_enumeration.xsd_enumeration,
         'fractionDigits': new_element.xsd_fractionDigits,
         'length': new_element.xsd_length,
@@ -49,7 +49,7 @@ class XsdRestriction(base.XsdRestrictionBase):
         self.parent_schema = parent_schema
 
     @method_once
-    def finalize(self, factory):
+    def finalize(self, builder):
         base_type = None
         if self.base_name is None:
             for t in self.children:
@@ -59,13 +59,13 @@ class XsdRestriction(base.XsdRestrictionBase):
                     'Wrong content of Restriction'
 
                 if isinstance(t, xsd_simple_type.XsdSimpleType):
-                    base_type = t.finalize(factory)
+                    base_type = t.finalize(builder)
                 elif isinstance(t, xsd_enumeration.XsdEnumeration):
                     enum = dumco.schema.model.EnumerationValue(t.value,
                                                                ' '.join(t.text))
                     self.dom_element.enumerations.append(enum)
         else:
-            base_type = factory.resolve_simple_type(self.base_name,
+            base_type = builder.resolve_simple_type(self.base_name,
                                                     self.parent_schema)
             for x in self.children:
                 assert isinstance(x, xsd_enumeration.XsdEnumeration), \

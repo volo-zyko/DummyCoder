@@ -4,7 +4,7 @@ import base
 import utils
 
 
-def rng_empty(attrs, parent_element, factory, grammar_path, all_grammars):
+def rng_empty(attrs, parent_element, builder, grammar_path, all_grammars):
     parent_element.children.append(RngEmpty())
 
     return (parent_element.children[-1], {})

@@ -22,13 +22,13 @@ import xsd_sequence
 import xsd_simple_content
 
 
-def xsd_complexType(attrs, parent, factory, schema_path, all_schemata):
-    name = factory.get_attribute(attrs, 'name', default=None)
+def xsd_complexType(attrs, parent, builder, schema_path, all_schemata):
+    name = builder.get_attribute(attrs, 'name', default=None)
 
-    mixed = factory.get_attribute(attrs, 'mixed', default=False)
+    mixed = builder.get_attribute(attrs, 'mixed', default=False)
     mixed = (mixed == 'true' or mixed == '1')
 
-    abstract = factory.get_attribute(attrs, 'abstract', default=False)
+    abstract = builder.get_attribute(attrs, 'abstract', default=False)
     abstract = (abstract == 'true' or abstract == '1')
 
     ct = dumco.schema.model.ComplexType(name,
@@ -37,12 +37,12 @@ def xsd_complexType(attrs, parent, factory, schema_path, all_schemata):
     new_element = XsdComplexType(ct, mixed=mixed, abstract=abstract)
     parent.children.append(new_element)
 
-    factory.add_to_parent_schema(new_element, attrs, all_schemata[schema_path],
+    builder.add_to_parent_schema(new_element, attrs, all_schemata[schema_path],
                                  'complex_types', is_type=True)
 
     return (new_element, {
         'all': xsd_all.xsd_all,
-        'annotation': factory.xsd_annotation,
+        'annotation': builder.xsd_annotation,
         'anyAttribute': xsd_any_attribute.xsd_anyAttribute,
         'attribute': xsd_attribute.xsd_attribute,
         'attributeGroup': xsd_attribute_group.xsd_attributeGroup,
@@ -64,7 +64,7 @@ class XsdComplexType(base.XsdBase):
         self.name = ct.name
 
     @method_once
-    def finalize(self, factory):
+    def finalize(self, builder):
         attr_uses = []
         particle = None
         text = None
@@ -73,12 +73,12 @@ class XsdComplexType(base.XsdBase):
         for c in self.children:
             if isinstance(c, xsd_simple_content.XsdSimpleContent):
                 assert particle is None, 'Content model overridden'
-                (content_type, sub_attr_uses) = c.finalize(factory)
+                (content_type, sub_attr_uses) = c.finalize(builder)
                 text = dumco.schema.uses.SchemaText(content_type)
                 attr_uses.extend(sub_attr_uses)
             elif isinstance(c, xsd_complex_content.XsdComplexContent):
                 assert particle is None, 'Content model overridden'
-                (particle, sub_attr_uses) = c.finalize(factory)
+                (particle, sub_attr_uses) = c.finalize(builder)
                 attr_uses.extend(sub_attr_uses)
                 if c.mixed is not None:
                     mixed = c.mixed
@@ -87,14 +87,14 @@ class XsdComplexType(base.XsdBase):
                   isinstance(c, xsd_sequence.XsdSequence) or
                   isinstance(c, xsd_group.XsdGroup)):
                 assert particle is None, 'Content model overridden'
-                particle = c.finalize(factory)
+                particle = c.finalize(builder)
             elif isinstance(c, xsd_attribute_group.XsdAttributeGroup):
-                attr_uses.extend(c.finalize(factory))
+                attr_uses.extend(c.finalize(builder))
             elif isinstance(c, xsd_attribute.XsdAttribute):
                 if not c.prohibited:
-                    attr_uses.append(c.finalize(factory))
+                    attr_uses.append(c.finalize(builder))
             elif isinstance(c, xsd_any_attribute.XsdAnyAttribute):
-                attr_uses.append(c.finalize(factory))
+                attr_uses.append(c.finalize(builder))
             else:  # pragma: no cover
                 assert False, 'Wrong content of ComplexType'
 

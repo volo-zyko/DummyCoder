@@ -11,16 +11,16 @@ import xsd_attribute
 import xsd_attribute_group
 
 
-def xsd_extension(attrs, parent, factory, schema_path, all_schemata):
-    base_name = factory.get_attribute(attrs, 'base')
-    base_name = factory.parse_qname(base_name)
+def xsd_extension(attrs, parent, builder, schema_path, all_schemata):
+    base_name = builder.get_attribute(attrs, 'base')
+    base_name = builder.parse_qname(base_name)
 
     new_element = XsdSimpleExtension(base_name,
                                      parent_schema=all_schemata[schema_path])
     parent.children.append(new_element)
 
     return (new_element, {
-        'annotation': factory.noop_handler,
+        'annotation': builder.noop_handler,
         'anyAttribute': xsd_any_attribute.xsd_anyAttribute,
         'attribute': xsd_attribute.xsd_attribute,
         'attributeGroup': xsd_attribute_group.xsd_attributeGroup,
@@ -35,7 +35,7 @@ class XsdSimpleExtension(base.XsdBase):
         self.parent_schema = parent_schema
 
     @method_once
-    def finalize(self, factory):
+    def finalize(self, builder):
         attr_uses = []
 
         for c in self.children:
@@ -45,14 +45,14 @@ class XsdSimpleExtension(base.XsdBase):
                 'Wrong content of simple Extension'
 
             if isinstance(c, xsd_attribute_group.XsdAttributeGroup):
-                attr_uses.extend(c.finalize(factory))
+                attr_uses.extend(c.finalize(builder))
             elif isinstance(c, xsd_attribute.XsdAttribute):
                 if not c.prohibited:
-                    attr_uses.append(c.finalize(factory))
+                    attr_uses.append(c.finalize(builder))
             elif isinstance(c, xsd_any_attribute.XsdAnyAttribute):
-                attr_uses.append(c.finalize(factory))
+                attr_uses.append(c.finalize(builder))
 
-        base_type = factory.resolve_type(self.base_name,
+        base_type = builder.resolve_type(self.base_name,
                                          self.parent_schema, True)
 
         if dumco.schema.checks.is_complex_type(base_type):

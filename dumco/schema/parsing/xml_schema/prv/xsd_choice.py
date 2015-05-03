@@ -13,9 +13,9 @@ import xsd_group
 import xsd_sequence
 
 
-def xsd_choice(attrs, parent, factory, schema_path, all_schemata):
-    min_occurs = factory.particle_min_occurs(attrs)
-    max_occurs = factory.particle_max_occurs(attrs)
+def xsd_choice(attrs, parent, builder, schema_path, all_schemata):
+    min_occurs = builder.particle_min_occurs(attrs)
+    max_occurs = builder.particle_max_occurs(attrs)
 
     particle = dumco.schema.uses.Particle(
         min_occurs, max_occurs, dumco.schema.model.Choice())
@@ -24,7 +24,7 @@ def xsd_choice(attrs, parent, factory, schema_path, all_schemata):
     parent.children.append(new_element)
 
     return (new_element, {
-        'annotation': factory.noop_handler,
+        'annotation': builder.noop_handler,
         'any': xsd_any.xsd_any,
         'choice': xsd_choice,
         'element': xsd_element.xsd_element,
@@ -42,7 +42,7 @@ class XsdChoice(base.XsdBase):
         self.max_occurs = max_occurs
 
     @method_once
-    def finalize(self, factory):
+    def finalize(self, builder):
         for c in self.children:
             assert (isinstance(c, xsd_any.XsdAny) or
                     isinstance(c, XsdChoice) or
@@ -51,7 +51,7 @@ class XsdChoice(base.XsdBase):
                     isinstance(c, xsd_sequence.XsdSequence)), \
                 'Wrong content of Choice'
 
-            self.dom_element.term.members.append(c.finalize(factory))
+            self.dom_element.term.members.append(c.finalize(builder))
 
         return utils.reduce_particle(self.dom_element)
 

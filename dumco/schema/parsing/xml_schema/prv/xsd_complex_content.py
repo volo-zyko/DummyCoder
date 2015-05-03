@@ -7,8 +7,8 @@ import xsd_extension_cc
 import xsd_restriction_cc
 
 
-def xsd_complexContent(attrs, parent, factory, schema_path, all_schemata):
-    mixed = factory.get_attribute(attrs, 'mixed', default=None)
+def xsd_complexContent(attrs, parent, builder, schema_path, all_schemata):
+    mixed = builder.get_attribute(attrs, 'mixed', default=None)
     mixed = (None if mixed is None
              else (mixed == 'true' or mixed == '1'))
 
@@ -16,7 +16,7 @@ def xsd_complexContent(attrs, parent, factory, schema_path, all_schemata):
     parent.children.append(new_element)
 
     return (new_element, {
-        'annotation': factory.noop_handler,
+        'annotation': builder.noop_handler,
         'extension': xsd_extension_cc.xsd_extension,
         'restriction': xsd_restriction_cc.xsd_restriction,
     })
@@ -29,7 +29,7 @@ class XsdComplexContent(base.XsdBase):
         self.mixed = mixed
 
     @method_once
-    def finalize(self, factory):
+    def finalize(self, builder):
         part = None
         attr_uses = []
 
@@ -40,6 +40,6 @@ class XsdComplexContent(base.XsdBase):
                 part is None and not attr_uses), \
                 'Wrong content of ComplexContent'
 
-            (part, attr_uses) = c.finalize(factory)
+            (part, attr_uses) = c.finalize(builder)
 
         return (part, attr_uses)

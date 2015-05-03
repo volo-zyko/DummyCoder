@@ -22,9 +22,9 @@ import prv.rng_text
 import prv.to_model
 
 
-class RelaxElementFactory(object):
+class RelaxElementBuilder(object):
     def __init__(self, arguments, namer, extension):
-        # Reset internals of this factory.
+        # Reset internals of this builder.
         self.reset()
 
         # These internals should not be reset.
@@ -39,7 +39,7 @@ class RelaxElementFactory(object):
         self.extension = extension
 
     def reset(self):
-        # Internals of this factory.
+        # Internals of this builder.
         self.dispatcher_stack = []
         self.dispatcher = {
             'grammar': prv.rng_grammar.rng_grammar,
@@ -193,56 +193,56 @@ class RelaxElementFactory(object):
         return attrs.get((uri, localname))
 
     @staticmethod
-    def noop_handler(attrs, parent_element, factory,
+    def noop_handler(attrs, parent_element, builder,
                      schema_path, all_grammars):  # pragma: no cover
         return (parent_element, {})
 
     @staticmethod
-    def rng_div(attrs, parent_element, factory,
+    def rng_div(attrs, parent_element, builder,
                 schema_path, all_grammars):
         return (parent_element, {
             'define': prv.rng_define.rng_define,
-            'div': factory.rng_div,
+            'div': builder.rng_div,
             'include': prv.rng_grammar.RngGrammar.rng_include,
             'start': prv.rng_start.rng_start,
         })
 
     @staticmethod
-    def rng_mixed(attrs, parent_element, factory,
+    def rng_mixed(attrs, parent_element, builder,
                   schema_path, all_grammars):
         assert attrs.getLength() == 0, 'Unexpected attributes in mixed'
 
         (interleave, dispatcher) = prv.rng_interleave.rng_interleave(
-            {}, parent_element, factory, schema_path, all_grammars)
+            {}, parent_element, builder, schema_path, all_grammars)
 
         interleave.children.append(prv.rng_text.RngText({}))
 
         return (interleave, dispatcher)
 
     @staticmethod
-    def rng_optional(attrs, parent_element, factory,
+    def rng_optional(attrs, parent_element, builder,
                      schema_path, all_grammars):
         assert attrs.getLength() == 0, 'Unexpected attributes in optional'
 
         (choice, dispatcher) = prv.rng_choice.rng_choice(
-            {}, parent_element, factory, schema_path, all_grammars)
+            {}, parent_element, builder, schema_path, all_grammars)
 
         choice.children.append(prv.rng_empty.RngEmpty({}))
 
         return (choice, dispatcher)
 
     @staticmethod
-    def rng_zeroOrMore(attrs, parent_element, factory,
+    def rng_zeroOrMore(attrs, parent_element, builder,
                        schema_path, all_grammars):
         assert attrs.getLength() == 0, 'Unexpected attributes in zeroOrMore'
 
         (choice, _) = prv.rng_choice.rng_choice(
-            {}, parent_element, factory, schema_path, all_grammars)
+            {}, parent_element, builder, schema_path, all_grammars)
 
         choice.children.append(prv.rng_empty.RngEmpty({}))
 
         (one, dispatcher) = prv.rng_oneOrMore.rng_oneOrMore(
-            {}, choice, factory, schema_path, all_grammars)
+            {}, choice, builder, schema_path, all_grammars)
 
         return (one, dispatcher)
 

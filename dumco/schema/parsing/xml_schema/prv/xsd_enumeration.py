@@ -4,12 +4,12 @@ import base
 import utils
 
 
-def xsd_enumeration(attrs, parent, factory, schema_path, all_schemata):
-    new_element = XsdEnumeration(factory.get_attribute(attrs, 'value'))
+def xsd_enumeration(attrs, parent, builder, schema_path, all_schemata):
+    new_element = XsdEnumeration(builder.get_attribute(attrs, 'value'))
     parent.children.append(new_element)
 
     return (new_element, {
-        'annotation': factory.xsd_annotation,
+        'annotation': builder.xsd_annotation,
     })
 
 

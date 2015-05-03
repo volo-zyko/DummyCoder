@@ -10,9 +10,9 @@ import utils
 import xsd_element
 
 
-def xsd_all(attrs, parent, factory, schema_path, all_schemata):
-    min_occurs = factory.particle_min_occurs(attrs)
-    max_occurs = factory.particle_max_occurs(attrs)
+def xsd_all(attrs, parent, builder, schema_path, all_schemata):
+    min_occurs = builder.particle_min_occurs(attrs)
+    max_occurs = builder.particle_max_occurs(attrs)
 
     particle = dumco.schema.uses.Particle(
         min_occurs, max_occurs, dumco.schema.model.Interleave())
@@ -21,7 +21,7 @@ def xsd_all(attrs, parent, factory, schema_path, all_schemata):
     parent.children.append(new_element)
 
     return (new_element, {
-        'annotation': factory.noop_handler,
+        'annotation': builder.noop_handler,
         'element': xsd_element.xsd_element,
     })
 
@@ -33,12 +33,12 @@ class XsdAll(base.XsdBase):
         self.dom_element = particle
 
     @method_once
-    def finalize(self, factory):
+    def finalize(self, builder):
         for c in self.children:
             assert isinstance(c, xsd_element.XsdElement), \
                 'Only Element is allowed in All'
 
-            self.dom_element.term.members.append(c.finalize(factory))
+            self.dom_element.term.members.append(c.finalize(builder))
 
         return utils.reduce_particle(self.dom_element)
 

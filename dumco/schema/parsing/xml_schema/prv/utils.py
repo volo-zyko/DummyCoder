@@ -11,7 +11,7 @@ import dumco.schema.checks
 import dumco.schema.model as model
 
 
-def restrict_base_attributes(base, factory, prohibited, redefined):
+def restrict_base_attributes(base, builder, prohibited, redefined):
     # Utility function common for XsdSimpleRestriction and
     # XsdComplexRestriction which add attribute uses only if they are not
     # restricted by derived type.

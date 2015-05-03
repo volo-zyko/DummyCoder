@@ -12,8 +12,8 @@ import time
 
 import dumco.schema.namer
 from dumco.schema.parsing.xml_parser import XmlLoader
-from dumco.schema.parsing.relaxng.element_factory import RelaxElementFactory
-from dumco.schema.parsing.xml_schema.element_factory import XsdElementFactory
+from dumco.schema.parsing.relaxng.rng_builder import RelaxElementBuilder
+from dumco.schema.parsing.xml_schema.xsd_builder import XsdElementBuilder
 from dumco.schema.dump_xsd import dump_xsd
 from dumco.schema.opacity_manager import OpacityManager
 import dumco.schema.xsd_types
@@ -147,14 +147,14 @@ if __name__ == '__main__':
     namer = dumco.schema.namer.Namer(args.naming_patterns)
 
     if args.input_syntax == 'xsd':
-        factory = XsdElementFactory(args, namer)
+        builder = XsdElementBuilder(args, namer)
     elif args.input_syntax == 'rng':
-        factory = RelaxElementFactory(args, namer, '.rng')
+        builder = RelaxElementBuilder(args, namer, '.rng')
     elif args.input_syntax == 'rnc':
         assert False, 'Not implemented'
 
     if args.input_syntax == 'xsd' or args.input_syntax == 'rng':
-        loader = XmlLoader(factory)
+        loader = XmlLoader(builder)
     elif args.input_syntax == 'rnc':
         assert False, 'Not implemented'
 

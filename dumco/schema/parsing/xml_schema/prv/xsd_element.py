@@ -13,22 +13,22 @@ import xsd_schema
 import xsd_simple_type
 
 
-def xsd_element(attrs, parent, factory, schema_path, all_schemata):
-    default = factory.get_attribute(attrs, 'default', default=None)
-    fixed = factory.get_attribute(attrs, 'fixed', default=None)
+def xsd_element(attrs, parent, builder, schema_path, all_schemata):
+    default = builder.get_attribute(attrs, 'default', default=None)
+    fixed = builder.get_attribute(attrs, 'fixed', default=None)
     assert default is None or fixed is None, \
         'Default and fixed can never be in effect at the same time'
 
-    subst_name = factory.get_attribute(attrs, 'substitutionGroup', default=None)
-    subst_name = factory.parse_qname(subst_name)
+    subst_name = builder.get_attribute(attrs, 'substitutionGroup', default=None)
+    subst_name = builder.parse_qname(subst_name)
 
-    abstract = factory.get_attribute(attrs, 'abstract', default=False)
+    abstract = builder.get_attribute(attrs, 'abstract', default=False)
     abstract = (abstract == 'true' or abstract == '1')
 
     if isinstance(parent, xsd_schema.XsdSchema):
-        name = factory.get_attribute(attrs, 'name')
-        type_name = factory.get_attribute(attrs, 'type', default=None)
-        type_name = factory.parse_qname(type_name)
+        name = builder.get_attribute(attrs, 'name')
+        type_name = builder.get_attribute(attrs, 'type', default=None)
+        type_name = builder.parse_qname(type_name)
 
         qualified = parent.dom_element.target_ns is not None
 
@@ -37,38 +37,38 @@ def xsd_element(attrs, parent, factory, schema_path, all_schemata):
             qualified, all_schemata[schema_path].dom_element)
 
         particle = dumco.schema.uses.Particle(
-            factory.particle_min_occurs(attrs),
-            factory.particle_max_occurs(attrs),
+            builder.particle_min_occurs(attrs),
+            builder.particle_max_occurs(attrs),
             element)
 
         new_element = XsdElement(particle, type_name=type_name,
                                  subst_group_name=subst_name, abstract=abstract,
                                  parent_schema=all_schemata[schema_path])
     else:
-        form = factory.get_attribute(attrs, 'form', default=None)
+        form = builder.get_attribute(attrs, 'form', default=None)
 
         if form is not None:
             qualified = (form == 'qualified')
         else:
             qualified = all_schemata[schema_path].elements_qualified
 
-        ref = factory.get_attribute(attrs, 'ref', default=None)
-        ref = factory.parse_qname(ref)
+        ref = builder.get_attribute(attrs, 'ref', default=None)
+        ref = builder.parse_qname(ref)
         if ref is not None:
             particle = dumco.schema.uses.Particle(
-                factory.particle_min_occurs(attrs),
-                factory.particle_max_occurs(attrs),
+                builder.particle_min_occurs(attrs),
+                builder.particle_max_occurs(attrs),
                 None)
         else:
-            name = factory.get_attribute(attrs, 'name')
+            name = builder.get_attribute(attrs, 'name')
 
             element = dumco.schema.model.Element(
                 name, default if fixed is None else fixed, fixed is not None,
                 qualified, all_schemata[schema_path].dom_element)
 
             particle = dumco.schema.uses.Particle(
-                factory.particle_min_occurs(attrs),
-                factory.particle_max_occurs(attrs),
+                builder.particle_min_occurs(attrs),
+                builder.particle_max_occurs(attrs),
                 element)
 
         new_element = XsdElement(particle, ref_name=ref,
@@ -77,16 +77,16 @@ def xsd_element(attrs, parent, factory, schema_path, all_schemata):
 
     parent.children.append(new_element)
 
-    factory.add_to_parent_schema(new_element, attrs, all_schemata[schema_path],
+    builder.add_to_parent_schema(new_element, attrs, all_schemata[schema_path],
                                  'elements')
 
     return (new_element, {
-        'annotation': factory.xsd_annotation,
+        'annotation': builder.xsd_annotation,
         'complexType': xsd_complex_type.xsd_complexType,
-        'key': factory.noop_handler,
-        'keyref': factory.noop_handler,
+        'key': builder.noop_handler,
+        'keyref': builder.noop_handler,
         'simpleType': xsd_simple_type.xsd_simpleType,
-        'unique': factory.noop_handler,
+        'unique': builder.noop_handler,
     })
 
 
@@ -103,15 +103,15 @@ class XsdElement(base.XsdBase):
         self.parent_schema = parent_schema
 
     @method_once
-    def finalize(self, factory):
+    def finalize(self, builder):
         if self.ref_name is not None:
-            part = factory.resolve_element(self.ref_name, self.parent_schema)
+            part = builder.resolve_element(self.ref_name, self.parent_schema)
             assert part.dom_element.term is not None
 
             self.dom_element.term = part.dom_element.term
         elif self.type_name is not None:
             self.dom_element.term.type = \
-                factory.resolve_type(self.type_name, self.parent_schema, False)
+                builder.resolve_type(self.type_name, self.parent_schema, False)
         else:
             self.dom_element.term.type = dumco.schema.xsd_types.ct_urtype()
             for t in self.children:
@@ -120,16 +120,16 @@ class XsdElement(base.XsdBase):
                     'Element can contain only its type'
 
                 if isinstance(t, xsd_simple_type.XsdSimpleType):
-                    self.dom_element.term.type = t.finalize(factory)
+                    self.dom_element.term.type = t.finalize(builder)
                 else:
                     self.dom_element.term.type = t.dom_element
 
         if self.subst_group_name is not None:
-            substitution_head = factory.resolve_element(
+            substitution_head = builder.resolve_element(
                 self.subst_group_name, self.parent_schema)
-            substitution_head.finalize(factory)
+            substitution_head.finalize(builder)
 
-            factory.add_substitution_group(substitution_head, self)
+            builder.add_substitution_group(substitution_head, self)
 
         if self.dom_element.max_occurs == 0:
             return None

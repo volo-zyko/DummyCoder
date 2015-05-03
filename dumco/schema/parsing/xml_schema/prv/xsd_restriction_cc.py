@@ -13,9 +13,9 @@ import xsd_group
 import xsd_sequence
 
 
-def xsd_restriction(attrs, parent, factory, schema_path, all_schemata):
-    base_name = factory.get_attribute(attrs, 'base')
-    base_name = factory.parse_qname(base_name)
+def xsd_restriction(attrs, parent, builder, schema_path, all_schemata):
+    base_name = builder.get_attribute(attrs, 'base')
+    base_name = builder.parse_qname(base_name)
 
     new_element = XsdComplexRestriction(base_name,
                                         parent_schema=all_schemata[schema_path])
@@ -23,7 +23,7 @@ def xsd_restriction(attrs, parent, factory, schema_path, all_schemata):
 
     return (new_element, {
         'all': xsd_all.xsd_all,
-        'annotation': factory.noop_handler,
+        'annotation': builder.noop_handler,
         'anyAttribute': xsd_any_attribute.xsd_anyAttribute,
         'attribute': xsd_attribute.xsd_attribute,
         'attributeGroup': xsd_attribute_group.xsd_attributeGroup,
@@ -41,7 +41,7 @@ class XsdComplexRestriction(base.XsdBase):
         self.parent_schema = parent_schema
 
     @method_once
-    def finalize(self, factory):
+    def finalize(self, builder):
         part = None
         attr_uses = []
 
@@ -53,23 +53,23 @@ class XsdComplexRestriction(base.XsdBase):
                     isinstance(c, xsd_sequence.XsdSequence) or
                     isinstance(c, xsd_group.XsdGroup)):
                 assert part is None, 'Content model overridden'
-                part = c.finalize(factory)
+                part = c.finalize(builder)
             elif isinstance(c, xsd_attribute_group.XsdAttributeGroup):
-                attr_uses.extend(c.finalize(factory))
+                attr_uses.extend(c.finalize(builder))
             elif isinstance(c, xsd_attribute.XsdAttribute):
                 if c.prohibited:
-                    prohibited_attr_uses.append(c.finalize(factory))
+                    prohibited_attr_uses.append(c.finalize(builder))
                 else:
-                    redefined_attr_uses.append(c.finalize(factory))
+                    redefined_attr_uses.append(c.finalize(builder))
             elif isinstance(c, xsd_any_attribute.XsdAnyAttribute):
-                attr_uses.append(c.finalize(factory))
+                attr_uses.append(c.finalize(builder))
             else:  # pragma: no cover
                 assert False, 'Wrong content of complex Restriction'
 
-        base_ct = factory.resolve_complex_type(self.base_name,
+        base_ct = builder.resolve_complex_type(self.base_name,
                                                self.parent_schema)
 
-        attr_uses.extend(utils.restrict_base_attributes(base_ct, factory,
+        attr_uses.extend(utils.restrict_base_attributes(base_ct, builder,
                                                         prohibited_attr_uses,
                                                         redefined_attr_uses))
         attr_uses.extend(redefined_attr_uses)

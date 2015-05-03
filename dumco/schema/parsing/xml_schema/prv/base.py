@@ -24,95 +24,95 @@ class XsdBase(object):
 
 class XsdRestrictionBase(XsdBase):
     @staticmethod
-    def _value_handler(fieldname, attrs, parent, factory,
+    def _value_handler(fieldname, attrs, parent, builder,
                        schema_path, all_schemata):
         assert hasattr(parent.dom_element, fieldname)
         setattr(parent.dom_element, fieldname,
-                factory.get_attribute(attrs, 'value'))
+                builder.get_attribute(attrs, 'value'))
 
         return (parent, {
-            'annotation': factory.noop_handler,
+            'annotation': builder.noop_handler,
         })
 
     @staticmethod
-    def xsd_fractionDigits(attrs, parent, factory,
+    def xsd_fractionDigits(attrs, parent, builder,
                            schema_path, all_schemata):
         return XsdRestrictionBase._value_handler(
             'fraction_digits', attrs, parent,
-            factory, schema_path, all_schemata)
+            builder, schema_path, all_schemata)
 
     @staticmethod
-    def xsd_length(attrs, parent, factory,
+    def xsd_length(attrs, parent, builder,
                    schema_path, all_schemata):
         return XsdRestrictionBase._value_handler(
             'length', attrs, parent,
-            factory, schema_path, all_schemata)
+            builder, schema_path, all_schemata)
 
     @staticmethod
-    def xsd_maxExclusive(attrs, parent, factory,
+    def xsd_maxExclusive(attrs, parent, builder,
                          schema_path, all_schemata):
         return XsdRestrictionBase._value_handler(
             'max_exclusive', attrs, parent,
-            factory, schema_path, all_schemata)
+            builder, schema_path, all_schemata)
 
     @staticmethod
-    def xsd_maxInclusive(attrs, parent, factory,
+    def xsd_maxInclusive(attrs, parent, builder,
                          schema_path, all_schemata):
         return XsdRestrictionBase._value_handler(
             'max_inclusive', attrs, parent,
-            factory, schema_path, all_schemata)
+            builder, schema_path, all_schemata)
 
     @staticmethod
-    def xsd_maxLength(attrs, parent, factory,
+    def xsd_maxLength(attrs, parent, builder,
                       schema_path, all_schemata):
         return XsdRestrictionBase._value_handler(
             'max_length', attrs, parent,
-            factory, schema_path, all_schemata)
+            builder, schema_path, all_schemata)
 
     @staticmethod
-    def xsd_minExclusive(attrs, parent, factory,
+    def xsd_minExclusive(attrs, parent, builder,
                          schema_path, all_schemata):
         return XsdRestrictionBase._value_handler(
             'min_exclusive', attrs, parent,
-            factory, schema_path, all_schemata)
+            builder, schema_path, all_schemata)
 
     @staticmethod
-    def xsd_minInclusive(attrs, parent, factory,
+    def xsd_minInclusive(attrs, parent, builder,
                          schema_path, all_schemata):
         return XsdRestrictionBase._value_handler(
             'min_inclusive', attrs, parent,
-            factory, schema_path, all_schemata)
+            builder, schema_path, all_schemata)
 
     @staticmethod
-    def xsd_minLength(attrs, parent, factory,
+    def xsd_minLength(attrs, parent, builder,
                       schema_path, all_schemata):
         return XsdRestrictionBase._value_handler(
             'min_length', attrs, parent,
-            factory, schema_path, all_schemata)
+            builder, schema_path, all_schemata)
 
     @staticmethod
-    def xsd_pattern(attrs, parent, factory,
+    def xsd_pattern(attrs, parent, builder,
                     schema_path, all_schemata):
         parent.dom_element.patterns.append(
-            factory.get_attribute(attrs, 'value'))
+            builder.get_attribute(attrs, 'value'))
 
         return (parent, {
-            'annotation': factory.noop_handler,
+            'annotation': builder.noop_handler,
         })
 
     @staticmethod
-    def xsd_totalDigits(attrs, parent, factory,
+    def xsd_totalDigits(attrs, parent, builder,
                         schema_path, all_schemata):
         return XsdRestrictionBase._value_handler(
             'total_digits', attrs, parent,
-            factory, schema_path, all_schemata)
+            builder, schema_path, all_schemata)
 
     @staticmethod
-    def xsd_whiteSpace(attrs, parent, factory,
+    def xsd_whiteSpace(attrs, parent, builder,
                        schema_path, all_schemata):
         assert hasattr(parent.dom_element, 'white_space')
 
-        value = factory.get_attribute(attrs, 'value')
+        value = builder.get_attribute(attrs, 'value')
         if value == 'preserve':
             parent.dom_element.white_space = \
                 dumco.schema.model.Restriction.WS_PRESERVE
@@ -126,5 +126,5 @@ class XsdRestrictionBase(XsdBase):
             assert False, 'Unknown token for whiteSpace'
 
         return (parent, {
-            'annotation': factory.noop_handler,
+            'annotation': builder.noop_handler,
         })

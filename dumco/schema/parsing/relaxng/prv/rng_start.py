@@ -20,12 +20,12 @@ import rng_value
 import utils
 
 
-def rng_start(attrs, parent_element, factory, grammar_path, all_grammars):
+def rng_start(attrs, parent_element, builder, grammar_path, all_grammars):
     assert isinstance(parent_element, rng_grammar.RngGrammar), \
         'Start only expected to be in grammar'
 
     try:
-        combine = factory.get_attribute(attrs, 'combine').strip()
+        combine = builder.get_attribute(attrs, 'combine').strip()
     except LookupError:
         combine = ''
 
@@ -35,19 +35,19 @@ def rng_start(attrs, parent_element, factory, grammar_path, all_grammars):
         'data': rng_data.rng_data,
         'element': rng_element.rng_element,
         'empty': rng_empty.rng_empty,
-        'externalRef': factory.noop_handler,
+        'externalRef': builder.noop_handler,
         'group': rng_group.rng_group,
         'interleave': rng_interleave.rng_interleave,
         'list': rng_list.rng_list,
-        'mixed': factory.rng_mixed,
+        'mixed': builder.rng_mixed,
         'notAllowed': rng_notAllowed.rng_notAllowed,
         'oneOrMore': rng_oneOrMore.rng_oneOrMore,
-        'optional': factory.rng_optional,
-        'parentRef': factory.noop_handler,
+        'optional': builder.rng_optional,
+        'parentRef': builder.noop_handler,
         'ref': rng_ref.rng_ref,
         'text': rng_text.rng_text,
         'value': rng_value.rng_value,
-        'zeroOrMore': factory.rng_zeroOrMore,
+        'zeroOrMore': builder.rng_zeroOrMore,
     })
 
 
@@ -62,17 +62,17 @@ class RngStart(base.RngBase):
         self.combine = combine
 
     @method_once
-    def finalize(self, grammar, factory):
+    def finalize(self, grammar, builder):
         assert (len(self.children) == 1 and
                 utils.is_pattern(self.children[0])), \
             'Wrong content of start'
 
-        self.pattern = self.children[0].finalize(grammar, factory)
+        self.pattern = self.children[0].finalize(grammar, builder)
 
         if isinstance(self.pattern, rng_element.RngElement):
-            self.pattern = self.prefinalize(grammar, factory)
+            self.pattern = self.prefinalize(grammar, builder)
 
-        return super(RngStart, self).finalize(grammar, factory)
+        return super(RngStart, self).finalize(grammar, builder)
 
     def dump(self, context):
         with utils.RngTagGuard('start', context):

@@ -19,7 +19,7 @@ import rng_value
 import utils
 
 
-def rng_except(attrs, parent_element, factory, grammar_path, all_grammars):
+def rng_except(attrs, parent_element, builder, grammar_path, all_grammars):
     if isinstance(parent_element, rng_data.RngData):
         parent_element.children.append(RngExceptPattern())
 
@@ -27,17 +27,17 @@ def rng_except(attrs, parent_element, factory, grammar_path, all_grammars):
             'choice': rng_choice.rng_choice,
             'data': rng_data.rng_data,
             'empty': rng_empty.rng_empty,
-            'externalRef': factory.noop_handler,
+            'externalRef': builder.noop_handler,
             'group': rng_group.rng_group,
             'interleave': rng_interleave.rng_interleave,
             'list': rng_list.rng_list,
             'notAllowed': rng_notAllowed.rng_notAllowed,
             'oneOrMore': rng_oneOrMore.rng_oneOrMore,
-            'optional': factory.rng_optional,
-            'parentRef': factory.noop_handler,
+            'optional': builder.rng_optional,
+            'parentRef': builder.noop_handler,
             'ref': rng_ref.rng_ref,
             'value': rng_value.rng_value,
-            'zeroOrMore': factory.rng_zeroOrMore,
+            'zeroOrMore': builder.rng_zeroOrMore,
         })
     else:
         parent_element.children.append(RngExceptName())
@@ -57,11 +57,11 @@ class RngExceptPattern(base.RngBase):
         self.patterns = []
 
     @method_once
-    def finalize(self, grammar, factory):
+    def finalize(self, grammar, builder):
         for c in self.children:
             assert utils.is_pattern(c), 'Wrong content of except pattern'
 
-            c = c.finalize(grammar, factory)
+            c = c.finalize(grammar, builder)
 
             if ((isinstance(c, rng_choice.RngChoicePattern) or
                     isinstance(c, rng_group.RngGroup) or
@@ -80,7 +80,7 @@ class RngExceptPattern(base.RngBase):
 
             self.patterns.append(c)
 
-        return super(RngExceptPattern, self).finalize(grammar, factory)
+        return super(RngExceptPattern, self).finalize(grammar, builder)
 
     def dump(self, context):
         assert self.patterns, 'Empty except pattern'
@@ -97,11 +97,11 @@ class RngExceptName(base.RngBase):
         self.name_classes = []
 
     @method_once
-    def finalize(self, grammar, factory):
+    def finalize(self, grammar, builder):
         for c in self.children:
             assert utils.is_name_class(c), 'Wrong content of except name'
 
-            c.finalize(grammar, factory)
+            c.finalize(grammar, builder)
             self.name_classes.append(c)
 
         assert len(self.name_classes) > 0, 'Wrong content of except name'
@@ -111,7 +111,7 @@ class RngExceptName(base.RngBase):
             choice.name_classes = self.name_classes
             self.name_classes = [choice]
 
-        super(RngExceptName, self).finalize(grammar, factory)
+        super(RngExceptName, self).finalize(grammar, builder)
 
     def dump(self, context):
         assert self.name_classes, 'Empty except name'

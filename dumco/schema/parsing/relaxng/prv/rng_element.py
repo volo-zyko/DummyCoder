@@ -22,10 +22,10 @@ import rng_value
 import utils
 
 
-def rng_element(attrs, parent_element, factory, grammar_path, all_grammars):
+def rng_element(attrs, parent_element, builder, grammar_path, all_grammars):
     try:
-        text_name = factory.get_attribute(attrs, 'name').strip()
-        name_obj = rng_name.create_name(text_name, factory)
+        text_name = builder.get_attribute(attrs, 'name').strip()
+        name_obj = rng_name.create_name(text_name, builder)
     except LookupError:
         name_obj = None
 
@@ -38,21 +38,21 @@ def rng_element(attrs, parent_element, factory, grammar_path, all_grammars):
         'data': rng_data.rng_data,
         'element': rng_element,
         'empty': rng_empty.rng_empty,
-        'externalRef': factory.noop_handler,
+        'externalRef': builder.noop_handler,
         'group': rng_group.rng_group,
         'interleave': rng_interleave.rng_interleave,
         'list': rng_list.rng_list,
-        'mixed': factory.rng_mixed,
+        'mixed': builder.rng_mixed,
         'name': rng_name.rng_name,
         'notAllowed': rng_notAllowed.rng_notAllowed,
         'nsName': rng_nsName.rng_nsName,
         'oneOrMore': rng_oneOrMore.rng_oneOrMore,
-        'optional': factory.rng_optional,
-        'parentRef': factory.noop_handler,
+        'optional': builder.rng_optional,
+        'parentRef': builder.noop_handler,
         'ref': rng_ref.rng_ref,
         'text': rng_text.rng_text,
         'value': rng_value.rng_value,
-        'zeroOrMore': factory.rng_zeroOrMore,
+        'zeroOrMore': builder.rng_zeroOrMore,
     })
 
 
@@ -68,13 +68,13 @@ class RngElement(base.RngBase):
         self.define_name = None
 
     @method_once
-    def prefinalize(self, grammar, factory):
+    def prefinalize(self, grammar, builder):
         if self.name is None:
             assert utils.is_name_class(self.children[0]), \
                 'Wrong name in element'
 
             self.name = self.children[0]
-            self.name.finalize(grammar, factory)
+            self.name.finalize(grammar, builder)
 
             self.children = self.children[1:]
 
@@ -108,8 +108,8 @@ class RngElement(base.RngBase):
         return self
 
     @method_once
-    def finalize(self, grammar, factory):
-        self.prefinalize(grammar, factory)
+    def finalize(self, grammar, builder):
+        self.prefinalize(grammar, builder)
 
         patterns = []
         has_empty = False
@@ -117,16 +117,16 @@ class RngElement(base.RngBase):
             assert utils.is_pattern(c), 'Wrong content of element'
 
             if isinstance(c, rng_ref.RngRef):
-                c = c.finalize(grammar, factory)
+                c = c.finalize(grammar, builder)
 
             if isinstance(c, rng_empty.RngEmpty):
                 has_empty = True
                 continue
             elif isinstance(c, RngElement):
-                patterns.append(c.prefinalize(grammar, factory))
+                patterns.append(c.prefinalize(grammar, builder))
                 continue
 
-            c = c.finalize(grammar, factory)
+            c = c.finalize(grammar, builder)
 
             if ((isinstance(c, rng_choice.RngChoicePattern) or
                     isinstance(c, rng_group.RngGroup) or
@@ -153,9 +153,9 @@ class RngElement(base.RngBase):
             self.pattern = rng_group.RngGroup()
             self.pattern.children = patterns
 
-        self.pattern = self.pattern.finalize(grammar, factory)
+        self.pattern = self.pattern.finalize(grammar, builder)
 
-        return super(RngElement, self).finalize(grammar, factory)
+        return super(RngElement, self).finalize(grammar, builder)
 
     def dump(self, context):
         if context.parent_stack[-2] == RNG_NAMESPACE + ':define':

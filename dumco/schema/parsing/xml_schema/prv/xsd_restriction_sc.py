@@ -14,20 +14,20 @@ import xsd_enumeration
 import xsd_simple_type
 
 
-def xsd_restriction(attrs, parent, factory, schema_path, all_schemata):
-    base_name = factory.get_attribute(attrs, 'base', default='')
-    base_name = factory.parse_qname(base_name)
+def xsd_restriction(attrs, parent, builder, schema_path, all_schemata):
+    base_name = builder.get_attribute(attrs, 'base', default='')
+    base_name = builder.parse_qname(base_name)
 
     new_element = XsdSimpleRestriction(base_name,
                                        parent_schema=all_schemata[schema_path])
     parent.children.append(new_element)
 
     # Simple restriction is just like the simple type.
-    factory.add_to_parent_schema(new_element, attrs, all_schemata[schema_path],
+    builder.add_to_parent_schema(new_element, attrs, all_schemata[schema_path],
                                  'simple_types', is_type=True)
 
     return (new_element, {
-        'annotation': factory.noop_handler,
+        'annotation': builder.noop_handler,
         'anyAttribute': xsd_any_attribute.xsd_anyAttribute,
         'attribute': xsd_attribute.xsd_attribute,
         'attributeGroup': xsd_attribute_group.xsd_attributeGroup,
@@ -56,7 +56,7 @@ class XsdSimpleRestriction(base.XsdRestrictionBase):
         self.dom_element = dumco.schema.model.Restriction()
 
     @method_once
-    def finalize(self, factory):
+    def finalize(self, builder):
         base_type = dumco.schema.model.SimpleType(
             None, self.parent_schema.dom_element)
         attr_uses = []
@@ -73,28 +73,28 @@ class XsdSimpleRestriction(base.XsdRestrictionBase):
                 'Wrong content of simple Restriction'
 
             if isinstance(c, xsd_simple_type.XsdSimpleType):
-                local_simple_type = c.finalize(factory)
+                local_simple_type = c.finalize(builder)
             elif isinstance(c, xsd_enumeration.XsdEnumeration):
                 enum = dumco.schema.model.EnumerationValue(c.value,
                                                            ' '.join(c.text))
                 self.dom_element.enumerations.append(enum)
             elif isinstance(c, xsd_attribute_group.XsdAttributeGroup):
-                attr_uses.extend(c.finalize(factory))
+                attr_uses.extend(c.finalize(builder))
             elif isinstance(c, xsd_attribute.XsdAttribute):
                 if c.prohibited:
-                    prohibited_attr_uses.append(c.finalize(factory))
+                    prohibited_attr_uses.append(c.finalize(builder))
                 else:
-                    redefined_attr_uses.append(c.finalize(factory))
+                    redefined_attr_uses.append(c.finalize(builder))
             elif isinstance(c, xsd_any_attribute.XsdAnyAttribute):
-                attr_uses.append(c.finalize(factory))
+                attr_uses.append(c.finalize(builder))
 
         # Only complex type can be here. That's the essence of restriction.
-        base_ct = factory.resolve_complex_type(self.base_name,
+        base_ct = builder.resolve_complex_type(self.base_name,
                                                self.parent_schema)
 
         if dumco.schema.checks.is_complex_type(base_ct):
             attr_uses.extend(
-                utils.restrict_base_attributes(base_ct, factory,
+                utils.restrict_base_attributes(base_ct, builder,
                                                prohibited_attr_uses,
                                                redefined_attr_uses))
 

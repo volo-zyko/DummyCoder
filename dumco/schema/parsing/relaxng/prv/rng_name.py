@@ -4,16 +4,16 @@ import base
 import utils
 
 
-def create_name(qname, factory):
-    (ns, name) = factory.parse_qname(qname)
-    ns = factory.get_ns() if ns is None else ns
+def create_name(qname, builder):
+    (ns, name) = builder.parse_qname(qname)
+    ns = builder.get_ns() if ns is None else ns
     name = None if name == '' else name
 
-    return RngName(ns, name, _is_qualified(ns, factory))
+    return RngName(ns, name, _is_qualified(ns, builder))
 
 
-def rng_name(attrs, parent_element, factory, grammar_path, all_grammars):
-    parent_element.children.append(create_name('', factory))
+def rng_name(attrs, parent_element, builder, grammar_path, all_grammars):
+    parent_element.children.append(create_name('', builder))
 
     return (parent_element.children[-1], {})
 
@@ -28,11 +28,11 @@ class RngName(base.RngBase):
         # It's necessary for conversion to dumco model.
         self.qualified = qualified
 
-    def append_text(self, text, factory):
+    def append_text(self, text, builder):
         assert self.name is None, \
             'Name is defined as both attribute and name class'
 
-        name_obj = create_name(text, factory)
+        name_obj = create_name(text, builder)
 
         self.ns = name_obj.ns
         self.name = name_obj.name
@@ -44,8 +44,8 @@ class RngName(base.RngBase):
             context.add_text(self.name)
 
 
-def _is_qualified(self, ns, factory):
+def _is_qualified(self, ns, builder):
     if ns is not None:
         return ns != ''
 
-    return factory.get_ns() != ''
+    return builder.get_ns() != ''

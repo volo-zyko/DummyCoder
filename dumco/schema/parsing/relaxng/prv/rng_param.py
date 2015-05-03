@@ -6,8 +6,8 @@ import base
 import utils
 
 
-def rng_param(attrs, parent_element, factory, grammar_path, all_grammars):
-    name = factory.get_attribute(attrs, 'name').strip()
+def rng_param(attrs, parent_element, builder, grammar_path, all_grammars):
+    name = builder.get_attribute(attrs, 'name').strip()
 
     parent_element.children.append(RngParam(name))
 
@@ -21,7 +21,7 @@ class RngParam(base.RngBase):
         self.name = name
         self.value = value
 
-    def append_text(self, text, factory):
+    def append_text(self, text, builder):
         self.value = text if self.value is None else self.value + text
 
     def dump(self, context):

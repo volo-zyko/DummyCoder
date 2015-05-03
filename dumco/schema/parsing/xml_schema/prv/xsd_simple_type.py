@@ -14,18 +14,18 @@ import xsd_restriction
 import xsd_union
 
 
-def xsd_simpleType(attrs, parent, factory, schema_path, all_schemata):
-    name = factory.get_attribute(attrs, 'name', default=None)
+def xsd_simpleType(attrs, parent, builder, schema_path, all_schemata):
+    name = builder.get_attribute(attrs, 'name', default=None)
 
     new_element = XsdSimpleType(name,
                                 all_schemata[schema_path])
     parent.children.append(new_element)
 
-    factory.add_to_parent_schema(new_element, attrs, all_schemata[schema_path],
+    builder.add_to_parent_schema(new_element, attrs, all_schemata[schema_path],
                                  'simple_types', is_type=True)
 
     return (new_element, {
-        'annotation': factory.noop_handler,
+        'annotation': builder.noop_handler,
         'list': xsd_list.xsd_list,
         'restriction': xsd_restriction.xsd_restriction,
         'union': xsd_union.xsd_union,
@@ -40,7 +40,7 @@ class XsdSimpleType(base.XsdBase):
         self.parent_schema = parent_schema
 
     @method_once
-    def finalize(self, factory):
+    def finalize(self, builder):
         simple_type = dumco.schema.model.SimpleType(
             self.name, self.parent_schema.dom_element)
 
@@ -51,17 +51,17 @@ class XsdSimpleType(base.XsdBase):
                 'Wrong content of SimpleType'
 
             if isinstance(c, xsd_restriction.XsdRestriction):
-                restriction_or_type = c.finalize(factory)
+                restriction_or_type = c.finalize(builder)
                 if dumco.schema.checks.is_restriction(restriction_or_type):
                     simple_type.restriction = restriction_or_type
                 else:
                     simple_type = restriction_or_type
             elif isinstance(c, xsd_list.XsdList):
                 listitem = dumco.schema.uses.ListTypeCardinality(
-                    c.finalize(factory), 0, dumco.schema.base.UNBOUNDED)
+                    c.finalize(builder), 0, dumco.schema.base.UNBOUNDED)
                 simple_type.listitems.append(listitem)
             elif isinstance(c, xsd_union.XsdUnion):
-                simple_type.union = c.finalize(factory)
+                simple_type.union = c.finalize(builder)
 
         assert ((simple_type.restriction is not None and
                  simple_type.listitems == [] and

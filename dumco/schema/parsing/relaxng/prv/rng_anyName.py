@@ -7,7 +7,7 @@ import rng_except
 import utils
 
 
-def rng_anyName(attrs, parent_element, factory, grammar_path, all_grammars):
+def rng_anyName(attrs, parent_element, builder, grammar_path, all_grammars):
     parent_element.children.append(RngAnyName())
 
     return (parent_element.children[-1], {
@@ -22,16 +22,16 @@ class RngAnyName(base.RngBase):
         self.except_name_class = None
 
     @method_once
-    def finalize(self, grammar, factory):
+    def finalize(self, grammar, builder):
         for c in self.children:
             assert (isinstance(c, rng_except.RngExceptName) and
                     self.except_name_class is None), \
                 'Wrong content of anyName element'
 
-            c.finalize(grammar, factory)
+            c.finalize(grammar, builder)
             self.except_name_class = c
 
-        super(RngAnyName, self).finalize(grammar, factory)
+        super(RngAnyName, self).finalize(grammar, builder)
 
     def dump(self, context):
         with utils.RngTagGuard('anyName', context):

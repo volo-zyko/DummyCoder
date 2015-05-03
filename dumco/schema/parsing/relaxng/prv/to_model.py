@@ -30,9 +30,9 @@ import rng_value
 
 
 class Rng2Model(object):
-    def __init__(self, all_schemata, factory):
+    def __init__(self, all_schemata, builder):
         self.all_schemata = all_schemata
-        self.namer = factory.namer
+        self.namer = builder.namer
 
         self.untyped_elements = {}
 

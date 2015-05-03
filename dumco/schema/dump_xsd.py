@@ -16,7 +16,7 @@ import rng_types
 import tuples
 import xsd_types
 
-from prv.dump_utils import XSD_PREFIX, TagGuard, XmlWriter, \
+from dumping.dump_utils import XSD_PREFIX, TagGuard, XmlWriter, \
     dump_restriction, dump_listitems, dump_union, dump_simple_content, \
     dump_particle, dump_attribute_uses, dump_element_particle, \
     dump_attribute_use, dump_element_attributes, dump_attribute_attributes, \

@@ -13,16 +13,16 @@ import xsd_schema
 import xsd_simple_type
 
 
-def xsd_attribute(attrs, parent, factory, schema_path, all_schemata):
-    default = factory.get_attribute(attrs, 'default', default=None)
-    fixed = factory.get_attribute(attrs, 'fixed', default=None)
+def xsd_attribute(attrs, parent, builder, schema_path, all_schemata):
+    default = builder.get_attribute(attrs, 'default', default=None)
+    fixed = builder.get_attribute(attrs, 'fixed', default=None)
     assert default is None or fixed is None, \
         'Default and fixed can never be in effect at the same time'
 
     if isinstance(parent, xsd_schema.XsdSchema):
-        name = factory.get_attribute(attrs, 'name')
-        type_name = factory.get_attribute(attrs, 'type', default=None)
-        type_name = factory.parse_qname(type_name)
+        name = builder.get_attribute(attrs, 'name')
+        type_name = builder.get_attribute(attrs, 'type', default=None)
+        type_name = builder.parse_qname(type_name)
 
         qualified = parent.dom_element.target_ns is not None
 
@@ -35,22 +35,22 @@ def xsd_attribute(attrs, parent, factory, schema_path, all_schemata):
         new_element = XsdAttribute(attr_use, type_name=type_name,
                                    parent_schema=all_schemata[schema_path])
     else:
-        form = factory.get_attribute(attrs, 'form', default=None)
-        use = factory.get_attribute(attrs, 'use', default=None)
+        form = builder.get_attribute(attrs, 'form', default=None)
+        use = builder.get_attribute(attrs, 'use', default=None)
 
         if form is not None:
             qualified = (form == 'qualified')
         else:
             qualified = all_schemata[schema_path].attributes_qualified
 
-        ref = factory.get_attribute(attrs, 'ref', default=None)
-        ref = factory.parse_qname(ref)
+        ref = builder.get_attribute(attrs, 'ref', default=None)
+        ref = builder.parse_qname(ref)
         if ref is not None:
             attr_use = dumco.schema.uses.AttributeUse(
                 default if fixed is None else fixed, fixed is not None,
                 use == 'required', None)
         else:
-            name = factory.get_attribute(attrs, 'name')
+            name = builder.get_attribute(attrs, 'name')
 
             attribute = dumco.schema.model.Attribute(
                 name, default if fixed is None else fixed, fixed is not None,
@@ -65,11 +65,11 @@ def xsd_attribute(attrs, parent, factory, schema_path, all_schemata):
 
     parent.children.append(new_element)
 
-    factory.add_to_parent_schema(new_element, attrs, all_schemata[schema_path],
+    builder.add_to_parent_schema(new_element, attrs, all_schemata[schema_path],
                                  'attributes')
 
     return (new_element, {
-        'annotation': factory.xsd_annotation,
+        'annotation': builder.xsd_annotation,
         'simpleType': xsd_simple_type.xsd_simpleType,
     })
 
@@ -86,13 +86,13 @@ class XsdAttribute(base.XsdBase):
         self.parent_schema = parent_schema
 
     @method_once
-    def finalize(self, factory):
+    def finalize(self, builder):
         if self.ref_name is not None:
             self.dom_element.attribute = \
-                factory.resolve_attribute(self.ref_name, self.parent_schema)
+                builder.resolve_attribute(self.ref_name, self.parent_schema)
         elif self.type_name is not None:
             self.dom_element.attribute.type = \
-                factory.resolve_simple_type(self.type_name, self.parent_schema)
+                builder.resolve_simple_type(self.type_name, self.parent_schema)
         else:
             self.dom_element.attribute.type = \
                 dumco.schema.xsd_types.st_urtype()
@@ -100,7 +100,7 @@ class XsdAttribute(base.XsdBase):
                 assert isinstance(t, xsd_simple_type.XsdSimpleType), \
                     'Attribute can contain only its type'
 
-                self.dom_element.attribute.type = t.finalize(factory)
+                self.dom_element.attribute.type = t.finalize(builder)
 
         return self.dom_element
 

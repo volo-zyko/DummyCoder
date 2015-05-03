@@ -22,17 +22,17 @@ import xsd_group
 import xsd_simple_type
 
 
-def xsd_schema(attrs, parent_element, factory, schema_path, all_schemata):
+def xsd_schema(attrs, parent_element, builder, schema_path, all_schemata):
     if dumco.schema.checks.is_xml_namespace(attrs.get('targetNamespace', None)):
         del all_schemata[schema_path]
-        factory.reset()
+        builder.reset()
 
         raise dumco.schema.parsing.xml_parser.SkipParse()
 
-    target_ns = factory.get_attribute(attrs, 'targetNamespace', default=None)
-    aqualified = factory.get_attribute(attrs, 'attributeFormDefault',
+    target_ns = builder.get_attribute(attrs, 'targetNamespace', default=None)
+    aqualified = builder.get_attribute(attrs, 'attributeFormDefault',
                                        default=False) == 'qualified'
-    equalified = factory.get_attribute(attrs, 'elementFormDefault',
+    equalified = builder.get_attribute(attrs, 'elementFormDefault',
                                        default=False) == 'qualified'
 
     schema = dumco.schema.model.Schema(target_ns)
@@ -44,7 +44,7 @@ def xsd_schema(attrs, parent_element, factory, schema_path, all_schemata):
     all_schemata[schema_path] = new_element
 
     return (new_element, {
-        'annotation': factory.noop_handler,
+        'annotation': builder.noop_handler,
         'attribute': xsd_attribute.xsd_attribute,
         'attributeGroup': xsd_attribute_group.xsd_attributeGroup,
         'complexType': xsd_complex_type.xsd_complexType,
@@ -52,8 +52,8 @@ def xsd_schema(attrs, parent_element, factory, schema_path, all_schemata):
         'group': xsd_group.xsd_group,
         'import': XsdSchema.xsd_import,
         'include': XsdSchema.xsd_include,
-        'notation': factory.noop_handler,
-        'redefine': factory.noop_handler,
+        'notation': builder.noop_handler,
+        'redefine': builder.noop_handler,
         'simpleType': xsd_simple_type.xsd_simpleType,
     })
 
@@ -76,10 +76,10 @@ class XsdSchema(base.XsdBase):
         self.simple_types = {}
         self.unnamed_types = []
 
-    def set_imports(self, all_schemata, factory):
+    def set_imports(self, all_schemata, builder):
         for path in all_schemata.iterkeys():
             if any([(path in included_paths) for included_paths in
-                    factory.included_schema_paths.itervalues()]):
+                    builder.included_schema_paths.itervalues()]):
                 continue
 
             schema = all_schemata[path]
@@ -91,22 +91,22 @@ class XsdSchema(base.XsdBase):
             self.imports[schema.dom_element.target_ns] = schema
 
     @method_once
-    def finalize(self, all_schemata, factory):
+    def finalize(self, all_schemata, builder):
         for st in sorted(self.simple_types.itervalues(), key=lambda x: x.name):
-            st.finalize(factory)
+            st.finalize(builder)
 
         for ct in sorted(self.complex_types.itervalues(), key=lambda x: x.name):
-            ct.finalize(factory)
+            ct.finalize(builder)
 
         for xsd_type in self.unnamed_types:
-            xsd_type.finalize(factory)
+            xsd_type.finalize(builder)
 
         for elem in self.elements.itervalues():
-            particle = elem.finalize(factory)
+            particle = elem.finalize(builder)
             self.dom_element.elements.append(particle.term)
 
         for attr in self.attributes.itervalues():
-            attr.finalize(factory)
+            attr.finalize(builder)
 
     def dump(self, context):
         with utils.XsdTagGuard('schema', context):
@@ -125,20 +125,20 @@ class XsdSchema(base.XsdBase):
                 c.dump(context)
 
     @staticmethod
-    def _get_schema_location(attrs, factory, schema_path):
+    def _get_schema_location(attrs, builder, schema_path):
         try:
-            location = factory.get_attribute(attrs, 'schemaLocation')
+            location = builder.get_attribute(attrs, 'schemaLocation')
         except LookupError:
             location = None
 
         return _location2path(location, schema_path)
 
     @staticmethod
-    def xsd_import(attrs, parent_element, factory,
+    def xsd_import(attrs, parent_element, builder,
                    schema_path, all_schemata):
-        namespace = factory.get_attribute(attrs, 'namespace')
+        namespace = builder.get_attribute(attrs, 'namespace')
 
-        new_schema_path = XsdSchema._get_schema_location(attrs, factory,
+        new_schema_path = XsdSchema._get_schema_location(attrs, builder,
                                                          schema_path)
 
         if new_schema_path is not None:
@@ -152,13 +152,13 @@ class XsdSchema(base.XsdBase):
                     if new_schema_path in all_schemata else None)
 
         return (parent_element, {
-            'annotation': factory.noop_handler,
+            'annotation': builder.noop_handler,
         })
 
     @staticmethod
-    def xsd_include(attrs, parent_element, factory,
+    def xsd_include(attrs, parent_element, builder,
                     schema_path, all_schemata):
-        new_schema_path = XsdSchema._get_schema_location(attrs, factory,
+        new_schema_path = XsdSchema._get_schema_location(attrs, builder,
                                                          schema_path)
 
         if new_schema_path is not None:
@@ -166,16 +166,16 @@ class XsdSchema(base.XsdBase):
                 'File {} does not exist'.format(new_schema_path)
 
             # Restart parsing with a new xsd.
-            include_logic = _XsdIncludeLogic(schema_path, factory)
+            include_logic = _XsdIncludeLogic(schema_path, builder)
             xsd_root = include_logic.include_xml(schema_path)
             all_schemata[schema_path] = None
-            factory.reset()
+            builder.reset()
 
             raise dumco.schema.parsing.xml_parser.ParseRestart(
                 StringIO.StringIO(xsd_root.toxml('utf-8')))
 
         return (parent_element, {
-            'annotation': factory.noop_handler,
+            'annotation': builder.noop_handler,
         })
 
 

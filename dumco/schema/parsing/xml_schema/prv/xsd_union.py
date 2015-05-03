@@ -9,16 +9,16 @@ import utils
 import xsd_simple_type
 
 
-def xsd_union(attrs, parent, factory, schema_path, all_schemata):
-    member_names = factory.get_attribute(attrs, 'memberTypes', default='')
-    member_names = [factory.parse_qname(q) for q in member_names.split()]
+def xsd_union(attrs, parent, builder, schema_path, all_schemata):
+    member_names = builder.get_attribute(attrs, 'memberTypes', default='')
+    member_names = [builder.parse_qname(q) for q in member_names.split()]
 
     new_element = XsdUnion(member_names,
                            parent_schema=all_schemata[schema_path])
     parent.children.append(new_element)
 
     return (new_element, {
-        'annotation': factory.noop_handler,
+        'annotation': builder.noop_handler,
         'simpleType': xsd_simple_type.xsd_simpleType,
     })
 
@@ -31,18 +31,18 @@ class XsdUnion(base.XsdBase):
         self.parent_schema = parent_schema
 
     @method_once
-    def finalize(self, factory):
+    def finalize(self, builder):
         member_types = []
 
         for t in self.member_names:
-            member_type = factory.resolve_simple_type(t, self.parent_schema)
+            member_type = builder.resolve_simple_type(t, self.parent_schema)
             self._merge_unions(member_type, member_types)
 
         for t in self.children:
             assert isinstance(t, xsd_simple_type.XsdSimpleType), \
                 'Wrong content of Union'
 
-            member_type = t.finalize(factory)
+            member_type = t.finalize(builder)
             self._merge_unions(member_type, member_types)
 
         assert member_types, 'No member types in Union'

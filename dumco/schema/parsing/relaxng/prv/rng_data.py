@@ -8,10 +8,10 @@ import rng_param
 import utils
 
 
-def rng_data(attrs, parent_element, factory, grammar_path, all_grammars):
-    type_name = factory.get_attribute(attrs, 'type').strip()
-    datatypes_uri = factory.get_datatypes_uri()
-    builtin_type = factory.builtin_types(datatypes_uri)[type_name]
+def rng_data(attrs, parent_element, builder, grammar_path, all_grammars):
+    type_name = builder.get_attribute(attrs, 'type').strip()
+    datatypes_uri = builder.get_datatypes_uri()
+    builtin_type = builder.builtin_types(datatypes_uri)[type_name]
 
     parent_element.children.append(RngData(datatypes_uri, builtin_type))
 
@@ -31,13 +31,13 @@ class RngData(base.RngBase):
         self.type = builtin_type
 
     @method_once
-    def finalize(self, grammar, factory):
+    def finalize(self, grammar, builder):
         for c in self.children:
             assert (isinstance(c, rng_param.RngParam) or
                     isinstance(c, rng_except.RngExceptPattern)), \
                 'Wrong content of data element'
 
-            c = c.finalize(grammar, factory)
+            c = c.finalize(grammar, builder)
             if isinstance(c, rng_param.RngParam):
                 self.params.append(c)
             elif isinstance(c, rng_except.RngExceptPattern):
@@ -46,7 +46,7 @@ class RngData(base.RngBase):
                 if len(c.patterns) != 0:
                     self.except_pattern = c
 
-        return super(RngData, self).finalize(grammar, factory)
+        return super(RngData, self).finalize(grammar, builder)
 
     def dump(self, context):
         with utils.RngTagGuard('data', context):
