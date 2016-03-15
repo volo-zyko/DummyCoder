@@ -64,7 +64,7 @@ def process_arguments():
         '{default: %(default)d}')
     parser.add_argument(
         '--suppress-warnings', action='store_true', default=False,
-        help='Do not print warning messages {default: %(default)s}')
+        help='do not print warning messages {default: %(default)s}')
 
     subparsers = parser.add_subparsers(dest='mode', help='processing modes')
 
