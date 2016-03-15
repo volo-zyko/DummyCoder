@@ -62,6 +62,9 @@ def process_arguments():
         '--max-dir-depth', default=1,
         help='max directory depth where schema files are searched '
         '{default: %(default)d}')
+    parser.add_argument(
+        '--suppress-warnings', action='store_true', default=False,
+        help='Do not print warning messages {default: %(default)s}')
 
     subparsers = parser.add_subparsers(dest='mode', help='processing modes')
 
@@ -140,6 +143,7 @@ if __name__ == '__main__':
 
     args = process_arguments()
     horn.set_verbosity(1)
+    horn.set_suppress_warnings(args.suppress_warnings)
 
     if not os.path.exists(args.input_path):
         raise PathNotExists()
