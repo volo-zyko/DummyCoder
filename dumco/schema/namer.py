@@ -256,7 +256,7 @@ def _track_name(key_component, name, counters):
 
     if key_component not in count_tracker:
         if name_id in count_tracker.itervalues():
-            for name_id in xrange(0, 2 ** 32):
+            for name_id in xrange(0, 2 ** 30):
                 if name_id not in count_tracker.itervalues():
                     count_tracker[key_component] = name_id
                     break
