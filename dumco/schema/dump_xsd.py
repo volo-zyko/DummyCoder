@@ -460,6 +460,11 @@ def _collect_forms(schemata):
             stats[1] = stats[1] + 1
 
     for schema in schemata:
+        if schema.target_ns is None:
+            element_forms[schema] = False
+            attribute_forms[schema] = False
+            continue
+
         # Qualification stats. Element at index 0 is a count of qualified
         # entities, and element at index 1 is a count of unqualified entities.
         elems = [0, 0]
@@ -477,8 +482,8 @@ def _collect_forms(schemata):
                         checks.is_attribute(m.attribute)):
                     inc_stats(m.attribute, attrs)
 
-        element_forms[schema] = True if elems[0] > elems[1] else False
-        attribute_forms[schema] = True if attrs[0] > attrs[1] else False
+        element_forms[schema] = elems[0] > elems[1]
+        attribute_forms[schema] = attrs[0] > attrs[1]
 
     return (element_forms, attribute_forms)
 

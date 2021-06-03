@@ -249,7 +249,7 @@ class OpacityManager(object):
                 member_name = m.group(4)
 
                 if member_name is None:
-                    uri = m.group(1)
+                    uri = None if m.group(1) == '' else m.group(1)
                     element_name = m.group(2)
 
                     element_set = self.supported_elems.setdefault(uri, set())
@@ -258,7 +258,7 @@ class OpacityManager(object):
                 elif member_name.startswith('#'):
                     continue
 
-                uri = m.group(1)
+                uri = None if m.group(1) == '' else m.group(1)
                 ct_name = m.group(2)
 
                 ns_map = self.supported_cts.setdefault(uri, dict())
